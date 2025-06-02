@@ -67,7 +67,7 @@ export default function Home() {
         <div className="flex gap-4 items-center flex-col sm:flex-row">
           <button
             id="open-camera"
-            className="rounded-full cursor-pointer border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto hover:bg-foreground/70 hover:border-transparent"
+            className="rounded-full cursor-pointer border border-solid border-transparent transition-colors flex items-center justify-center bg-r-green/80 text-background gap-2 font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto hover:bg-r-green hover:border-transparent"
             onClick={openCamera}
           >
             <Image

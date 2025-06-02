@@ -3,12 +3,32 @@
 :root {
   --background: #ffffff;
   --foreground: #546254;
+
+  --r-green: #1ac099;
+  --r-darkgreen: #346d6b;
+  --r-lightgreen: #4caf50;
+  --r-neongreen: #5bd468;
+
+  --r-orange: #ff916d;
+  --r-lightorange: #f4b953;
+
+  --r-blue: #4655a0;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-poppins);
+  
+  --color-r-green: var(--r-green);
+  --color-r-darkgreen: var(--r-darkgreen);
+  --color-r-lightgreen: var(--r-lightgreen);
+  --color-r-neongreen: var(--r-neongreen);
+
+  --color-r-orange: var(--r-orange);
+  --color-r-lightorange: var(--r-lightorange);
+
+  --color-r-blue: var(--r-blue);
 }
 
 body {
