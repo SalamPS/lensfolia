@@ -59,7 +59,7 @@ const Intro = () => {
             </div>
 
             {/* Title */}
-            <h1 className="max-w-4xl bg-gradient-to-b from-zinc-500 to-zinc-700 bg-clip-text text-center text-2xl font-bold text-transparent md:text-4xl dark:from-zinc-50 py-4 dark:to-zinc-400">
+            <h1 className="max-w-4xl bg-gradient-to-b from-zinc-500 to-zinc-700 bg-clip-text text-center text-xl font-bold text-transparent md:text-3xl dark:from-zinc-50 py-4 dark:to-zinc-400">
               Mengapa Menggunakan LensFolia untuk Deteksi Dini Pada Tanaman Anda
               itu Penting?
             </h1>
@@ -71,7 +71,7 @@ const Intro = () => {
                   key={index}
                   className="bg-card border-border flex flex-col items-start gap-6 rounded-lg border p-6 shadow-sm"
                 >
-                  <div className="border-border rounded-full border p-3 shadow-sm">
+                  <div className="border-border rounded-full border p-3 shadow-xl">
                     {card.icon}
                   </div>
                   <div className="space-y-2">
