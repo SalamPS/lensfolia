@@ -1,10 +1,9 @@
 import React from "react";
 import { cn } from "@/lib/utils";
-import Image from "next/image";
 import { IconBrain, IconLeaf } from "@tabler/icons-react";
+import TitleBadge from "../ui/title-badge";
 
 const Intro = () => {
-  // Data untuk card
   const cards = [
     {
       icon: <IconLeaf size={24} className="text-primary" />,
@@ -28,7 +27,7 @@ const Intro = () => {
   ];
 
   return (
-    <section>
+    <section id="intro">
       <div className="bg-backkround flex h-full w-full items-center justify-center">
         <div className="relative flex w-full items-center justify-center px-4">
           <div
@@ -45,21 +44,14 @@ const Intro = () => {
           {/* Content */}
           <div className="z-20 flex w-full flex-col items-center gap-4 py-12 md:gap-6">
             {/* Badge */}
-            <div className="bg-card border-border flex items-center justify-center gap-2 rounded-full border px-4 py-2 shadow-sm">
-              <Image
-                src="/sparkle.svg"
-                alt="sparkle-icon"
-                width={16}
-                height={16}
-                className="invert dark:invert-0"
-              />
-              <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-50">
-                Intro
-              </p>
-            </div>
+            <TitleBadge
+              title="Intro"
+              iconDark="/sparkle.svg"
+              iconLight="/sparkle-color-primary.svg"
+            />
 
             {/* Title */}
-            <h1 className="max-w-4xl bg-gradient-to-b from-zinc-500 to-zinc-700 bg-clip-text text-center text-xl font-bold text-transparent md:text-3xl dark:from-zinc-50 py-4 dark:to-zinc-400">
+            <h1 className="max-w-4xl bg-gradient-to-b from-zinc-500 to-zinc-700 bg-clip-text py-4 text-center text-xl font-bold text-transparent md:text-3xl dark:from-zinc-50 dark:to-zinc-400">
               Mengapa Menggunakan LensFolia untuk Deteksi Dini Pada Tanaman Anda
               itu Penting?
             </h1>
@@ -78,7 +70,7 @@ const Intro = () => {
                     <h2 className="text-foreground text-lg font-semibold">
                       {card.title}
                     </h2>
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-muted-foreground text-sm ">
                       {card.description}
                     </p>
                   </div>
@@ -96,7 +88,7 @@ const Intro = () => {
                   <p className="text-primary font-mono text-2xl font-bold md:text-3xl">
                     {stat.value}
                   </p>
-                  <p className="text-muted-foreground text-xs md:text-sm">
+                  <p className="text-muted-foreground text-center text-xs md:text-sm font-mono">
                     {stat.label}
                   </p>
                 </div>

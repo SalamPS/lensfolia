@@ -2,17 +2,15 @@
 
 import Image from "next/image";
 import { ModeToggle } from "@/components/ui/mode-toggle";
-import { Button } from "../ui/button";
 import { IconArrowUpRight, IconMenu2, IconX } from "@tabler/icons-react";
 import Link from "next/link";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useTheme } from "next-themes";
 
 export const navItems = [
   { label: "Intro", href: "#intro" },
   { label: "Fitur", href: "#features" },
-  { label: "Cara Kerja", href: "#how-to-works" },
+  { label: "Cara Kerja", href: "#how-it-works" },
   { label: "FAQ", href: "#faq" },
 ];
 
@@ -27,29 +25,33 @@ const Navbar = () => {
     setIsMobileMenuOpen(false);
   };
 
-  const { theme } = useTheme();
-
   return (
     <>
       <header className="bg-background/80 border-border fixed top-0 z-50 w-full border-b px-3 py-3 backdrop-blur-lg md:px-4">
         <div className="mx-auto max-w-7xl">
           <div className="flex w-full items-center justify-between">
             {/* Logo dan Nama Aplikasi */}
-            <div className="flex shrink-0 items-center gap-2">
+            <Link
+              href="#hero"
+              className="relative flex h-[28px] w-[28px] shrink-0 items-center gap-2"
+              aria-label="Go to top"
+            >
               <Image
-                src={
-                  theme === "dark"
-                    ? "/logo-asset-white.svg"
-                    : "/logo-asset-black.svg"
-                }
+                src="/logo-asset-black.svg"
                 alt="App Logo"
-                height={28}
-                width={28}
+                fill
+                className="dark:hidden"
               />
-              <p className="text-foreground hidden font-bold md:flex">
+              <Image
+                src="/logo-asset-white.svg"
+                alt="App Logo"
+                fill
+                className="hidden dark:block"
+              />
+              <p className="text-foreground hidden pl-9 font-bold md:flex">
                 Lensfolia
               </p>
-            </div>
+            </Link>
 
             {/* Desktop Navigation */}
             <div className="hidden md:block">
@@ -69,16 +71,21 @@ const Navbar = () => {
 
             {/* CTA */}
             <div className="flex items-center justify-center gap-2">
-              <Button variant="link" className="font-bold">
-                ID
-              </Button>
               <ModeToggle />
               <Link
-                href="/DetectionPage"
-                className="bg-primary hidden items-center justify-center gap-2 rounded-md px-3 py-2 md:flex md:gap-2"
+                href="/detect"
+                className="bg-primary hover:shadow-primary/25 hover:from-primary hover:to-primary/80 group relative hidden items-center justify-center gap-2 overflow-hidden rounded-md px-3 py-2 transition-all duration-300 ease-out hover:scale-105 hover:bg-gradient-to-r hover:shadow-lg md:flex md:gap-2"
               >
-                <p className="text-sm font-semibold text-white">Mulai</p>
-                <IconArrowUpRight className="text-white" size={20} />
+                <p className="text-sm font-semibold text-white transition-transform duration-300 ease-out group-hover:translate-x-[-2px]">
+                  Mulai
+                </p>
+                <IconArrowUpRight
+                  className="text-white transition-all duration-300 ease-out group-hover:translate-x-1 group-hover:translate-y-[-1px] group-hover:scale-110 group-hover:rotate-12"
+                  size={20}
+                />
+
+                {/* Subtle shine effect */}
+                <div className="absolute inset-0 translate-x-[-100%] bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-[100%]" />
               </Link>
               <div className="md:hidden">
                 <button
@@ -151,11 +158,11 @@ const Navbar = () => {
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ delay: navItems.length * 0.1 + 0.2 }}
+                    transition={{ delay: navItems.length * 0.1 + 0.1 }}
                     className="w-full"
                   >
                     <Link
-                      href="/DetectionPage"
+                      href="/detect"
                       className="bg-primary flex items-center justify-center gap-2 rounded-lg p-3"
                     >
                       <IconArrowUpRight className="text-white" size={24} />
