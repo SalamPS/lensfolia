@@ -17,7 +17,7 @@ const featureCards = [
     title: "Mendukung Berbagai Jenis Tanaman",
     description:
       "Cocok untuk petani, peneliti, dan hobiis dengan beragam tanaman.",
-    colSpan: "md:col-span-1", // This card was originally separate in Row 1
+    colSpan: "md:col-span-1", 
   },
   {
     icon: IconBolt,
