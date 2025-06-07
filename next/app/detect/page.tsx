@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import LFDWrapper from '@/components/detect/Wrapper';
 import Loading from '@/components/detect/Loading';
 import { useRouter } from 'next/navigation';
+import { IconCamera, IconUpload } from '@tabler/icons-react';
 
 export default function LFDImageUpload() {
 	const router = useRouter();
@@ -46,6 +47,11 @@ export default function LFDImageUpload() {
 	const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
 		if (e.target.files && e.target.files.length > 0) {
 			const file = e.target.files[0];
+			// Cek apakah file yang diunggah adalah gambar
+			if (!file.type.startsWith('image/')) {
+				console.error('File yang diunggah bukan gambar.');
+				return;
+			}
 			const reader = new FileReader();
 			reader.readAsDataURL(file);
 			reader.onloadend = () => {
@@ -72,6 +78,12 @@ export default function LFDImageUpload() {
 		e.preventDefault();
 		if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
 			const file = e.dataTransfer.files[0];
+			// Cek apakah file yang di-drop adalah gambar
+			if (!file.type.startsWith('image/')) {
+				console.error('File yang diunggah bukan gambar.');
+				setIsDragging(false);
+				return;
+			}
 			const reader = new FileReader();
 			reader.readAsDataURL(file);
 			reader.onloadend = () => {
@@ -145,11 +157,19 @@ export default function LFDImageUpload() {
 	}
 
 	return (
-		<LFDWrapper onDrop={handleDrop} onDragOver={handleDragOver} onDragLeave={() => setIsDragging(false)}>
+		<LFDWrapper onDrop={handleDrop} onDragOver={handleDragOver}>
+			<div className='fixed top-0 left-0 w-screen h-screen z-60 flex'
+				style={{display: isDragging ? 'flex' : 'none'}} onDragLeave={() => setIsDragging(false)}>
+			</div>
 			<div className='fixed top-0 left-0 w-screen h-screen bg-background/80 z-50 flex items-center justify-center'
 				style={{display: isDragging ? 'flex' : 'none'}}>
-				<div className="flex items-center bg-background/60 justify-center w-[90vw] h-[90vh] text-white rounded text-lg font-bold border-2 border-border border-dashed">
-					Drop it like it's hot
+				<div className="flex items-center bg-background/60 justify-center w-[80vw] h-[80vh] rounded-3xl border-2 border-border border-dashed">
+					<div className='animate-pulse text-white text-lg font-bold flex flex-col items-center justify-center'>
+						<IconUpload size={40} />
+						<p className='mt-4'>
+							Drop it like it's hot
+						</p>
+					</div>
 				</div>
 			</div>
 			{isLoading && <Loading />}
@@ -165,18 +185,19 @@ export default function LFDImageUpload() {
 				<section className="grid grid-cols-2 gap-5 items-center border-[1px] bg-card/[0.08] border-border rounded-2xl p-5"
 					id='set-image'
 					onDragLeave={() => setIsDragging(false)}>
+					
 					<LFDISContainer
-						icon='camera'
 						onClick={openCamera}
 						title='Ambil Foto Langsung'
-						subtitle='Izinkan penggunaan kamera Anda'
-					/>
+						subtitle='Izinkan penggunaan kamera Anda'>
+						<IconCamera size={20}/>
+					</LFDISContainer>
 					<LFDISContainer
-						icon='upload'
 						onClick={triggerFileUpload}
 						title='Unggah dari perangkat Anda'
-						subtitle='Drag and drop file atau klik untuk upload'
-					/>
+						subtitle='Drag and drop file atau klik untuk upload'>
+						<IconUpload size={20}/>
+					</LFDISContainer>
 				</section> 
 				: 
 				<section className="p-6 border-[1px] border-border border-dashed bg-card/[0.12]"
@@ -241,23 +262,21 @@ export default function LFDImageUpload() {
 }
 
 interface LFDISContainerProps {
-	children?: React.ReactNode;
-	icon: string;
+	children: React.ReactNode;
 	title: string;
 	subtitle: string;
 	onClick: () => void;
 }
 
-function LFDISContainer({children, icon, title, subtitle, onClick}: LFDISContainerProps) {
+function LFDISContainer({children, title, subtitle, onClick}: LFDISContainerProps) {
 	return <div className={`p-5 border-[1px] border-border border-dashed bg-card/[0.08]`}>
-		<div className="flex flex-col aspect-[4/3] items-center justify-center gap-1 p-18 rounded-md cursor-pointer bg-card"
+		<div className="flex flex-col aspect-[4/3] items-center justify-center gap-1 p-18 rounded-md cursor-pointer bg-card hover:scale-[1.02] duration-200"
 			onClick={onClick}>
-			<div className='bg-primary shadow-inner shadow-foreground/[0.5] rounded-md p-4 mb-5 aspect-square flex items-center justify-center'>
-				{icon[0]}
+			<div className='bg-primary shadow-inner shadow-foreground/[0.6] rounded-md p-5 mb-5 aspect-square flex items-center justify-center duration-200'>
+				{children}
 			</div>
 			<h1 className='text-sm font-bold'>{title}</h1>
 			<h2 className='text-xs text-muted-foreground'>{subtitle}</h2>
-			{children}
 		</div>
 	</div>
 }
