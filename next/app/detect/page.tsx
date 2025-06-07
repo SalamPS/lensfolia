@@ -2,7 +2,7 @@
 "use client";
 import React, { useState, useRef, useEffect } from 'react';
 import LFDWrapper from '@/components/detect/Wrapper';
-import Loading from '@/components/detect/Loading';
+import Loading from '@/components/Loading';
 import { useRouter } from 'next/navigation';
 import { IconCamera, IconUpload } from '@tabler/icons-react';
 
