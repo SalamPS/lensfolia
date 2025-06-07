@@ -13,7 +13,7 @@ export default function SignupModal() {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="secondary">Daftar</Button>
+        <Button variant="default">Daftar</Button>
       </DialogTrigger>
       <DialogContent>
         <div className="flex flex-col items-center gap-2">

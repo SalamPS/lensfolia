@@ -6,6 +6,8 @@ import { IconArrowUpRight, IconMenu2, IconX } from "@tabler/icons-react";
 import Link from "next/link";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { usePathname } from "next/navigation";
+import SignupModal from "../auth/signup-modal";
 
 export const navItems = [
   { label: "Intro", href: "#intro" },
@@ -16,6 +18,7 @@ export const navItems = [
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const pathname = usePathname();
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -28,11 +31,11 @@ const Navbar = () => {
   return (
     <>
       <header className="bg-background/80 border-border fixed top-0 z-50 w-full border-b px-3 py-3 backdrop-blur-lg md:px-4">
-        <div className="mx-auto max-w-7xl">
-          <div className="flex w-full items-center justify-between">
-            {/* Logo dan Nama Aplikasi */}
+        <div className={`mx-auto max-w-7xl grid grid-cols-2 ${pathname == "/" ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
+          {/* Logo dan Nama Aplikasi */}
+          <div className="flex items-center">
             <Link
-              href="#hero"
+              href="/"
               className="relative flex h-[28px] w-[28px] shrink-0 items-center gap-2"
               aria-label="Go to top"
             >
@@ -52,54 +55,54 @@ const Navbar = () => {
                 Lensfolia
               </p>
             </Link>
-
-            {/* Desktop Navigation */}
-            <div className="hidden md:block">
-              <nav className="flex items-center justify-center gap-6">
-                {navItems.map(({ label, href }) => (
-                  <Link
-                    href={href}
-                    key={label}
-                    className="text-muted-foreground/80 group hover:text-card-foreground relative rounded-md px-3 py-1 text-sm font-semibold transition-all duration-300"
-                    title={label}
-                  >
-                    {label}
-                  </Link>
-                ))}
-              </nav>
-            </div>
-
-            {/* CTA */}
-            <div className="flex items-center justify-center gap-2">
-              <ModeToggle />
-              <Link
-                href="/detect"
-                className="bg-primary hover:shadow-primary/25 hover:from-primary hover:to-primary/80 group relative hidden items-center justify-center gap-2 overflow-hidden rounded-md px-3 py-2 transition-all duration-300 ease-out hover:scale-105 hover:bg-gradient-to-r hover:shadow-lg md:flex md:gap-2"
-              >
-                <p className="text-sm font-semibold text-white transition-transform duration-300 ease-out group-hover:translate-x-[-2px]">
-                  Mulai
-                </p>
-                <IconArrowUpRight
-                  className="text-white transition-all duration-300 ease-out group-hover:translate-x-1 group-hover:translate-y-[-1px] group-hover:scale-110 group-hover:rotate-12"
-                  size={20}
-                />
-
-                {/* Subtle shine effect */}
-                <div className="absolute inset-0 translate-x-[-100%] bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-[100%]" />
-              </Link>
-              <div className="md:hidden">
-                <button
-                  onClick={toggleMobileMenu}
-                  className="text-foreground hover:bg-card/50 focus:ring-primary flex items-center justify-center rounded-md p-2 transition-colors duration-200 focus:ring-1 focus:outline-none"
-                  aria-label="Toggle menu"
+          </div>
+          {/* CTA */}
+          
+          {/* Desktop Navigation */}
+          {pathname == "/" ?
+            <nav className="hidden md:flex items-center justify-center gap-6">
+              {navItems.map(({ label, href }) => (
+                <Link
+                  href={href}
+                  key={label}
+                  className="text-muted-foreground/80 group hover:text-card-foreground relative rounded-md px-3 py-1 text-sm font-semibold transition-all duration-300"
+                  title={label}
                 >
-                  {isMobileMenuOpen ? (
-                    <IconX size={20} />
-                  ) : (
-                    <IconMenu2 size={20} />
-                  )}
-                </button>
-              </div>
+                  {label}
+                </Link>
+              ))}
+            </nav>
+          : ""}
+          
+          <div className="flex items-center justify-end gap-2">
+            <ModeToggle />
+            {pathname == "/" ? <Link
+              href="/detect"
+              className="bg-primary hover:shadow-primary/25 hover:from-primary hover:to-primary/80 group relative hidden items-center justify-center gap-2 overflow-hidden rounded-md px-3 py-2 transition-all duration-300 ease-out hover:scale-105 hover:bg-gradient-to-r hover:shadow-lg md:flex md:gap-2"
+            >
+              <p className="text-sm font-semibold text-white transition-transform duration-300 ease-out group-hover:translate-x-[-2px]">
+                Mulai
+              </p>
+              <IconArrowUpRight
+                className="text-white transition-all duration-300 ease-out group-hover:translate-x-1 group-hover:translate-y-[-1px] group-hover:scale-110 group-hover:rotate-12"
+                size={20}
+              />
+
+              {/* Subtle shine effect */}
+              <div className="absolute inset-0 translate-x-[-100%] bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-[100%]" />
+            </Link> : <SignupModal/>}
+            <div className="md:hidden">
+              <button
+                onClick={toggleMobileMenu}
+                className="text-foreground hover:bg-card/50 focus:ring-primary flex items-center justify-center rounded-md p-2 transition-colors duration-200 focus:ring-1 focus:outline-none"
+                aria-label="Toggle menu"
+              >
+                {isMobileMenuOpen ? (
+                  <IconX size={20} />
+                ) : (
+                  <IconMenu2 size={20} />
+                )}
+              </button>
             </div>
           </div>
         </div>
