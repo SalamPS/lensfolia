@@ -148,7 +148,7 @@ export default function LFDImageUpload() {
 			// const data = await response.json();
 			// console.log('Detection result:', data);
 			await new Promise((resolve) => setTimeout(resolve, 5000));
-			router.push('/result');
+			router.push('/result/123');
 		} catch (error) {
 			console.error('Error processing image:', error);
 		} finally {
