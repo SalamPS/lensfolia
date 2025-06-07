@@ -1,11 +1,12 @@
+/* eslint-disable @next/next/no-img-element */
 import { IconArrowLeft, IconBookmark, IconClipboardText, IconEdit, IconSend, IconSparkles, IconThumbUp } from "@tabler/icons-react";
 import LFDWrapper from "./Wrapper";
 import Link from "next/link";
 
 export default function LFDResultPage ({result}: {result?: LFDResult_}) {
 	return <LFDWrapper>
-		<header className="text-center w-[40vw] mt-24 mb-4">
-			<h1 className="text-3xl font-semibold mb-6">LensFolia—Deteksi Penyakit Tanaman dengan AI</h1>
+		<header className="text-center w-[40vw] my-8 z-20">
+			<h1 className="bg-gradient-to-b from-zinc-500 to-zinc-700 bg-clip-text py-4 text-center text-xl font-bold text-transparent md:text-4xl dark:from-zinc-50 dark:to-zinc-400">LensFolia—Deteksi Penyakit Tanaman dengan AI</h1>
 			<p className=" text-muted-foreground">Kami telah menganalisis gambar daun yang Anda unggah. Berikut adalah hasil deteksi dan rekomendasi perawatan yang sesuai.</p>
 		</header>
 		<section id='preview-image' className="p-6 border-[1px] border-border border-dashed bg-card/[0.12] backdrop-blur-md">
@@ -19,12 +20,12 @@ export default function LFDResultPage ({result}: {result?: LFDResult_}) {
 				<img src={result?.imageUrl} alt="Captured Image" className="max-w-md rounded-xl" />
 			</div>
 		</section>
-		<section id='disease-result'>
-			<h1 className="text-4xl font-bold mt-8 mb-4 text-center">
+		<section id='disease-result' className="z-20">
+			<h1 className="text-4xl font-bold mt-8 mb-4 text-transparent text-center bg-gradient-to-b from-zinc-500 to-zinc-700 dark:from-primary dark:to-emerald-800 bg-clip-text">
 				{!result?.result.length? 
-				<span className="text-primary">Tidak ada penyakit terdeteksi!</span> 
+				<span className="">Tidak ada penyakit terdeteksi!</span> 
 				: 
-				<span className="text-primary">{result.result.length} Penyakit Terdeteksi!</span> 
+				<span className="">{result.result.length} Penyakit Terdeteksi!</span> 
 				}
 			</h1>
 			{result?.result.length ? 
@@ -35,7 +36,7 @@ export default function LFDResultPage ({result}: {result?: LFDResult_}) {
 						<img src={disease.exampleImageUrl} alt={disease.diseaseName} className="h-full w-64 object-cover rounded-xl mb-2" />
 						<h2 className="text-lg font-semibold my-2">{disease.diseaseName}</h2>
 						<p 
-							className={`text-xs font-semibold text-white mt-1 border-[1px] rounded-full p-2 px-4 mb-2
+							className={`text-xs font-semibold text-foreground mt-1 border-[1px] rounded-full p-2 px-4 mb-2
 								${disease.confidence > 0.8 ? 'bg-primary/30' : disease.confidence > 0.5 ? 'bg-[#FF8904]/30' : 'bg-destructive/30'}
 								${disease.confidence > 0.8 ? 'border-primary' : disease.confidence > 0.5 ? 'border-[#FF8904]' : 'border-destructive'}
 							`}>
@@ -46,12 +47,12 @@ export default function LFDResultPage ({result}: {result?: LFDResult_}) {
 			</div>
 			: ''}
 			<div className="flex justify-center">
-				<button className="cursor-pointer flex items-center bg-primary text-white font-semibold shadow-inner shadow-foreground/[0.5] py-2 px-4 rounded-lg hover:bg-primary/80 transition-colors mt-6">
+				<button className="cursor-pointer flex items-center bg-primary text-foreground font-semibold shadow-inner shadow-foreground/[0.5] py-2 px-4 rounded-lg hover:bg-primary/80 transition-colors mt-6">
 					<IconBookmark className="inline mr-2"/> Bookmark Hasil Deteksi
 				</button>
 			</div>
 		</section>
-		<section id='discussion' className="my-16 p-8 px-4 pb-4 w-[60vw] rounded-4xl bg-card flex flex-col gap-4">
+		<section id='discussion' className="z-20 my-16 p-8 px-4 pb-4 w-[60vw] rounded-4xl bg-card flex flex-col gap-4">
 			<h2 className="text-2xl font-semibold mb-4 text-center">Pembahasan Terkait Penyakit Tanaman</h2>
 			<Discussion title="Overview"
 				description={result?.overview || "Tidak ada overview yang tersedia."}>
@@ -86,7 +87,7 @@ export default function LFDResultPage ({result}: {result?: LFDResult_}) {
 					</div>
 					<div className="flex mt-2 bg-secondary rounded-t-2xl p-3 px-5">
 						<input className="grow outline-none text-muted-foreground" type="text" placeholder="Tanyakan apapun terkait deteksi daunmu"/>
-						<button className="bg-white text-black p-3 rounded-full hover:bg-primary/10 transition-colors">
+						<button className="bg-foreground text-background p-3 rounded-full hover:bg-primary/10 transition-colors">
 							<IconSend/>
 						</button>
 					</div>

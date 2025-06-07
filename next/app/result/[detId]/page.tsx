@@ -1,3 +1,6 @@
+import DynamicBG from '@/components/DynamicBG';
+import Navbar from '@/components/home/Navbar';
+import React from 'react'
 import LFDResultPage from "@/components/detect/Result";
 
 export default async function LFDResultContainer({
@@ -36,5 +39,11 @@ export default async function LFDResultContainer({
       'Apa saja tanaman yang rentan terhadap Embun Tepung?',
     ]
   }
-  return <LFDResultPage result={res}/>;
+  return (<main className='bg-background h-full w-full'>
+    <Navbar />
+    <DynamicBG/>
+    <LFDResultPage result={res}/>;
+  </main>
+);
+  
 }

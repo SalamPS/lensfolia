@@ -1,10 +1,13 @@
-import SignupModal from '@/components/auth/signup-modal';
+import DetectionMenu from '@/components/detect/DetectionMenu';
+import DynamicBG from '@/components/DynamicBG';
+import Navbar from '@/components/home/Navbar';
 import React from 'react'
 
 const DetectionPage = () => {
-  return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-24">
-     <SignupModal />
+  return (<main className='bg-background h-full w-full'>
+      <Navbar />
+      <DynamicBG/>
+      <DetectionMenu/>
     </main>
   );
 }
