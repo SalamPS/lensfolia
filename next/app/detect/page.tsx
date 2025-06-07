@@ -167,7 +167,7 @@ export default function LFDImageUpload() {
 					<div className='animate-pulse text-white text-lg font-bold flex flex-col items-center justify-center'>
 						<IconUpload size={40} />
 						<p className='mt-4'>
-							Drop it like it's hot
+							Drop it like it{"'"}s hot
 						</p>
 					</div>
 				</div>
