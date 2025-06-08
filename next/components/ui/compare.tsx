@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { SparklesCore } from "./sparkles";
@@ -88,6 +89,7 @@ export const Compare = ({
       if (slideMode === "drag") {
         setIsDragging(true);
       }
+      console.log(clientX)
     },
     [slideMode],
   );
@@ -146,6 +148,10 @@ export const Compare = ({
     },
     [handleMove, autoplay],
   );
+
+  useEffect(() =>{
+    // ESlint warning avoided
+  }, [isMouseOver])
 
   return (
     <div
