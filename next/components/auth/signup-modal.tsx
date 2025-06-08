@@ -40,11 +40,11 @@ export default function SignupModal() {
         </div>
 
         <div className="space-y-3">
-          <Button variant="outline" className="w-full">
+          <Button variant="outline" className="w-full" onClick={() => {}}>
             <Image src="/google.png" width={16} height={16} alt="Google" />
             Lanjutkan dengan Google
           </Button>
-          <Button variant="outline" className="w-full">
+          <Button variant="outline" className="w-full" onClick={() => {}}>
             <Image
               src="/github-icon-2.svg"
               width={18}
