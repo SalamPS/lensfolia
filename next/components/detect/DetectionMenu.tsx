@@ -170,7 +170,7 @@ export default function DetectionMenu() {
 					</div>
 				</div>
 			</div>
-			{isLoading && <Loading />}
+			{isLoading && <Loading>Memproses Deteksi Daun ...</Loading>}
 			
 			<header className='flex flex-col gap-4 w-[40vw] z-20'>
 				<h1 className="text-4xl font-bold text-center mb-4 two-lines">
