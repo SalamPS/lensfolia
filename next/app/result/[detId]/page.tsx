@@ -2,6 +2,7 @@ import DynamicBG from '@/components/DynamicBG';
 import Navbar from '@/components/home/Navbar';
 import React from 'react'
 import LFDResultPage from "@/components/detect/Result";
+import { userNavbar_ } from '@/components/types/user';
 
 export default async function LFDResultContainer({
   params,
@@ -39,11 +40,19 @@ export default async function LFDResultContainer({
       'Apa saja tanaman yang rentan terhadap Embun Tepung?',
     ]
   }
-  return (<main className='bg-background h-full w-full'>
-    <Navbar />
-    <DynamicBG/>
-    <LFDResultPage result={res}/>;
-  </main>
-);
-  
+  return (
+    <main className='bg-background h-full w-full'>
+      <Navbar user={user}/>
+      <DynamicBG/>
+      <LFDResultPage result={res}/>;
+    </main>
+  );
+}
+
+const user:userNavbar_ = {
+  id: '123',
+  name: 'Salam PS',
+  email: 'salamp@salamp.id',
+  profilePicture: '/profile.jpg',
+  createdAt: '2023-01-01',
 }

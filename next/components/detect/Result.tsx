@@ -1,9 +1,20 @@
+"use client";
+
 /* eslint-disable @next/next/no-img-element */
-import { IconArrowLeft, IconBookmark, IconClipboardText, IconEdit, IconSend, IconSparkles, IconThumbUp } from "@tabler/icons-react";
+import { IconArrowLeft, IconBookmark, IconBookmarkFilled, IconClipboardText, IconEdit, IconSend, IconSparkles, IconThumbUp } from "@tabler/icons-react";
 import LFDWrapper from "./Wrapper";
 import Link from "next/link";
+import { Button } from "../ui/button";
+import { useState } from "react";
 
 export default function LFDResultPage ({result}: {result?: LFDResult_}) {
+	const [bookmarked, setBookmarked] = useState(false);
+
+	const handleBookmark = () => {
+		// Implement bookmark functionality here
+		setBookmarked(!bookmarked);
+	}
+
 	return <LFDWrapper>
 		<header className="text-center w-[40vw] my-8 z-20">
 			<h1 className="bg-gradient-to-b from-zinc-500 to-zinc-700 bg-clip-text py-4 text-center text-xl font-bold text-transparent md:text-4xl dark:from-zinc-50 dark:to-zinc-400">LensFolia—Deteksi Penyakit Tanaman dengan AI</h1>
@@ -47,9 +58,13 @@ export default function LFDResultPage ({result}: {result?: LFDResult_}) {
 			</div>
 			: ''}
 			<div className="flex justify-center">
-				<button className="cursor-pointer flex items-center bg-primary text-foreground font-semibold shadow-inner shadow-foreground/[0.5] py-2 px-4 rounded-lg hover:bg-primary/80 transition-colors mt-6">
-					<IconBookmark className="inline mr-2"/> Bookmark Hasil Deteksi
-				</button>
+				<Button onClick={() => {handleBookmark()}}>
+					{bookmarked ?<>
+						<IconBookmarkFilled size={24} /> Hasil Deteksi Tersimpan
+					</> : <>
+						<IconBookmark size={24} /> Simpan Hasil Deteksi
+					</>}
+				</Button>
 			</div>
 		</section>
 		<section id='discussion' className="z-20 my-16 p-8 px-4 pb-4 w-[60vw] rounded-4xl bg-card flex flex-col gap-4">
