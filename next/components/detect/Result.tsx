@@ -3,11 +3,12 @@
 /* eslint-disable @next/next/no-img-element */
 import { IconArrowLeft, IconBookmark, IconBookmarkFilled, IconClipboardText, IconEdit, IconSend, IconSparkles, IconThumbUp } from "@tabler/icons-react";
 import LFDWrapper from "./Wrapper";
-import Link from "next/link";
 import { Button } from "../ui/button";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function LFDResultPage ({result}: {result?: LFDResult_}) {
+	const router = useRouter();
 	const [bookmarked, setBookmarked] = useState(false);
 
 	const handleBookmark = () => {
@@ -22,9 +23,10 @@ export default function LFDResultPage ({result}: {result?: LFDResult_}) {
 		</header>
 		<section id='preview-image' className="p-6 border-[1px] border-border border-dashed bg-card/[0.12] backdrop-blur-md">
 			<div className='mb-6 flex items-center gap-4 text-sm font-semibold'>
-				<Link href="/detect" className="inline-block p-2 bg-card rounded-full cursor-pointer hover:bg-card/80 transition-colors">
+				<Button className="inline-block py-2 aspect-square bg-secondary/40 rounded-full cursor-pointer hover:bg-secondary transition-colors"
+					onClick={() => {router.back()}}>
 					<IconArrowLeft size={18}/>
-				</Link>
+				</Button>
 				{result?.imageName}
 			</div>
 			<div className="flex flex-col items-center justify-center gap-1 border-[1px] border-border p-6 rounded-2xl bg-card">
