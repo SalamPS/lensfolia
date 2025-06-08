@@ -156,11 +156,11 @@ export default function DetectionMenu() {
 
 	return (
 		<LFDWrapper onDrop={handleDrop} onDragOver={handleDragOver}>
-			<div className='fixed top-0 left-0 w-screen h-screen z-60 flex'
+			<div className='fixed top-0 left-0 w-screen h-screen z-100 flex'
 				style={{display: isDragging ? 'flex' : 'none'}} onDragLeave={() => setIsDragging(false)}>
 			</div>
-			<div className='fixed top-0 left-0 w-screen h-screen bg-background/80 z-100 flex items-center justify-center'
-				style={{display: isDragging ? 'flex' : 'none'}}>
+			<div className='fixed top-0 left-0 w-screen h-screen bg-background/80 z-80 flex items-center justify-center'
+				style={{display: isDragging ? 'flex' : 'none'}} onDragLeave={() => setIsDragging(false)}>
 				<div className="flex items-center bg-background/60 justify-center w-[80vw] h-[80vh] rounded-3xl border-2 border-border border-dashed">
 					<div className='animate-pulse text-white text-lg font-bold flex flex-col items-center justify-center'>
 						<IconUpload size={40} />
