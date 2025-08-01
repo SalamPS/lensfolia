@@ -52,4 +52,6 @@ chatbot-agent-engine/
 ai-agent-engine/
 dinov2-research-engine/data/
 dinov2-research-engine/qdrant_storage/
+dinov2-research-engine/models/
+dinov2-research-engine/logs/checkpoints
 two-stage-detection-engine/mobilenet_v2_1.0_224-plant-disease-identification_onnx
