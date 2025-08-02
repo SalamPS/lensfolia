@@ -1,23 +1,37 @@
+'use client'
+
 import BookmarksPage from '@/components/bookmarks/BookmarksPage';
 import Navbar from '@/components/home/Navbar';
 import { userNavbar_ } from '@/components/types/user';
+import { useAuth } from '@/hooks/useAuth';
 import React from 'react'
 
 const BookmarksWrapper = () => {
+	const { user, loading } = useAuth()
+
+	if (loading) {
+		return <div className="flex items-center justify-center min-h-screen">Loading...</div>
+	}
+
+	if (!user) {
+		return <div className="flex items-center justify-center min-h-screen">Please log in to access bookmarks</div>
+	}
+
+	// Convert Supabase user to your user type
+	const userForNavbar: userNavbar_ = {
+		id: user.id,
+		name: user.user_metadata?.full_name || user.email || 'User',
+		email: user.email || '',
+		profilePicture: user.user_metadata?.avatar_url || '/profile.jpg',
+		createdAt: user.created_at,
+	}
+
 	return (<>
-		<Navbar user={user}/>
+		<Navbar user={userForNavbar}/>
 		<div className='bg-background h-full w-full p-44 flex flex-col gap-8'>
 			<BookmarksPage bookmarks={Bookmarks}/>
 		</div>
 	</>);
-}
-
-const user:userNavbar_ = {
-	id: '123',
-	name: 'Salam PS',
-	email: 'salamp@salamp.id',
-	profilePicture: '/profile.jpg',
-	createdAt: '2023-01-01',
 }
 
 export default BookmarksWrapper;
