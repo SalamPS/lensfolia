@@ -5,6 +5,7 @@ import requests
 from io import BytesIO
 import json
 import os
+import base64
 
 class PlantDiseaseClassifier:
     def __init__(self, model_dir):
@@ -17,24 +18,58 @@ class PlantDiseaseClassifier:
         with open(os.path.join(self.model_dir, filename)) as f:
             return json.load(f)
     
-    def predict(self, image_path_or_url, top_k=5):
+    def predict(self, image_source, top_k=5):
         """
         Predict plant disease from an image
         
         Args:
-            image_path_or_url: Path to local image file or URL
+            image_source: Path to local image file, URL, base64 encoded image data, or PIL Image
             top_k: Number of top predictions to return
         
         Returns:
             List of dictionaries with keys 'label' and 'confidence'
         """
         try:
-            # Load image
-            if image_path_or_url.startswith('http'):
-                response = requests.get(image_path_or_url)
+            print(f"\n[DEBUG] Processing image source")
+            # Handle PIL Image directly
+            if isinstance(image_source, Image.Image):
+                image = image_source
+            # Load image based on input type
+            elif isinstance(image_source, str) and image_source.startswith('http'):
+                # Handle URL
+                print(f"[DEBUG] Downloading image from URL: {image_source}")
+                response = requests.get(image_source)
+                print(f"[DEBUG] Response status: {response.status_code}")
+                if not response.ok:
+                    print(f"[DEBUG] Failed to download image, status: {response.status_code}")
+                    raise RuntimeError(f"Failed to download image, status: {response.status_code}")
                 image = Image.open(BytesIO(response.content))
+                print("[DEBUG] Successfully opened image from URL")
+            elif image_source.startswith('data:image/') or len(image_source) > 100:
+                # Handle base64 data
+                if image_source.startswith('data:image/'):
+                    # Extract base64 from data URL
+                    image_data = image_source.split(',')[1]
+                else:
+                    image_data = image_source
+                image_bytes = base64.b64decode(image_data)
+                image = Image.open(BytesIO(image_bytes))
+            elif isinstance(image_source, str):
+                # Handle local file path or base64
+                if image_source.startswith('data:image/') or len(image_source) > 100:
+                    # Handle base64 data
+                    if image_source.startswith('data:image/'):
+                        # Extract base64 from data URL
+                        image_data = image_source.split(',')[1]
+                    else:
+                        image_data = image_source
+                    image_bytes = base64.b64decode(image_data)
+                    image = Image.open(BytesIO(image_bytes))
+                else:
+                    # Handle local file path
+                    image = Image.open(image_source)
             else:
-                image = Image.open(image_path_or_url)
+                raise ValueError("Unsupported image source type")
             
             # Preprocess image
             image = self._preprocess_image(image)
@@ -117,7 +152,7 @@ class PlantDiseaseClassifier:
 if __name__ == "__main__":
     # Initialize classifier
     classifier = PlantDiseaseClassifier(
-        model_dir="mobilenet_v2_1.0_224-plant-disease-identification_onnx"
+        model_dir="src/agent/mobilenet_v2"
     )
     
     # Test prediction
