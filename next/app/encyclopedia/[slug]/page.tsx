@@ -1,19 +1,30 @@
 
 import EncyclopediaDetail from "@/components/encyclopedia/EncyclopediaDetail";
-import { mockEncyclopediaData } from "@/components/encyclopedia/MockData";
 import { notFound } from "next/navigation";
+import { supabase } from "@/lib/supabase";
+import { mapEncyclopediaEntryDBToEntry } from "@/components/types/encyclopedia";
 
 interface PageProps {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
-export default function EncyclopediaDetailPage({ params }: PageProps) {
-  // Cari data berdasarkan slug (ID)
-  const entry = mockEncyclopediaData.find((item) => item.id === params.slug);
+export default async function EncyclopediaDetailPage({ params }: PageProps) {
+  const { slug } = await params;
+  
+  const { data, error } = await supabase
+    .from("encyclopedia")
+    .select("*")
+    .eq("id", slug)
+    .single();
 
-  // Jika tidak ditemukan, tampilkan 404
+  if (error) {
+    console.error("Error fetching data:", error);
+    return;
+  }
+
+  const entry = mapEncyclopediaEntryDBToEntry(data);
   if (!entry) {
     return notFound();
   }
@@ -22,7 +33,15 @@ export default function EncyclopediaDetailPage({ params }: PageProps) {
 }
 
 export async function generateStaticParams() {
-  return mockEncyclopediaData.map((entry) => ({
-    slug: entry.id,
+  const { data: supabaseData, error } = await supabase
+    .from("encyclopedia")
+    .select("id");
+
+  if (error) {
+    return [];
+  }
+
+  return supabaseData.map((entry) => ({
+    slug: entry.id.toString(),
   }));
 }

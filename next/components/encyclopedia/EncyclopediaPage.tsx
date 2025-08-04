@@ -10,7 +10,7 @@ import {
 import React, { useState, useEffect } from "react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { EncyclopediaEntry } from "../types/encyclopedia";
+import { EncyclopediaEntry, mapEncyclopediaEntryDBToEntry } from "../types/encyclopedia";
 import {
   Pagination,
   PaginationContent,
@@ -36,8 +36,9 @@ import {
 import EncyclopediaCardSkeleton from "./EncyclopediaCardSkeleton";
 import EncyclopediaCard from "./EncyclopediaCard";
 import Image from "next/image";
-import { mockEncyclopediaData } from "./MockData";
+// import { mockEncyclopediaData } from "./MockData";
 import StaticBG from "../StaticBG";
+import { supabase } from "@/lib/supabase";
 
 const EncyclopediaPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -54,10 +55,27 @@ const EncyclopediaPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
-      await new Promise((resolve) => setTimeout(resolve, 800));
-      setEntries(mockEncyclopediaData);
-      setFilteredEntries(mockEncyclopediaData);
-      setIsLoading(false);
+
+      try {
+        const { data, error } = await supabase
+          .from("encyclopedia")
+          .select("*");
+
+        if (error) {
+          console.error("Error fetching data:", error);
+          return;
+        }
+
+        const entry = data.map((each) => {
+          return mapEncyclopediaEntryDBToEntry(each);
+        });
+        setEntries(entry);
+        setFilteredEntries(entry);
+      } catch (err) {
+        console.error("Unexpected error:", err);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     fetchData();
