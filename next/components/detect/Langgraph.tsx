@@ -35,7 +35,7 @@ export function LangGraphVisual ({image_url, trigger}: LangGraphVisualProps) {
 				zIndex: trigger ? 998 : -100,
 			}}
 			transition={{ duration: 0.3 }}
-			className="flex flex-col justify-start fixed overflow-hidden top-0 left-0 w-full h-full bg-background"
+			className="flex flex-col justify-start fixed overflow-hidden top-0 left-0 w-full h-full bg-background/98"
 			style={{ 
 				zIndex: trigger ? 998 : -100,
 			}}>
@@ -85,7 +85,7 @@ export function LangGraphVisual ({image_url, trigger}: LangGraphVisualProps) {
 				</div>
 				<div>
 
-					<div className="flex gap-4 mb-4">
+					<div className="flex flex-col md:flex-row gap-4 mb-4">
 						<h2 className="text-2xl grow-0 font-bold">MEMPROSES DIAGNOSIS</h2>
 						<div className="grow mt-2 bg-foreground/40 rounded-full h-4">
 							<div
