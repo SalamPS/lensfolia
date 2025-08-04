@@ -11,9 +11,6 @@ interface EncyclopediaCardProps {
 }
 
 const EncyclopediaCard: React.FC<EncyclopediaCardProps> = ({ data }) => {
-
-
-
   return (
     <SpotlightCard
       className="custom-spotlight-card"
@@ -42,14 +39,20 @@ const EncyclopediaCard: React.FC<EncyclopediaCardProps> = ({ data }) => {
             </span>
           </div>
 
-          <h3 className="text-lg font-semibold">{data.title}</h3>
+          <h3 className="text-foreground text-lg font-semibold">
+            {data.title}
+          </h3>
         </div>
         <p className="text-muted-foreground mt-2 line-clamp-2 text-sm">
           {data.description}
         </p>
         <div className="mt-4 flex items-center">
           <Link href={`/encyclopedia/${data.id}`}>
-            <Button variant="secondary" size="sm" className="hover:shadow-lg shadow-primary/30 transition-all">
+            <Button
+              variant="secondary"
+              size="sm"
+              className="shadow-primary/30 transition-all hover:shadow-lg"
+            >
               Baca selengkapnya
             </Button>
           </Link>
