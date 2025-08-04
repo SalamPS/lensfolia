@@ -171,15 +171,6 @@ export default function DetectionMenu() {
 				</div>
 			</div>
 			{isLoading && <Loading>Memproses Deteksi Daun ...</Loading>}
-			
-			<header className='flex flex-col gap-4 w-[40vw] z-20'>
-				<h1 className="text-4xl font-bold text-center mb-4 two-lines">
-					Foto langsung atau Unggah dari perangkat anda
-				</h1>
-				<p className="text-base text-center text-muted-foreground">
-					Pastikan gambar yang akan diidentifikasi memiliki kualitas yang bagus dan tidak blur, posisikan daun sehingga terlihat dengan jelas.
-				</p>
-			</header>
 			{!captureUrl ? 
 				<section className="grid grid-cols-2 gap-5 items-center border-[1px] bg-card/[0.4] backdrop-blur-xs border-border rounded-2xl p-10"
 					id='set-image'>

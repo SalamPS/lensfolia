@@ -18,7 +18,13 @@ export const navItems = [
   { label: "FAQ", href: "#faq" },
 ];
 
-const Navbar = ({user}: {user?:userNavbar_}) => {
+export const navItemsFeatures = [
+  { label: "Deteksi", href: "/detect" },
+  { label: "Lensiklopedia", href: "/encyclopedia" },
+  { label: "Forum", href: "/forum" },
+];
+
+const Navbar = ({ user }: { user?: userNavbar_ }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
 
@@ -33,7 +39,7 @@ const Navbar = ({user}: {user?:userNavbar_}) => {
   return (
     <>
       <header className="bg-background/80 border-border fixed top-0 z-50 w-full border-b px-3 py-3 backdrop-blur-lg md:px-4">
-        <div className={`mx-auto max-w-7xl grid grid-cols-2 ${pathname == "/" ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
+        <div className={`mx-auto grid max-w-7xl grid-cols-2 md:grid-cols-3`}>
           {/* Logo dan Nama Aplikasi */}
           <div className="flex items-center">
             <Link
@@ -59,10 +65,10 @@ const Navbar = ({user}: {user?:userNavbar_}) => {
             </Link>
           </div>
           {/* CTA */}
-          
+
           {/* Desktop Navigation */}
-          {pathname == "/" ?
-            <nav className="hidden md:flex items-center justify-center gap-6">
+          {pathname == "/" ? (
+            <nav className="hidden items-center justify-center gap-6 md:flex">
               {navItems.map(({ label, href }) => (
                 <Link
                   href={href}
@@ -74,47 +80,61 @@ const Navbar = ({user}: {user?:userNavbar_}) => {
                 </Link>
               ))}
             </nav>
-          : ""}
-          
+          ) : (
+            <nav className="hidden items-center justify-center gap-6 md:flex">
+              {navItemsFeatures.map(({ label, href }) => (
+                <Link
+                  href={href}
+                  key={label}
+                  className={`relative rounded-md px-3 py-1 text-sm font-semibold transition-all duration-300 ${pathname === href ? "text-card-foreground" : "text-muted-foreground/80 group hover:text-card-foreground"}`}
+                  title={label}
+                >
+                  {label}
+                </Link>
+              ))}
+            </nav>
+          )}
+
           <div className="flex items-center justify-end gap-2">
             <ModeToggle />
-            {
-            user && user?.id ? 
-            <Link
-              href="/bookmarks"
-              className="text-muted-foreground hover:bg-card/50 flex items-center justify-center rounded-md px-3 py-2 transition-colors duration-200 focus:ring-primary"
+            {user && user?.id ? (
+              <Link
+                href="/bookmarks"
+                className="text-muted-foreground hover:bg-card/50 focus:ring-primary flex items-center justify-center rounded-md px-3 py-2 transition-colors duration-200"
               >
-              <div className="relative h-5 aspect-square overflow-hidden shrink-0 bg-primary rounded-full">
-                <img
-                  src={user.profilePicture || "/profile.jpg"}
-                  alt={user.name[0]}
-                  className="rounded-full w-full aspect-square"
+                <div className="bg-primary relative aspect-square h-6 shrink-0 overflow-hidden rounded-full">
+                  <img
+                    src={user.profilePicture || "/profile.jpg"}
+                    alt={user.name[0]}
+                    className="aspect-square w-full rounded-full"
+                  />
+                </div>
+                <span className="text-foreground ml-2 hidden text-sm font-semibold md:inline-block">
+                  {user.name}
+                </span>
+              </Link>
+            ) : pathname == "/" ? (
+              <Link
+                className="bg-primary hover:shadow-primary/25 hover:from-primary hover:to-primary/80 group relative hidden items-center justify-center gap-2 overflow-hidden rounded-md px-3 py-2 transition-all duration-300 ease-out hover:scale-105 hover:bg-gradient-to-r hover:shadow-lg md:flex md:gap-2"
+                href="/detect"
+              >
+                <p className="text-sm font-semibold text-white transition-transform duration-300 ease-out group-hover:translate-x-[-2px]">
+                  Mulai
+                </p>
+                <IconArrowUpRight
+                  className="text-white transition-all duration-300 ease-out group-hover:translate-x-1 group-hover:translate-y-[-1px] group-hover:scale-110 group-hover:rotate-12"
+                  size={20}
                 />
-              </div>
-              <span className="hidden md:inline-block ml-2 text-sm font-semibold text-foreground">
-                {user.name}
-              </span>
-            </Link>
-            :
-            pathname == "/" ? 
-            <Link className="bg-primary hover:shadow-primary/25 hover:from-primary hover:to-primary/80 group relative hidden items-center justify-center gap-2 overflow-hidden rounded-md px-3 py-2 transition-all duration-300 ease-out hover:scale-105 hover:bg-gradient-to-r hover:shadow-lg md:flex md:gap-2"
-              href="/detect">
-              <p className="text-sm font-semibold text-white transition-transform duration-300 ease-out group-hover:translate-x-[-2px]">
-                Mulai
-              </p>
-              <IconArrowUpRight
-                className="text-white transition-all duration-300 ease-out group-hover:translate-x-1 group-hover:translate-y-[-1px] group-hover:scale-110 group-hover:rotate-12"
-                size={20}
-              />
-              {/* Subtle shine effect */}
-              <div className="absolute inset-0 translate-x-[-100%] bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-[100%]" />
-            </Link> 
-            : 
-            <SignupModal/>}
+                {/* Subtle shine effect */}
+                <div className="absolute inset-0 translate-x-[-100%] bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-[100%]" />
+              </Link>
+            ) : (
+              <SignupModal />
+            )}
             <div className="md:hidden">
               <button
                 onClick={toggleMobileMenu}
-                className="text-foreground hover:bg-card/50 focus:ring-primary flex items-center justify-center rounded-md p-2 transition-colors duration-200 focus:ring-1 focus:outline-none"
+                className="text-foreground hover:bg-card/50 focus:ring-primary flex items-center justify-center rounded-md p-2 transition-colors duration-200 focus:ring-1 focus:outline-none cursor-pointer"
                 aria-label="Toggle menu"
               >
                 {isMobileMenuOpen ? (
@@ -155,45 +175,75 @@ const Navbar = ({user}: {user?:userNavbar_}) => {
               exit={{ y: "-100%" }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
             >
-              <nav className="w-full px-8 py-6">
-                <div className="flex flex-col items-center justify-center gap-4">
-                  {navItems.map(({ label, href }, index) => (
+              {pathname == "/" ? (
+                <nav className="w-full px-8 py-6">
+                  <div className="flex flex-col items-center justify-center gap-4">
+                    {navItems.map(({ label, href }, index) => (
+                      <motion.div
+                        key={label}
+                        initial={{ y: -20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: -20, opacity: 0 }}
+                        transition={{ delay: index * 0.1, duration: 0.3 }}
+                        className="w-full"
+                      >
+                        <Link
+                          href={href}
+                          onClick={closeMobileMenu}
+                          className="text-foreground hover:bg-card/50 flex w-full items-center justify-center rounded-lg px-4 py-3 text-xl font-semibold transition-all duration-200 hover:inset-shadow-sm hover:inset-shadow-white/5 dark:hover:shadow"
+                          title={label}
+                        >
+                          {label}
+                        </Link>
+                      </motion.div>
+                    ))}
+
+                    {/* Mobile CTA Section */}
                     <motion.div
-                      key={label}
-                      initial={{ y: -20, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      exit={{ y: -20, opacity: 0 }}
-                      transition={{ delay: index * 0.1, duration: 0.3 }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: navItems.length * 0.1 + 0.1 }}
                       className="w-full"
                     >
                       <Link
-                        href={href}
-                        onClick={closeMobileMenu}
-                        className="text-foreground hover:bg-card/50 flex w-full items-center justify-center rounded-lg px-4 py-3 text-xl font-semibold transition-all duration-200 hover:inset-shadow-sm hover:inset-shadow-white/5 dark:hover:shadow"
-                        title={label}
+                        href="/detect"
+                        className="bg-primary flex items-center justify-center gap-2 rounded-lg p-3"
                       >
-                        {label}
+                        <IconArrowUpRight className="text-white" size={24} />
+                        <p className="text-xl font-semibold text-white">
+                          Mulai
+                        </p>
                       </Link>
                     </motion.div>
-                  ))}
+                  </div>
+                </nav>
+              ) : (
+                <nav className="w-full px-8 py-6">
+                  <div className="flex flex-col items-center justify-center gap-4">
+                    {navItemsFeatures.map(({ label, href }, index) => (
+                      <motion.div
+                        key={label}
+                        initial={{ y: -20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: -20, opacity: 0 }}
+                        transition={{ delay: index * 0.1, duration: 0.3 }}
+                        className="w-full"
+                      >
+                        <Link
+                          href={href}
+                          onClick={closeMobileMenu}
+                          className={`text-foreground hover:bg-card/50 flex w-full items-center justify-center rounded-lg px-4 py-3 text-xl font-semibold transition-all duration-200 hover:inset-shadow-sm hover:inset-shadow-white/5 dark:hover:shadow ${pathname === href ? "text-card-foreground" : "text-muted-foreground/80 group hover:text-card-foreground"}`}
+                          title={label}
+                        >
+                          {label}
+                        </Link>
+                      </motion.div>
+                    ))}
 
-                  {/* Mobile CTA Section */}
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: navItems.length * 0.1 + 0.1 }}
-                    className="w-full"
-                  >
-                    <Link
-                      href="/detect"
-                      className="bg-primary flex items-center justify-center gap-2 rounded-lg p-3"
-                    >
-                      <IconArrowUpRight className="text-white" size={24} />
-                      <p className="text-xl font-semibold text-white">Mulai</p>
-                    </Link>
-                  </motion.div>
-                </div>
-              </nav>
+                    
+                  </div>
+                </nav>
+              )}
             </motion.div>
           </motion.div>
         )}
