@@ -9,7 +9,7 @@ const AIBubble = ({ text }: { text: string }) => {
 	);
 };
 
-export function AskAI ({disease}: {disease?: LFDResult_}) {
+export function AskAI ({disease}: {disease: LFDResult_ | null}) {
 	return (
 		<div id="ask-ai" className="border-border rounded-3xl border-[1px]">
 			<h3 className="border-border flex items-center justify-center border-b-[1px] p-2 py-6 font-semibold">
@@ -22,8 +22,8 @@ export function AskAI ({disease}: {disease?: LFDResult_}) {
 						Apa yang bisa saya bantu?
 					</h4>
 					<div className="w-[80%] text-center">
-						{disease?.aibubble?.length
-							? disease.aibubble.map((text, index) => (
+						{disease?.ai_bubble?.length
+							? disease.ai_bubble.map((text, index) => (
 									<AIBubble key={index} text={text} />
 								))
 							: null}

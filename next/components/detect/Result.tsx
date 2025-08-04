@@ -261,7 +261,7 @@ export default function LFDResultPage({detId}: {detId?: string}) {
             lebih lanjut, konsultasikan dengan ahli pertanian atau dokter
             tanaman.
           </p>
-          <AskAI />
+          <AskAI disease={currentDisease}/>
         </div>
       </section>
     </LFDWrapper>
