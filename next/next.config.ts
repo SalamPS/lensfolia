@@ -11,6 +11,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "s3.amazonaws.com",
       },
+      {
+        protocol: "https",
+        hostname: "tse2.mm.bing.net",
+      },
     ],
   },
 };
