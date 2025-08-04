@@ -86,10 +86,11 @@ class DetectionPipeline:
             # Crop image
             crop = img[y1:y2, x1:x2]
             
-            # Convert to bytes and print first few characters
-            _, buffer = cv2.imencode('.jpg', crop)
-            img_bytes = buffer.tobytes()
-            print(f"Crop {i} first bytes:", img_bytes[:20])  # Print first 20 bytes
+            # Convert cropped image to base64
+            _, buffer = cv2.imencode('.jpg', crop, [cv2.IMWRITE_JPEG_QUALITY, 95])
+            base64_crop = "data:image/jpeg;base64," + base64.b64encode(buffer).decode('utf-8')
+            
+            print(f"Crop {i} encoded as base64 (length: {len(base64_crop)} chars)")
             
             # Convert to PIL Image for classification
             crop_rgb = cv2.cvtColor(crop, cv2.COLOR_BGR2RGB)
@@ -100,11 +101,12 @@ class DetectionPipeline:
             if hasattr(self, 'classifier'):
                 classification = self.classifier.predict(pil_image, top_k=3)
             
-            # Store in memory
+            # Store in memory with full base64 data
             cropped_images.append({
-                "coordinates": (x1, y1, x2, y2),
-                "size": (x2-x1, y2-y1),
-                "bytes_sample": img_bytes[:20],  # Just storing a sample for demo
+                "crop_id": i,
+                "coordinates": [x1, y1, x2, y2],  # Convert tuple to list for JSON serialization
+                "size": [x2-x1, y2-y1],  # Convert tuple to list for JSON serialization
+                "base64_image": base64_crop,
                 "classification": classification
             })
 
@@ -173,7 +175,7 @@ if __name__ == "__main__":
         print(results['detection_result'][:100]) 
         print("Cropped Images:")
         for i, crop in enumerate(results['cropped_images']):
-            print(f"Crop {i}: Coordinates: {crop['coordinates']}, Size: {crop['size']}, Sample Bytes: {crop['bytes_sample']}")
+            print(f"Crop {crop['crop_id']}: Coordinates: {crop['coordinates']}, Size: {crop['size']}, Base64 length: {len(crop['base64_image'])} chars")
             if crop['classification']:
                 print(f"Classification: {crop['classification']}")
         print("-" * 50)
