@@ -6,6 +6,7 @@ import Loading from "@/components/Loading";
 import { useRouter } from "next/navigation";
 import { IconCamera, IconUpload } from "@tabler/icons-react";
 import { Button } from "../ui/button";
+import { LangGraphVisual } from "./Langgraph";
 
 export default function DetectionMenu() {
   const router = useRouter();
@@ -162,6 +163,10 @@ export default function DetectionMenu() {
 
   return (
     <LFDWrapper onDrop={handleDrop} onDragOver={handleDragOver}>
+      <LangGraphVisual 
+        image_url="https://plantvillage-production-new.s3.amazonaws.com/image/99416/file/default-eb4701036f717c99bf95001c1a8f7b40.jpg" 
+        trigger={true}
+      />
       <div
         className="fixed top-0 left-0 z-100 flex h-screen w-screen"
         style={{ display: isDragging ? "flex" : "none" }}
