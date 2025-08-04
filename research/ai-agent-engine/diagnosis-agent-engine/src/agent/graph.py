@@ -1,282 +1,28 @@
+"""Plant Disease Detection Multi-Agent System Graph."""
+
 from __future__ import annotations
 
 import json
 import os
-from dataclasses import dataclass, field, fields
-from typing import Dict, List, Literal, cast, Annotated, Any, Callable, Optional, Sequence
-from typing_extensions import Annotated
-import base64
-
-from langchain_core.runnables import ensure_config
-from langchain.chat_models import init_chat_model
-from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import BaseMessage, AIMessage, AnyMessage, HumanMessage
-from langchain_core.tools import tool
-from langchain_community.vectorstores import SupabaseVectorStore
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
-from langchain_tavily import TavilySearch
-from supabase.client import Client, create_client
-from pydantic import BaseModel, Field
-
-from langgraph.config import get_config
-from langgraph.graph import StateGraph, add_messages, END, START
-from langgraph.prebuilt import ToolNode, create_react_agent
-from langgraph.managed import IsLastStep
-from langgraph.types import Command
-
+from typing import Dict, Literal, cast
 from datetime import UTC, datetime
-from agent.pipeline import DetectionPipeline
 
+from langchain_core.messages import AIMessage, HumanMessage
+from langgraph.graph import StateGraph, END, START
+from langgraph.types import Command
 from dotenv import load_dotenv
 
+from agent.configuration import Configuration
+from agent.state import InputState, State
+from agent.schemas import ImageAnalysisResult, PlantDiseaseResponse
+from agent.tools import (
+    plant_disease_detection, 
+    generate_search_query, 
+    create_structured_response
+)
+from agent.utils import load_chat_model, create_retriever_agent
+
 load_dotenv()
-
-# Configuration
-class Config:
-    GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY") 
-    SUPABASE_URL = os.getenv("SUPABASE_URL")
-    SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
-    TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
-    PRODUCT_COLLECTION_NAME = "lensfolia_collection"
-    EMBEDDING_MODEL = "models/gemini-embedding-001"
-
-# Initialize services
-supabase: Client = create_client(Config.SUPABASE_URL, Config.SUPABASE_ANON_KEY)
-embeddings = GoogleGenerativeAIEmbeddings(
-    api_key=Config.GOOGLE_API_KEY,
-    model=Config.EMBEDDING_MODEL
-)
-vector_store = SupabaseVectorStore(
-    client=supabase,
-    embedding=embeddings,
-    table_name="documents",
-    query_name="match_documents",
-)
-
-# System prompts
-IMAGE_ANALYSIS_PROMPT = """You are an expert plant pathologist. Analyze the provided image and determine:
-
-1. Is this a plant leaf image?
-2. If yes, does the leaf show signs of disease or damage?
-3. If diseased, describe the visible symptoms in detail (spots, discoloration, patterns, etc.)
-4. What plant type do you think this might be?
-5. What potential diseases could cause these symptoms?
-
-Be specific about visual symptoms you observe. Current time: {system_time}"""
-
-QUERY_GENERATION_PROMPT = """You are an expert at generating search queries for plant disease information.
-Generate a precise search query to find relevant information about: {topic}
-
-Focus on: {focus_area}
-
-Return only the search query, nothing else."""
-
-RAG_SYSTEM_PROMPTS = {
-    "overview": """You are a plant disease expert. Based on the retrieved information, provide a comprehensive overview of the detected plant disease including:
-    - Disease identification and confirmation
-    - Symptoms description
-    - Causes and conditions that promote the disease
-    - Affected plant parts
-    - Disease progression
-    
-    Be thorough and scientific in your explanation.""",
-    
-    "treatment": """You are a plant treatment specialist. Based on the retrieved information, provide detailed treatment recommendations including:
-    - Immediate treatment steps
-    - Cultural practices to control the disease
-    - Preventive measures
-    - Application timing and methods
-    - Safety considerations
-    
-    Focus on practical, actionable advice.""",
-    
-    "product": """You are a plant care product specialist. Based on the retrieved information, recommend specific products for treating the identified disease including:
-    - Product names and active ingredients
-    - Application instructions
-    - Dosage and frequency
-    - Product images (ALWAYS include image links from the retrieved documents)
-    - Where to purchase or availability
-    
-    IMPORTANT: Always include product image links in your response when available in the retrieved documents."""
-}
-
-@dataclass(kw_only=True)
-class Configuration:
-    """The configuration for the agent."""
-    
-    model: Annotated[str, {"__template_metadata__": {"kind": "llm"}}] = field(
-        default="google_genai/gemini-2.5-flash",
-        metadata={"description": "The name of the language model to use."},
-    )
-
-    @classmethod
-    def from_context(cls) -> Configuration:
-        """Create a Configuration instance from a RunnableConfig object."""
-        try:
-            config = get_config()
-        except RuntimeError:
-            config = None
-        config = ensure_config(config)
-        configurable = config.get("configurable") or {}
-        _fields = {f.name for f in fields(cls) if f.init}
-        return cls(**{k: v for k, v in configurable.items() if k in _fields})
-
-# Pydantic models for structured output
-class PlantDiseaseResponse(BaseModel):
-    """Final structured response for plant disease detection"""
-    
-    is_plant_leaf: bool = Field(description="Whether the image contains a plant leaf")
-    has_disease: bool = Field(description="Whether disease was detected on the leaf")
-    plant_type: str = Field(description="Identified plant type or 'Unknown'")
-    disease_name: str = Field(description="Identified disease name or 'None detected'")
-    confidence_score: float = Field(description="Overall confidence in the diagnosis (0-1)")
-    
-    # Detection results
-    total_detections: int = Field(description="Number of objects detected")
-    top_predictions: List[Dict] = Field(description="Top predictions for each detected object")
-    cropped_images: List[Dict] = Field(description="Cropped images with base64 data and classification", default_factory=list)
-    
-    # Analysis results
-    image_analysis: str = Field(description="Initial image analysis results")
-    overview: str = Field(description="Disease overview and information")
-    treatment: str = Field(description="Treatment recommendations")
-    products: str = Field(description="Recommended products with image links")
-    
-    # Metadata
-    processed_at: str = Field(description="Processing timestamp")
-    annotated_image: str = Field(description="Base64 encoded annotated image", default="")
-
-# Tools
-@tool
-def plant_disease_detection(image_url: str) -> dict:
-    """Detect plant diseases in an image using YOLOv8 and classification."""
-    try:
-        pipeline = DetectionPipeline(
-            detection_model_path="src/agent/models/detection/yolov8.onnx",
-            classifier_model_dir="src/agent/models/classification"
-        )
-        return pipeline.process(image_url)
-    except Exception as e:
-        return {
-            "error": str(e),
-            "metadata": {
-                "timestamp": datetime.now(tz=UTC).isoformat(),
-                "status": "error"
-            }
-        }
-
-@tool
-def search_plant_info(query: str) -> List[Dict]:
-    """Search plant disease information from knowledge base."""
-    try:
-        filter_dict = {"doc_type": "plant_info"}
-        results = vector_store.similarity_search(query, k=5, filter=filter_dict)
-        return [
-            {
-                "content": doc.page_content,
-                "metadata": doc.metadata
-            }
-            for doc in results
-        ]
-    except Exception as e:
-        return [{"error": str(e)}]
-
-@tool
-def search_products(query: str) -> List[Dict]:
-    """Search product recommendations from knowledge base."""
-    try:
-        filter_dict = {"doc_type": "product"}
-        results = vector_store.similarity_search(query, k=5, filter=filter_dict)
-        return [
-            {
-                "content": doc.page_content,
-                "metadata": doc.metadata
-            }
-            for doc in results
-        ]
-    except Exception as e:
-        return [{"error": str(e)}]
-
-@tool
-def web_search(query: str) -> str:
-    """Search the web for additional plant disease information."""
-    try:
-        search = TavilySearch(
-            api_key=Config.TAVILY_API_KEY,
-            max_results=3
-        )
-        results = search.invoke(query)
-        return str(results)
-    except Exception as e:
-        return f"Web search error: {str(e)}"
-
-@tool
-def generate_search_query(topic: str, focus_area: str) -> str:
-    """Generate optimized search query for plant disease information."""
-    prompt = QUERY_GENERATION_PROMPT.format(topic=topic, focus_area=focus_area)
-    
-    configuration = Configuration.from_context()
-    model = load_chat_model(configuration.model)
-    
-    response = model.invoke([HumanMessage(content=prompt)])
-    return response.content.strip()
-
-@tool(return_direct=True, response_format="content_and_artifact", args_schema=PlantDiseaseResponse)
-def create_structured_response(**tool_args):
-    """Create the final structured response."""
-    return "Here is your plant disease analysis:", tool_args
-
-# State definition
-@dataclass
-class InputState:
-    """Defines the input state for the agent."""
-    
-    messages: Annotated[Sequence[AnyMessage], add_messages] = field(default_factory=list)
-    image_url: str = field(default="")
-
-@dataclass  
-class State(InputState):
-    """Represents the complete state of the agent."""
-    
-    is_last_step: IsLastStep = field(default=False)
-    
-    # Analysis results
-    is_plant_leaf: bool = field(default=False)
-    has_disease: bool = field(default=False)
-    plant_type: str = field(default="Unknown")
-    image_analysis: str = field(default="")
-    
-    # Detection results
-    detection_results: Dict[str, Any] = field(default_factory=dict)
-    top_predictions: List[Dict] = field(default_factory=list)
-    confidence_score: float = field(default=0.0)
-    
-    # Retrieval results
-    overview: str = field(default="")
-    treatment: str = field(default="")
-    products: str = field(default="")
-    
-    # Search queries
-    overview_query: str = field(default="")
-    treatment_query: str = field(default="")
-    product_query: str = field(default="")
-    
-    # Final response
-    disease_name: str = field(default="None detected")
-    final_response_saved: bool = field(default=False)
-
-def load_chat_model(fully_specified_name: str) -> BaseChatModel:
-    """Load a chat model from a fully specified name."""
-    provider, model = fully_specified_name.split("/", maxsplit=1)
-    return init_chat_model(model, model_provider=provider)
-
-class ImageAnalysisResult(BaseModel):
-    """Structured output for image analysis"""
-    is_plant_leaf: bool = Field(description="Whether the image contains a plant leaf")
-    has_disease: bool = Field(description="Whether disease signs are visible on the leaf")
-    plant_type: str = Field(description="Identified plant type or 'Unknown'")
-    analysis: str = Field(description="Detailed visual analysis of the image")
-    confidence: float = Field(description="Confidence in the analysis (0-1)", ge=0, le=1)
 
 def image_analysis_node(state: State) -> State:
     """Analyze image and update state with findings."""
@@ -285,19 +31,14 @@ def image_analysis_node(state: State) -> State:
     
     structured_llm = model.with_structured_output(ImageAnalysisResult)
     
-    analysis_prompt = """You are an expert plant pathologist. Analyze this image:
-
-1. Is this a plant leaf?
-2. If yes, are there visible disease signs (spots, discoloration, wilting, lesions)?
-3. What plant type is this?
-4. Provide detailed visual analysis
-
-Current time: {system_time}"""
+    analysis_prompt = configuration.image_analysis_prompt.format(
+        system_time=datetime.now(tz=UTC).isoformat()
+    )
     
     message = {
         "role": "user",
         "content": [
-            {"type": "text", "text": analysis_prompt.format(system_time=datetime.now(tz=UTC).isoformat())},
+            {"type": "text", "text": analysis_prompt},
             {"type": "image", "source_type": "url", "url": state.image_url}
         ]
     }
@@ -312,7 +53,6 @@ Current time: {system_time}"""
         "confidence_score": result.confidence
     }
 
-# New router node with conditional logic
 def route_after_analysis(state: State) -> str:
     """Route based on image analysis results."""
     if state.is_plant_leaf and state.has_disease:
@@ -365,6 +105,7 @@ def plant_disease_detection_node(state: State) -> Command[Literal["overview_quer
             },
             goto="create_final_response"
         )
+        
 
 def overview_query_generation_node(state: State) -> Command[Literal["overview_rag"]]:
     """Generate search query for disease overview information."""
@@ -389,28 +130,39 @@ def overview_query_generation_node(state: State) -> Command[Literal["overview_ra
     )
 
 def overview_rag_node(state: State) -> Command[Literal["treatment_query_generation"]]:
-    """Perform RAG for disease overview information."""
+    """Perform RAG for disease overview information using retriever agent."""
     
-    # Search for plant disease information
-    search_results = search_plant_info.invoke(state.overview_query)
+    retriever_agent = create_retriever_agent()
     
-    # Also try web search for additional context
-    web_results = web_search.invoke(state.overview_query)
+    # Let the agent decide how to retrieve information
+    retrieval_query = f"""Find comprehensive information about: {state.overview_query}
     
-    # Create context from results
-    context = ""
-    for result in search_results:
-        if "content" in result:
-            context += f"Source: {result.get('metadata', {}).get('plant_name', 'Unknown')}\n"
-            context += f"{result['content']}\n\n"
+    Focus on: disease identification, symptoms, causes, affected plant parts, and disease progression.
     
-    context += f"Web search results: {web_results}\n"
+    Plant type: {state.plant_type}
+    Detected predictions: {[pred['predictions'][0]['label'] for pred in state.top_predictions if pred['predictions']]}
+    """
     
-    # Generate overview using RAG
+    # Run the retriever agent
+    result = retriever_agent.invoke({
+        "messages": [HumanMessage(content=retrieval_query)]
+    })
+    
+    # Extract the context from agent's response
+    context = result["messages"][-1].content
+    
+    # Generate overview using the retrieved context
     configuration = Configuration.from_context()
     model = load_chat_model(configuration.model)
     
-    prompt = f"{RAG_SYSTEM_PROMPTS['overview']}\n\nContext:\n{context}\n\nQuery: {state.overview_query}\n\nProvide a comprehensive overview:"
+    prompt = f"""{configuration.rag_system_prompts['overview']}
+
+Retrieved Information:
+{context}
+
+Original Query: {state.overview_query}
+
+Provide a comprehensive overview:"""
     
     response = model.invoke([HumanMessage(content=prompt)])
     
@@ -435,23 +187,36 @@ def treatment_query_generation_node(state: State) -> Command[Literal["treatment_
     )
 
 def treatment_rag_node(state: State) -> Command[Literal["product_query_generation"]]:
-    """Perform RAG for treatment recommendations."""
+    """Perform RAG for treatment recommendations using retriever agent."""
     
-    search_results = search_plant_info.invoke(state.treatment_query)
-    web_results = web_search.invoke(state.treatment_query)
+    retriever_agent = create_retriever_agent()
     
-    context = ""
-    for result in search_results:
-        if "content" in result:
-            context += f"Source: {result.get('metadata', {}).get('section', 'Unknown')}\n"
-            context += f"{result['content']}\n\n"
+    retrieval_query = f"""Find detailed treatment information for: {state.treatment_query}
     
-    context += f"Web search results: {web_results}\n"
+    Focus on: treatment methods, remedies, control measures, application timing, and preventive practices.
+    
+    Plant type: {state.plant_type}
+    Disease context: {state.overview[:200]}...
+    """
+    
+    result = retriever_agent.invoke({
+        "messages": [HumanMessage(content=retrieval_query)]
+    })
+    
+    context = result["messages"][-1].content
     
     configuration = Configuration.from_context()
     model = load_chat_model(configuration.model)
     
-    prompt = f"{RAG_SYSTEM_PROMPTS['treatment']}\n\nContext:\n{context}\n\nOverview: {state.overview}\n\nQuery: {state.treatment_query}\n\nProvide detailed treatment recommendations:"
+    prompt = f"""{configuration.rag_system_prompts['treatment']}
+
+Retrieved Information:
+{context}
+
+Disease Overview: {state.overview}
+Original Query: {state.treatment_query}
+
+Provide detailed treatment recommendations:"""
     
     response = model.invoke([HumanMessage(content=prompt)])
     
@@ -476,23 +241,37 @@ def product_query_generation_node(state: State) -> Command[Literal["product_rag"
     )
 
 def product_rag_node(state: State) -> Command[Literal["create_final_response"]]:
-    """Perform RAG for product recommendations."""
+    """Perform RAG for product recommendations using retriever agent."""
     
-    search_results = search_products.invoke(state.product_query)
-    web_results = web_search.invoke(state.product_query)
+    retriever_agent = create_retriever_agent()
     
-    context = ""
-    for result in search_results:
-        if "content" in result:
-            context += f"Product: {result.get('metadata', {}).get('product_name', 'Unknown')}\n"
-            context += f"{result['content']}\n\n"
+    retrieval_query = f"""Find specific product recommendations for: {state.product_query}
     
-    context += f"Web search results: {web_results}\n"
+    Focus on: product names, active ingredients, application instructions, dosage, and availability.
+    IMPORTANT: Include product image links when available.
+    
+    Plant type: {state.plant_type}
+    Treatment context: {state.treatment[:200]}...
+    """
+    
+    result = retriever_agent.invoke({
+        "messages": [HumanMessage(content=retrieval_query)]
+    })
+    
+    context = result["messages"][-1].content
     
     configuration = Configuration.from_context()
     model = load_chat_model(configuration.model)
     
-    prompt = f"{RAG_SYSTEM_PROMPTS['product']}\n\nContext:\n{context}\n\nTreatment plan: {state.treatment}\n\nQuery: {state.product_query}\n\nProvide specific product recommendations with image links:"
+    prompt = f"""{configuration.rag_system_prompts['product']}
+
+Retrieved Information:
+{context}
+
+Treatment Plan: {state.treatment}
+Original Query: {state.product_query}
+
+Provide specific product recommendations with image links:"""
     
     response = model.invoke([HumanMessage(content=prompt)])
     
@@ -500,7 +279,7 @@ def product_rag_node(state: State) -> Command[Literal["create_final_response"]]:
         update={"products": response.content},
         goto="create_final_response"
     )
-
+    
 def create_final_response_node(state: State) -> Command[Literal["__end__"]]:
     """Create the final structured response."""
     
@@ -588,7 +367,7 @@ def create_final_response_node(state: State) -> Command[Literal["__end__"]]:
 # Build the graph
 builder = StateGraph(State, input_schema=InputState, context_schema=Configuration)
 
-# Add nodes (remove router)
+# Add nodes
 builder.add_node("image_analysis", image_analysis_node)
 builder.add_node("plant_disease_detection", plant_disease_detection_node)
 builder.add_node("overview_query_generation", overview_query_generation_node)
@@ -612,7 +391,7 @@ builder.add_conditional_edges(
     }
 )
 
-# Rest of edges remain the same
+# Add edges for the main flow
 builder.add_edge("plant_disease_detection", "overview_query_generation")
 builder.add_edge("overview_query_generation", "overview_rag")
 builder.add_edge("overview_rag", "treatment_query_generation")
@@ -622,6 +401,7 @@ builder.add_edge("product_query_generation", "product_rag")
 builder.add_edge("product_rag", "create_final_response")
 builder.add_edge("create_final_response", END)
 
+# Compile the graph
 graph = builder.compile(name="Plant Disease Detection Multi-Agent System")
 
 async def stream_graph_execution():
@@ -690,6 +470,7 @@ async def stream_graph_execution():
                 print(f"   • Confidence: {node_updates.get('confidence_score', 0):.2f}")
                 
             # Small delay to make the streaming more visible
+            import asyncio
             await asyncio.sleep(0.3)
 
 if __name__ == "__main__":

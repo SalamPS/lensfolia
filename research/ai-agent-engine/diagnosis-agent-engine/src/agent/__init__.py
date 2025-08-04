@@ -1,9 +1,10 @@
-"""React Agent.
+"""Plant Disease Detection Multi-Agent System.
 
-This module defines a custom reasoning and action agent graph.
-It invokes tools in a simple loop.
+This module defines a custom plant disease detection agent graph.
+It combines image analysis, disease detection, and information retrieval
+to provide comprehensive plant disease diagnosis and treatment recommendations.
 """
 
-from agent.graph import graph
+from .graph import graph
 
 __all__ = ["graph"]
