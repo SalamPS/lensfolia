@@ -43,23 +43,25 @@ export function LangGraphVisual ({image_url, trigger}: LangGraphVisualProps) {
 			style={{ 
 				zIndex: trigger ? 998 : -100,
 			}}>
-			<div className="grid grid-rows-3 gap-4 transition-200">
+			<div className="grid grid-rows-3 transition-200">
 				<div className="flex flex-col justify-end items-center text-muted-foreground text-sm">
 					<AnimatePresence mode="popLayout">
 						{processedSteps.map((step, index) => (
 							<motion.div 
 								key={step}
-								initial={{ opacity: 0, y: 20, scale: 0.8 }}
-								animate={{ opacity: 0.7, y: 0, scale: 1 }}
-								exit={{ opacity: 0, y: -10, scale: 0.9 }}
+								initial={{ opacity: 0, y: 20 }}
+								animate={{ opacity: 0.7, y: 0 }}
+								exit={{ opacity: 0, y: -20 }}
 								transition={{ 
-									duration: 0.5, 
-									delay: index * 0.1,
-									ease: "easeInOut"
+									duration: 0.3, 
+									delay: index * 0.05,
+									ease: "easeOut"
 								}}
 								id={step}
 							>
-								{step}
+								<div className="bg-card p-4 rounded-lg shadow-lg">
+									{step}
+								</div>
 							</motion.div>
 						))}
 					</AnimatePresence>
@@ -69,18 +71,12 @@ export function LangGraphVisual ({image_url, trigger}: LangGraphVisualProps) {
 						{currentStep && (
 							<motion.div
 								key={currentStep}
-								initial={{ opacity: 0, scale: 0.5, rotateX: -90 }}
-								animate={{ 
-									opacity: 1, 
-									scale: 1, 
-									rotateX: 0,
-									textShadow: "0 0 20px rgba(59, 130, 246, 0.5)"
-								}}
-								exit={{ opacity: 0, scale: 1.2, rotateX: 90 }}
+								initial={{ opacity: 0, y: 30 }}
+								animate={{ opacity: 1, y: 0 }}
+								exit={{ opacity: 0, y: -30 }}
 								transition={{ 
-									duration: 0.8,
-									ease: "easeInOut",
-									scale: { type: "spring", damping: 10, stiffness: 100 }
+									duration: 0.4,
+									ease: "easeOut"
 								}}
 								className="text-lg font-semibold text-primary"
 								id={currentStep}
@@ -97,17 +93,19 @@ export function LangGraphVisual ({image_url, trigger}: LangGraphVisualProps) {
 						{pendingSteps.map((step, index) => (
 							<motion.div 
 								key={step}
-								initial={{ opacity: 0, y: -20, scale: 0.8 }}
-								animate={{ opacity: 0.5, y: 0, scale: 1 }}
-								exit={{ opacity: 0, y: 10, scale: 0.9 }}
+								initial={{ opacity: 0, y: -20 }}
+								animate={{ opacity: 0.5, y: 0 }}
+								exit={{ opacity: 0, y: 20 }}
 								transition={{ 
-									duration: 0.5, 
-									delay: index * 0.05,
-									ease: "easeInOut"
+									duration: 0.3, 
+									delay: index * 0.03,
+									ease: "easeOut"
 								}}
 								id={step}
 							>
-								{step}
+								<div className="bg-card p-4 rounded-lg shadow-lg">
+									{step}
+								</div>
 							</motion.div>
 						))}
 					</AnimatePresence>
