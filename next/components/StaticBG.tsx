@@ -3,16 +3,10 @@ import Image from "next/image";
 import React from "react";
 
 interface HeroSectionProps {
-  title?: string;
-  description?: string;
   children?: React.ReactNode;
 }
 
-const StaticBG: React.FC<HeroSectionProps> = ({
-  title,
-  description,
-  children,
-}) => {
+const StaticBG: React.FC<HeroSectionProps> = ({ children }) => {
   return (
     <section className="bg-background relative h-fit w-full overflow-hidden">
       {/* Background spotlight */}
@@ -54,19 +48,7 @@ const StaticBG: React.FC<HeroSectionProps> = ({
 
       {/* Content */}
       <div className="relative z-10 mt-16 flex h-[20rem] items-center justify-center">
-        <div className="flex flex-col items-center justify-center gap-4 px-4">
-          {title && (
-            <h1 className="bg-gradient-to-b from-zinc-500 to-zinc-700 bg-clip-text text-center text-2xl font-bold text-wrap text-transparent md:text-4xl dark:from-zinc-50 dark:to-zinc-400">
-              {title}
-            </h1>
-          )}
-          {description && (
-            <p className="text-muted-foreground max-w-2xl text-center text-sm text-pretty">
-              {description}
-            </p>
-          )}
-          {children}
-        </div>
+        <div className="w-full max-w-7xl">{children}</div>
       </div>
     </section>
   );

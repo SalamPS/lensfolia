@@ -17,8 +17,8 @@ const EncyclopediaDetail: React.FC<EncyclopediaDetailProps> = ({ data }) => {
   return (
     <>
       <Navbar />
-      <section className="bg-background mt-16">
-        <div className="container mx-auto max-w-4xl px-4 py-8">
+      <section className="bg-background">
+        <div className="container mt-12 mx-auto max-w-4xl px-4 py-8">
           {/* Tombol Kembali */}
           <div className="mb-6">
             <Link href="/encyclopedia">

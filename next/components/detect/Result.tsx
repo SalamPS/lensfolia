@@ -1,160 +1,307 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element */
-import { IconArrowLeft, IconBookmark, IconBookmarkFilled, IconClipboardText, IconEdit, IconSend, IconSparkles, IconThumbUp } from "@tabler/icons-react";
+import {
+  IconArrowLeft,
+  IconBookmark,
+  IconBookmarkFilled,
+  IconClipboardText,
+  IconSend,
+  IconSparkles,
+  IconStethoscope,
+  IconThumbUp,
+} from "@tabler/icons-react";
 import LFDWrapper from "./Wrapper";
 import { Button } from "../ui/button";
-import { useState } from "react";
+import * as React from "react";
 import { useRouter } from "next/navigation";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
+import { Card, CardContent } from "@/components/ui/card";
+import type { CarouselApi } from "@/components/ui/carousel";
+import { ProductRecommendation } from "./ProductRecommendation";
 
-export default function LFDResultPage ({result}: {result?: LFDResult_}) {
-	const router = useRouter();
-	const [bookmarked, setBookmarked] = useState(false);
+export default function LFDResultPage({ result }: { result?: LFDResult_ }) {
+  const router = useRouter();
+  const [bookmarked, setBookmarked] = React.useState(false);
+  const [api, setApi] = React.useState<CarouselApi>();
+  const [current, setCurrent] = React.useState(0);
+  const [count, setCount] = React.useState(0);
 
-	const handleBookmark = () => {
-		// Implement bookmark functionality here
-		setBookmarked(!bookmarked);
-	}
+  React.useEffect(() => {
+    if (!api) {
+      return;
+    }
 
-	return <LFDWrapper>
-		<header className="text-center w-[40vw] my-8 z-20">
-			<h1 className="bg-gradient-to-b from-zinc-500 to-zinc-700 bg-clip-text py-4 text-center text-xl font-bold text-transparent md:text-4xl dark:from-zinc-50 dark:to-zinc-400">LensFolia—Deteksi Penyakit Tanaman dengan AI</h1>
-			<p className=" text-muted-foreground">Kami telah menganalisis gambar daun yang Anda unggah. Berikut adalah hasil deteksi dan rekomendasi perawatan yang sesuai.</p>
-		</header>
-		<section id='preview-image' className="p-6 border-[1px] border-border border-dashed bg-card/[0.12] backdrop-blur-md">
-			<div className='mb-6 flex items-center gap-4 text-sm font-semibold'>
-				<Button className="inline-block py-2 aspect-square bg-secondary/40 rounded-full cursor-pointer hover:bg-secondary transition-colors"
-					onClick={() => {router.back()}}>
-					<IconArrowLeft size={18}/>
-				</Button>
-				{result?.imageName}
-			</div>
-			<div className="flex flex-col items-center justify-center gap-1 border-[1px] border-border p-6 rounded-2xl bg-card">
-				<img src={result?.imageUrl} alt="Captured Image" className="max-w-md rounded-xl" />
-			</div>
-		</section>
-		<section id='disease-result' className="z-20">
-			<h1 className="text-4xl font-bold mt-8 mb-4 text-transparent text-center bg-gradient-to-b from-zinc-500 to-zinc-700 dark:from-primary dark:to-emerald-800 bg-clip-text">
-				{!result?.result.length? 
-				<span className="">Tidak ada penyakit terdeteksi!</span> 
-				: 
-				<span className="">{result.result.length} Penyakit Terdeteksi!</span> 
-				}
-			</h1>
-			{result?.result.length ? 
-			<div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-14"
-				style={result?.result.length == 1 ? { gridTemplateColumns: 'repeat(auto-fill, minmax(0, 1fr))' } : {}}>
-				{result.result.map((disease, index) => (
-					<div key={index} className="p-4 border-[1px] border-border rounded-2xl bg-card flex flex-col items-center">
-						<img src={disease.exampleImageUrl} alt={disease.diseaseName} className="h-full w-64 object-cover rounded-xl mb-2" />
-						<h2 className="text-lg font-semibold my-2">{disease.diseaseName}</h2>
-						<p 
-							className={`text-xs font-semibold text-foreground mt-1 border-[1px] rounded-full p-2 px-4 mb-2
-								${disease.confidence > 0.8 ? 'bg-primary/30' : disease.confidence > 0.5 ? 'bg-[#FF8904]/30' : 'bg-destructive/30'}
-								${disease.confidence > 0.8 ? 'border-primary' : disease.confidence > 0.5 ? 'border-[#FF8904]' : 'border-destructive'}
-							`}>
-							Tingkat Keyakinan: {Math.round(disease.confidence * 100)}%
-						</p>
-					</div>
-				))}
-			</div>
-			: ''}
-			<div className="flex justify-center">
-				<Button onClick={() => {handleBookmark()}}>
-					{bookmarked ?<>
-						<IconBookmarkFilled size={24} /> Hasil Deteksi Tersimpan
-					</> : <>
-						<IconBookmark size={24} /> Simpan Hasil Deteksi
-					</>}
-				</Button>
-			</div>
-		</section>
-		<section id='discussion' className="z-20 my-16 p-8 px-4 pb-4 w-[60vw] rounded-4xl bg-card flex flex-col gap-4">
-			<h2 className="text-2xl font-semibold mb-4 text-center">Pembahasan Terkait Penyakit Tanaman</h2>
-			<Discussion title="Overview"
-				description={result?.overview || "Tidak ada overview yang tersedia."}>
-				<IconClipboardText className="text-primary" size={24} />
-			</Discussion>
-			<Discussion title="Rekomendasi"
-				description={result?.recommendation || "Tidak ada rekomendasi yang tersedia."}>
-				<IconThumbUp className="text-[#53EAFD]" size={24} />
-			</Discussion>
-			<Discussion title="Catatan Penting"
-				description={result?.notes || "Tidak ada catatan penting yang tersedia."}>
-				<IconEdit className="text-[#FB7185]" size={24} />
-			</Discussion>
-			<p className="text-muted-foreground text-sm px-6">
-				*Catatan: Informasi ini hanya sebagai referensi. Untuk penanganan lebih lanjut, konsultasikan dengan ahli pertanian atau dokter tanaman.
-			</p>
-			<div id="ask-ai" className="border-border border-[1px] rounded-3xl">
-				<h3 className="flex items-center justify-center font-semibold p-2 py-6 border-b-[1px] border-border">
-					<IconSparkles className="inline mr-2" size={24} />
-					Konsultasi  lebih lanjut dengan AI
-				</h3>
-				<div className="flex flex-col gap-4 px-6">
-					<div className="grow flex flex-col items-center justify-center h-80">
-						<h4 className="font-semibold mb-8">Apa yang bisa saya bantu?</h4>
-						<div className="text-center w-[80%]">
-							{result?.aibubble && result.aibubble.length > 0 &&
-								result.aibubble.map((text, index) => (
-									<AIBubble key={index} text={text} />
-								))
-							}
-						</div>
-					</div>
-					<div className="flex mt-2 bg-secondary rounded-t-2xl p-3 px-5">
-						<input className="grow outline-none text-muted-foreground" type="text" placeholder="Tanyakan apapun terkait deteksi daunmu"/>
-						<button className="bg-foreground text-background p-3 rounded-full hover:bg-primary/10 transition-colors">
-							<IconSend/>
-						</button>
-					</div>
-				</div>
-			</div>
-		</section>
-	</LFDWrapper>
+    setCount(api.scrollSnapList().length);
+    setCurrent(api.selectedScrollSnap() + 1);
+
+    api.on("select", () => {
+      setCurrent(api.selectedScrollSnap() + 1);
+    });
+  }, [api]);
+
+  const handleBookmark = () => {
+    setBookmarked(!bookmarked);
+  };
+
+  const currentDisease = result?.result[current - 1];
+  return (
+    <LFDWrapper>
+      <section
+        id="preview-image"
+        className="border-border w-fullbg-card/[0.12] border-[2px] border-dashed p-6 backdrop-blur-md"
+      >
+        <div className="text-foreground mb-6 flex items-center gap-4 text-sm font-semibold">
+          <Button
+            className="dark:bg-secondary/40 dark:hover:bg-secondary flex h-10 w-10 cursor-pointer rounded-full bg-zinc-200 transition-colors hover:bg-zinc-300"
+            onClick={() => {
+              router.back();
+            }}
+          >
+            <IconArrowLeft className="text-foreground" />
+          </Button>
+          {result?.imageName}
+        </div>
+        <div className="border-border bg-card flex flex-col items-center justify-center gap-1 overflow-hidden rounded-[20px] border-[1px] p-4">
+          <img
+            src={result?.imageUrl || "/placeholder.svg"}
+            alt="Captured Image"
+            className="max-w-md rounded-md object-cover"
+          />
+        </div>
+      </section>
+
+      {/* Disease Result Section */}
+      <section id="disease-result" className="z-20">
+        <h1 className="dark:from-primary mt-8 mb-4 bg-gradient-to-b from-zinc-500 to-zinc-700 bg-clip-text text-center text-4xl font-bold text-transparent dark:to-emerald-800">
+          {!result?.result.length ? (
+            <span className="">Tidak ada penyakit terdeteksi!</span>
+          ) : (
+            <span className="">
+              {result.result.length} Penyakit Terdeteksi!
+            </span>
+          )}
+        </h1>
+
+        {result?.result.length ? (
+          <div className="my-14">
+            <div className="mx-auto max-w-2xl">
+              <Carousel setApi={setApi} className="w-[400px]">
+                <CarouselContent>
+                  {result.result.map((disease, index) => (
+                    <CarouselItem key={index}>
+                      <Card className="border-border">
+                        <CardContent className="flex flex-col items-center justify-center">
+                          <img
+                            src={disease.exampleImageUrl || "/placeholder.svg"}
+                            alt={disease.diseaseName}
+                            className="mb-4 w-full rounded-md object-cover"
+                          />
+                          <h2 className="my-2 text-lg font-semibold">
+                            {disease.diseaseName}
+                          </h2>
+                          <p
+                            className={`text-foreground mt-1 mb-2 rounded-full border-[1px] p-2 px-4 text-xs font-semibold ${
+                              disease.confidence > 0.8
+                                ? "bg-primary/30 border-primary"
+                                : disease.confidence > 0.5
+                                  ? "border-[#FF8904] bg-[#FF8904]/30"
+                                  : "bg-destructive/30 border-destructive"
+                            }`}
+                          >
+                            Tingkat Keyakinan:{" "}
+                            {Math.round(disease.confidence * 100)}%
+                          </p>
+                        </CardContent>
+                      </Card>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                {result.result.length > 1 && (
+                  <>
+                    <CarouselPrevious className="hidden sm:flex" />
+                    <CarouselNext className="hidden sm:flex" />
+                  </>
+                )}
+              </Carousel>
+            </div>
+
+            {/* Dot Indicators */}
+            {result.result.length > 1 && (
+              <div className="mt-4 flex justify-center gap-2">
+                {Array.from({ length: count }).map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => api?.scrollTo(index)}
+                    className={`h-2 w-2 rounded-full transition-colors ${
+                      current === index + 1 ? "bg-primary" : "bg-muted"
+                    }`}
+                    aria-label={`Go to slide ${index + 1}`}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        ) : null}
+
+        <div className="flex justify-center">
+          <Button onClick={handleBookmark}>
+            {bookmarked ? (
+              <>
+                <IconBookmarkFilled size={24} /> Hasil Deteksi Tersimpan
+              </>
+            ) : (
+              <>
+                <IconBookmark size={24} /> Simpan Hasil Deteksi
+              </>
+            )}
+          </Button>
+        </div>
+      </section>
+
+      <section className="mx-auto flex w-full flex-col items-center justify-center p-4">
+        <div
+          id="discussion"
+          className="bg-card z-20 mx-4 my-16 flex w-full flex-col gap-4 rounded-4xl p-8 px-4 pb-4 md:max-w-7xl"
+        >
+          <h2 className="mb-4 text-center text-2xl font-semibold">
+            Pembahasan Terkait{" "}
+            {currentDisease?.diseaseName || "Penyakit Tanaman"}
+          </h2>
+          <Discussion
+            title="Overview"
+            description={
+              currentDisease?.overview || "Tidak ada overview yang tersedia."
+            }
+          >
+            <IconClipboardText className="text-primary" size={24} />
+          </Discussion>
+          <Discussion
+            title="Perawatan"
+            description={
+              currentDisease?.treatment ||
+              "Tidak ada rekomendasi yang tersedia."
+            }
+          >
+            <IconStethoscope className="text-[#53EAFD]" size={24} />
+          </Discussion>
+          <Discussion
+            title="Rekomendasi"
+            description={
+              currentDisease?.recommendation ||
+              "Tidak ada catatan penting yang tersedia."
+            }
+          >
+            <IconThumbUp className="text-[#FB7185]" size={24} />
+          </Discussion>
+          {currentDisease?.products && (
+            <ProductRecommendation products={currentDisease.products} />
+          )}
+          <p className="text-muted-foreground px-6 text-sm">
+            *Catatan: Informasi ini hanya sebagai referensi. Untuk penanganan
+            lebih lanjut, konsultasikan dengan ahli pertanian atau dokter
+            tanaman.
+          </p>
+          <div id="ask-ai" className="border-border rounded-3xl border-[1px]">
+            <h3 className="border-border flex items-center justify-center border-b-[1px] p-2 py-6 font-semibold">
+              <IconSparkles className="mr-2 inline" size={24} />
+              Konsultasi lebih lanjut dengan AI
+            </h3>
+            <div className="flex flex-col gap-4 px-6">
+              <div className="flex h-80 grow flex-col items-center justify-center">
+                <h4 className="mb-8 font-semibold">
+                  Apa yang bisa saya bantu?
+                </h4>
+                <div className="w-[80%] text-center">
+                  {currentDisease?.aibubble?.length
+                    ? currentDisease.aibubble.map((text, index) => (
+                        <AIBubble key={index} text={text} />
+                      ))
+                    : result?.aibubble?.length
+                      ? result.aibubble.map((text, index) => (
+                          <AIBubble key={index} text={text} />
+                        ))
+                      : null}
+                </div>
+              </div>
+              <div className="bg-secondary mt-2 flex rounded-t-2xl p-3 px-5">
+                <input
+                  className="text-muted-foreground grow outline-none"
+                  type="text"
+                  placeholder="Tanyakan apapun terkait deteksi daunmu"
+                />
+                <button className="bg-foreground text-background hover:bg-primary/10 rounded-full p-3 transition-colors">
+                  <IconSend />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </LFDWrapper>
+  );
 }
-
+interface ProductRecommendation {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  imageUrl: string;
+  link: string;
+}
 interface LFDResult_ {
   id: string;
   createdAt: string;
   updatedAt: string;
   imageUrl: string;
-	imageName: string;
-	overview: string;
-	recommendation: string;
-	notes: string;
+  imageName: string;
   result: {
     diseaseName: string;
     confidence: number;
-		exampleImageUrl: string;
+    exampleImageUrl: string;
+    overview?: string;
+    treatment?: string;
+    recommendation?: string;
+    aibubble?: string[];
+    products?: ProductRecommendation[];
   }[];
-	aibubble?: string[];
+  aibubble?: string[];
 }
 
 interface DiscussionProps {
-	children: React.ReactNode;
-	title: string;
-	description: string;
+  children: React.ReactNode;
+  title: string;
+  description: string;
 }
 
-const AIBubble = ({text}: {text:string}) => {
-	return <div className="cursor-pointer text-xs bg-secondary p-2 px-3 shadow-inner shadow-foreground/[0.1] rounded-full m-1 inline-block hover:bg-secondary/80 transition-colors">
-		{text}
-	</div>
-}
+const AIBubble = ({ text }: { text: string }) => {
+  return (
+    <div className="bg-secondary shadow-foreground/[0.1] hover:bg-secondary/80 m-1 inline-block cursor-pointer rounded-full p-2 px-3 text-xs shadow-inner transition-colors">
+      {text}
+    </div>
+  );
+};
 
-const Discussion: React.FC<DiscussionProps> = ({children, title, description}) => {
-	return <div className="border-border border-[1px] rounded-2xl p-4">
-		<div className="flex items-center mb-4 w-fit">
-			<div className="p-3 border-border border-[1px] flex items-center justify-center rounded-full bg-card mr-3 shadow-2xl">
-				{children}
-			</div>
-			<h3 className="text-lg font-semibold">
-				{title}
-			</h3>
-		</div>
-		<p className="text-muted-foreground">
-			{description}
-		</p>
-	</div>
-}
+const Discussion: React.FC<DiscussionProps> = ({
+  children,
+  title,
+  description,
+}) => {
+  return (
+    <div className="border-border rounded-2xl border-[1px] p-4">
+      <div className="mb-4 flex w-fit items-center">
+        <div className="border-border bg-card mr-3 flex items-center justify-center rounded-full border-[1px] p-3 shadow-2xl">
+          {children}
+        </div>
+        <h3 className="text-lg font-semibold">{title}</h3>
+      </div>
+      <p className="text-muted-foreground">{description}</p>
+    </div>
+  );
+};

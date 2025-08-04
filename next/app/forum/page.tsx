@@ -1,9 +1,14 @@
-import React from 'react'
+import ForumPage from "@/components/forum/ForumPage";
+import Navbar from "@/components/home/Navbar";
+import React from "react";
 
-const ForumPage = () => {
+const Page = () => {
   return (
-    <div>ForumPage</div>
-  )
-}
+    <>
+      <Navbar />
+      <ForumPage />
+    </>
+  );
+};
 
-export default ForumPage
+export default Page;
