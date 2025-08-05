@@ -149,6 +149,7 @@ const ForumPage = () => {
                     title={post.title}
                     content={post.content}
                     authorImg={post.authorImg}
+                    authorId={post.authorId}
                     author={post.author}
                     timeAgo={post.timeAgo}
                     type={post.type}
@@ -156,6 +157,7 @@ const ForumPage = () => {
                     comments={post.comments}
                     upvotes={post.upvotes}
                     downvotes={post.downvotes}
+                    nullvotes={post.nullvotes}
                     views={post.views}
                   />
                 ))

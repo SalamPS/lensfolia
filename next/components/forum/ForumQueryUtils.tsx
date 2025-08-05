@@ -38,6 +38,7 @@ export const ForumQuery = async () => {
 	.select(`
 		*,
 		user_profiles (
+			id,
 			name,
 			profile_picture
 		),
@@ -58,6 +59,7 @@ export const ForumDetailQuery = async (id:string) => {
 	.from("forums")
 	.select(`*,
 		user_profiles (
+			id,
 			name,
 			profile_picture
 		),
@@ -65,12 +67,14 @@ export const ForumDetailQuery = async (id:string) => {
 		ratings(*),
 		forums_discussions(*,
 			user_profiles (
+				id,
 				name,
 				profile_picture
 			),
 			ratings(*),
 			forums_comments(*,
 				user_profiles (
+					id,
 					name,
 					profile_picture
 				),
@@ -79,7 +83,6 @@ export const ForumDetailQuery = async (id:string) => {
 		)
 	`)
 	.eq("id", id);
-	console.log(response)
 	return response.data
 }
 
@@ -87,11 +90,13 @@ export const ForumReplyConverter = (comments: any): Comment => {
 	return {
 		id: comments.id,
 		author: comments.user_profiles.name,
+		authorId: comments.user_profiles.id,
 		authorImg: comments.user_profiles.profile_picture,
 		timeAgo: getTimeAgo(comments.created_at),
 		content: comments.content,
-		upvotes: comments.ratings.filter((rating: any) => rating.is_upvote === true).map((rating: any) => rating?.id),
-		downvotes: comments.ratings.filter((rating: any) => rating.is_upvote === false).map((rating: any) => rating?.id),
+		upvotes: comments.rating.filter((rating: any) => rating.is_upvote === true).map((rating: any) => rating?.created_by),
+		downvotes: comments.rating.filter((rating: any) => rating.is_upvote === false).map((rating: any) => rating?.created_by),
+		nullvotes: comments.rating.filter((rating: any) => rating.is_upvote === null).map((rating: any) => rating?.created_by),
 	}
 }
 
@@ -99,11 +104,13 @@ export const ForumCommentConverter = (post: any): Comment[] => {
 	return post.forums_discussions.map((discussion: any) => ({
 		id: discussion.id,
 		author: discussion.user_profiles.name,
+		authorId: discussion.user_profiles.id,
 		authorImg: discussion.user_profiles.profile_picture,
 		timeAgo: getTimeAgo(discussion.created_at),
 		content: discussion.content,
-		upvotes: discussion.ratings.filter((rating: any) => rating.is_upvote === true).map((rating: any) => rating?.id),
-		downvotes: discussion.ratings.filter((rating: any) => rating.is_upvote === false).map((rating: any) => rating?.id),
+		upvotes: discussion.rating.filter((rating: any) => rating.is_upvote === true).map((rating: any) => rating?.created_by),
+		downvotes: discussion.rating.filter((rating: any) => rating.is_upvote === false).map((rating: any) => rating?.created_by),
+		nullvotes: discussion.rating.filter((rating: any) => rating.is_upvote === null).map((rating: any) => rating?.created_by),
 		replies: discussion.forums_comments.map((reply: any) => ForumReplyConverter(reply)),
 	}))
 }
@@ -114,6 +121,7 @@ export const ForumConverter = (post: any):ForumPost => {
 		title: post.content,
 		content: post.contents,
 		authorImg: post.user_profiles.profile_picture,
+		authorId: post.user_profiles.id,
 		author: post.user_profiles.name,
 		timeAgo: getTimeAgo(post.created_at),
 		type: post.category,
@@ -121,7 +129,8 @@ export const ForumConverter = (post: any):ForumPost => {
 		imageUrl: post.media_url,
 		comments: post.forums_discussions.map((discussion: any) => (discussion.id)),
 		views: post.views,
-		upvotes: post.ratings.filter((rating: any) => rating.is_upvote === true).map((rating: any) => rating?.id),
-		downvotes: post.ratings.filter((rating: any) => rating.is_upvote === false).map((rating: any) => rating?.id),
+		upvotes: post.rating.filter((rating: any) => rating.is_upvote === true).map((rating: any) => rating?.created_by),
+		downvotes: post.rating.filter((rating: any) => rating.is_upvote === false).map((rating: any) => rating?.created_by),
+		nullvotes: post.rating.filter((rating: any) => rating.is_upvote === null).map((rating: any) => rating?.created_by),
 	}
 }

@@ -29,23 +29,26 @@ const PostPage = ({slug}: {slug:string}) => {
         .from("forums")
         .select(`*,
           user_profiles (
+            id,
             name,
             profile_picture
           ),
           diagnoses(*),
-          ratings(*),
+          rating(*),
           forums_discussions(*,
             user_profiles (
+              id,
               name,
               profile_picture
             ),
-            ratings(*),
+            rating(*),
             forums_comments(*,
               user_profiles (
+                id,
                 name,
                 profile_picture
               ),
-              ratings(*)
+              rating(*)
             )
           )
         `)
@@ -57,7 +60,6 @@ const PostPage = ({slug}: {slug:string}) => {
       const response_comments = ForumCommentConverter(response.data[0])
       setPost(response_post);
       setComments(response_comments);
-      console.log(response_post, response_comments);
       setIsLoading(false);
     })();
   }, [slug]);

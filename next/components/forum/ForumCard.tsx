@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "../ui/button";
 import {
   IconArrowBigDownLines,
@@ -10,6 +10,8 @@ import { Avatar, AvatarImage } from "../ui/avatar";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/hooks/useAuth";
+import { PostgrestSingleResponse } from "@supabase/supabase-js";
 
 export type PostType = "diseases" | "pests" | "general";
 
@@ -18,6 +20,7 @@ interface ForumCardProps {
   title: string;
   content: string;
   authorImg: string;
+  authorId: string;
   author: string;
   timeAgo: string;
   type: PostType;
@@ -25,6 +28,7 @@ interface ForumCardProps {
   comments: string[];
   upvotes: string[];
   downvotes: string[];
+  nullvotes: string[];
   views: number;
 }
 
@@ -54,46 +58,160 @@ const ForumCard = ({
   title,
   content,
   authorImg,
+  authorId,
   author,
   timeAgo,
   type,
   tags,
   comments,
-  upvotes: initialUpvoteCount,
-  downvotes: initialDownvoteCount,
+  upvotes: initialUpvotes,
+  downvotes: initialDownvotes,
+  nullvotes: initialNullvotes,
   views,
 }: ForumCardProps) => {
-  const [upvoteCount, setUpvoteCount] = useState(initialUpvoteCount.length);
-  const [downvoteCount, setDownvoteCount] = useState(initialDownvoteCount.length);
+  const [upvoteCount, setUpvoteCount] = useState(initialUpvotes.length);
+  const [downvoteCount, setDownvoteCount] = useState(initialDownvotes.length);
   const [userVote, setUserVote] = useState<"up" | "down" | null>(null);
+  const [userVoted, setUserVoted] = useState(false);
   const router = useRouter();
+  const { user } = useAuth();
 
-  const handleUpvote = () => {
-    if (userVote === "up") {
-      // setUpvoteCount((prev) => prev - 1);
-      setUserVote(null);
-    } else if (userVote === "down") {
-      // setUpvoteCount((prev) => prev + 1);
-      // setDownvoteCount((prev) => prev - 1);
-      setUserVote("up");
-    } else {
-      // setUpvoteCount((prev) => prev + 1);
-      setUserVote("up");
+  useEffect(() => {
+    if (user) {
+      const upvoted = initialUpvotes.includes(user.id);
+      const downvoted = initialDownvotes.includes(user.id);
+      const nullvoted = initialNullvotes?.includes(user.id) || false;
+      setUserVote(upvoted ? "up" : downvoted ? "down" : null);
+      setUserVoted(upvoted || downvoted || nullvoted);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user])
+
+  const handleUpvote = async () => {
+    if (!user) {
+      alert("Please log in to vote.");
+      return;
+    }
+    let result: PostgrestSingleResponse<null> = {
+      error: null,
+      data: null,
+      count: null,
+      status: 200,
+      statusText: "OK",
+    };
+    if (userVoted) {
+      if (userVote === "up") {
+        setUpvoteCount((prev) => prev - 1);
+        setUserVote(null);
+        result = await supabase
+          .from("ratings")
+          .update({ is_upvote: null })
+          .eq("ref_forums", id)
+          .eq("created_by", user.id);
+      } else if (userVote === "down") {
+        setUpvoteCount((prev) => prev + 1);
+        setDownvoteCount((prev) => prev - 1);
+        setUserVote("up");
+        result = await supabase
+          .from("ratings")
+          .update({ is_upvote: true })
+          .eq("ref_forums", id)
+          .eq("created_by", user.id);
+      } else {
+        setUpvoteCount((prev) => prev + 1);
+        setUserVote("up");
+        result = await supabase
+          .from("ratings")
+          .update({ is_upvote: true })
+          .eq("ref_forums", id)
+          .eq("created_by", user.id);
+      }
+    } else {
+      setUpvoteCount((prev) => prev + 1);
+      result = await supabase
+        .from("ratings")
+        .insert({
+          ref_forums: id,
+          content: title.length > 30 ? `${title.slice(0, 30)}...` : title,
+          content_creator: authorId,
+          is_upvote: true,
+        });
+      if (result.error) {
+        console.error("Error upvoting:", result.error);
+        return;
+      }
+    }
+    if (result.error) {
+      console.error("Error upvoting:", result.error);
+      setDownvoteCount(initialDownvotes.length);
+      setUpvoteCount(initialUpvotes.length);
+      return;
+    }
+    setUserVoted(true);
   };
 
-  const handleDownvote = () => {
-    if (userVote === "down") {
-      // setDownvoteCount((prev) => prev - 1);
-      setUserVote(null);
-    } else if (userVote === "up") {
-      // setDownvoteCount((prev) => prev + 1);
-      // setUpvoteCount((prev) => prev - 1);
-      setUserVote("down");
-    } else {
-      // setDownvoteCount((prev) => prev + 1);
-      setUserVote("down");
+  const handleDownvote = async () => {
+    if (!user) {
+      alert("Please log in to vote.");
+      return;
     }
+    let result: PostgrestSingleResponse<null> = {
+      error: null,
+      data: null,
+      count: null,
+      status: 200,
+      statusText: "OK",
+    };
+    if (userVoted) {
+      console.log(user);
+      if (userVote === "down") {
+        setDownvoteCount((prev) => prev - 1);
+        setUserVote(null);
+        result = await supabase
+          .from("ratings")
+          .update({ is_upvote: null })
+          .eq("ref_forums", id)
+          .eq("created_by", user.id);
+      } else if (userVote === "up") {
+        setDownvoteCount((prev) => prev + 1);
+        setUpvoteCount((prev) => prev - 1);
+        setUserVote("down");
+        result = await supabase
+          .from("ratings")
+          .update({ is_upvote: false })
+          .eq("ref_forums", id)
+          .eq("created_by", user.id);
+      } else {
+        setDownvoteCount((prev) => prev + 1);
+        setUserVote("down");
+        result = await supabase
+          .from("ratings")
+          .update({ is_upvote: false })
+          .eq("ref_forums", id)
+          .eq("created_by", user.id);
+      }
+    } else {
+      setDownvoteCount((prev) => prev + 1);
+      result = await supabase
+        .from("ratings")
+        .insert({
+          ref_forums: id,
+          content: title.length > 30 ? `${title.slice(0, 30)}...` : title,
+          content_creator: authorId,
+          is_upvote: false,
+        });
+      if (result.error) {
+        console.error("Error downvoting:", result.error);
+        return;
+      }
+    }
+    if (result.error) {
+      console.error("Error downvoting:", result.error);
+      setDownvoteCount(initialDownvotes.length);
+      setUpvoteCount(initialUpvotes.length);
+      return;
+    }
+    setUserVoted(true);
   };
 
   const goToPostHandler = async (cid?: string) => {

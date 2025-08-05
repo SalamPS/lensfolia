@@ -6,40 +6,183 @@ import {
   IconArrowBigUpLines,
   IconMessageCircle,
 } from "@tabler/icons-react";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/hooks/useAuth";
+import { PostgrestSingleResponse } from "@supabase/supabase-js";
 
 interface CommentItemProps {
+  isReply?: boolean;
   id: string;
   author: string;
+  authorId: string;
   authorImg: string;
   timeAgo: string;
   content: string;
   upvotes: string[];
   downvotes: string[];
+  nullvotes: string[];
   replies?: CommentItemProps[];
 }
 
 const CommentItem = ({
+  isReply = false,
   id,
   author,
+  authorId,
   authorImg,
   timeAgo,
   content,
   upvotes,
   downvotes,
+  nullvotes,
   replies = [],
 }: CommentItemProps) => {
   const [showReplyForm, setShowReplyForm] = React.useState(false);
   const [replyContent, setReplyContent] = React.useState("");
 
+    const [upvoteCount, setUpvoteCount] = React.useState(upvotes.length);
+    const [downvoteCount, setDownvoteCount] = React.useState(downvotes.length);
+    const [userVote, setUserVote] = React.useState<"up" | "down" | null>(null);
+    const [userVoted, setUserVoted] = React.useState(false);
+    const { user } = useAuth();
 
-    const handleUpvote = () => {
-      console.log(`Upvoting comment ${id}`);
-      
+    React.useEffect(() => {
+      if (user) {
+        const upvoted = upvotes.includes(user.id);
+        const downvoted = downvotes.includes(user.id);
+        const nullvoted = nullvotes?.includes(user.id) || false;
+        setUserVote(upvoted ? "up" : downvoted ? "down" : null);
+        setUserVoted(upvoted || downvoted || nullvoted);
+      }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user]);
+
+    const handleUpvote = async () => {
+      if (!user) {
+        alert("Please log in to vote.");
+        return;
+      }
+      const REFERENCE = isReply ? "ref_comments" : "ref_discussions";
+      let result: PostgrestSingleResponse<null> = {
+        error: null,
+        data: null,
+        count: null,
+        status: 200,
+        statusText: "OK",
+      };
+      if (userVoted) {
+        if (userVote === "up") {
+          setUpvoteCount((prev) => prev - 1);
+          setUserVote(null);
+          result = await supabase
+            .from("rating")
+            .update({ is_upvote: null })
+            .eq(REFERENCE, id)
+            .eq("created_by", user.id);
+        } else if (userVote === "down") {
+          setUpvoteCount((prev) => prev + 1);
+          setDownvoteCount((prev) => prev - 1);
+          setUserVote("up");
+          result = await supabase
+            .from("rating")
+            .update({ is_upvote: true })
+            .eq(REFERENCE, id)
+            .eq("created_by", user.id);
+        } else {
+          setUpvoteCount((prev) => prev + 1);
+          setUserVote("up");
+          result = await supabase
+            .from("rating")
+            .update({ is_upvote: true })
+            .eq(REFERENCE, id)
+            .eq("created_by", user.id);
+        }
+      } else {
+        setUpvoteCount((prev) => prev + 1);
+        result = await supabase
+          .from("rating")
+          .insert({
+            ref_comments: id,
+            content: content.length > 30 ? `${content.slice(0, 30)}...` : content,
+            content_creator: authorId,
+            is_upvote: true,
+            created_by: user.id,
+          });
+      }
+      if (result.error) {
+        console.error("Error upvoting:", result.error);
+        setDownvoteCount(downvotes.length);
+        setUpvoteCount(upvotes.length);
+        return;
+      }
+      setUserVoted(true);
     };
 
-    const handleDownvote = () => {
-      console.log(`Downvoting comment ${id}`);
-      
+    const handleDownvote = async () => {
+      if (!user) {
+        alert("Please log in to vote.");
+        return;
+      }
+      const REFERENCE = isReply ? "ref_comments" : "ref_discussions";
+      let result: PostgrestSingleResponse<null> = {
+        error: null,
+        data: null,
+        count: null,
+        status: 200,
+        statusText: "OK",
+      };
+
+      if (userVoted) {
+        if (userVote === "down") {
+          setDownvoteCount((prev) => prev - 1);
+          setUserVote(null);
+          result = await supabase
+            .from("rating")
+            .update({ is_upvote: null })
+            .eq(REFERENCE, id)
+            .eq("created_by", user.id);
+        } else if (userVote === "up") {
+          setDownvoteCount((prev) => prev + 1);
+          setUpvoteCount((prev) => prev - 1);
+          setUserVote("down");
+          result = await supabase
+            .from("rating")
+            .update({ is_upvote: false })
+            .eq(REFERENCE, id)
+            .eq("created_by", user.id);
+        } else {
+          setDownvoteCount((prev) => prev + 1);
+          setUserVote("down");
+          result = await supabase
+            .from("rating")
+            .update({ is_upvote: false })
+            .eq(REFERENCE, id)
+            .eq("created_by", user.id);
+        }
+      } else {
+        setDownvoteCount((prev) => prev + 1);
+        const setup = {
+          content_type: "forums",
+          ref_forums: "ba1863af-e5d2-4573-bb3b-e9393016c371",
+          ref_discussions: "002082b9-b86e-4429-81ff-62c27614e6c6",
+          ref_comments: "2188d8d9-3238-4998-b293-b6bd82cc9edd",
+          created_by: "05e5fc52-e58a-4213-b560-7ead5aa6c2e7",
+          content_creator: "05e5fc52-e58a-4213-b560-7ead5aa6c2e7",
+          content: "Gapapa. Iseng aja.",
+          is_upvote: false,
+        }
+        console.log("Inserting downvote:", setup);
+        result = await supabase
+          .from("rating")
+          .insert(setup);
+      }
+      if (result.error) {
+        console.error("Error downvoting:", result.error);
+        setDownvoteCount(downvotes.length);
+        setUpvoteCount(upvotes.length);
+        return;
+      }
+      setUserVoted(true);
     };
 
     const handleReplySubmit = () => {
@@ -72,7 +215,7 @@ const CommentItem = ({
               className="gap-1"
             >
               <IconArrowBigUpLines size={16} />
-              <span>{upvotes.length}</span>
+              <span>{upvoteCount}</span>
             </Button>
             <Button
               onClick={handleDownvote}
@@ -81,7 +224,7 @@ const CommentItem = ({
               className="gap-1"
             >
               <IconArrowBigDownLines size={16} />
-              <span>{downvotes.length}</span>
+              <span>{downvoteCount}</span>
             </Button>
             <Button
               variant="ghost"
@@ -121,7 +264,7 @@ const CommentItem = ({
           {replies.length > 0 && (
             <div className="mt-4 border-l-2 pl-4">
               {replies.map((reply) => (
-                <CommentItem key={reply.id} {...reply} />
+                <CommentItem key={reply.id} {...reply} isReply />
               ))}
             </div>
           )}

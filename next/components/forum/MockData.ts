@@ -5,6 +5,7 @@ export interface ForumPost {
   title: string;
   content: string;
   authorImg: string;
+  authorId: string;
   author: string;
   timeAgo: string;
   type: PostType;
@@ -13,6 +14,7 @@ export interface ForumPost {
   comments: string[];
   upvotes: string[];
   downvotes: string[];
+  nullvotes: string[];
   views: number;
 }
 
@@ -21,6 +23,7 @@ export interface ForumPostDetail {
   title: string;
   content: string;
   authorImg: string;
+  authorId: string;
   author: string;
   timeAgo: string;
   type: PostType;
@@ -29,6 +32,7 @@ export interface ForumPostDetail {
   comments: Comment[];
   upvotes: string[];
   downvotes: string[];
+  nullvotes: string[];
   views: number;
 }
 
@@ -36,9 +40,11 @@ export interface Comment {
   id: string;
   author: string;
   authorImg: string;
+  authorId: string;
   timeAgo: string;
   content: string;
   upvotes: string[];
   downvotes: string[];
+  nullvotes: string[];
   replies?: Comment[];
 }

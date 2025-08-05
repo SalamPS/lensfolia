@@ -8,6 +8,8 @@ import { LGStep_ } from "./ module/langgraph_type";
 import { useRouter } from "next/navigation";
 import { LFD_ } from "../types/diagnoseResult";
 import { Button } from "../ui/button";
+// import { useStream } from "@langchain/langgraph-sdk/react";
+// import { Message } from "@langchain/langgraph-sdk";
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -24,6 +26,38 @@ export function LangGraphVisual ({
 	diagnose_data, 
 	uploadStatus
 }: LangGraphVisualProps) {
+	// const thread = useStream<{ 
+	// 	messages: Message[];
+	// 	image_url: string;
+	// 	diagnoses_ref: string;
+	//  }>({
+	// 	apiUrl: "https://jay-fit-safely.ngrok-free.app/",
+	// 	assistantId: "agent",
+	// 	messagesKey: "messages",
+	// 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	// 	onUpdateEvent(event: any) {
+	// 		// if (!LGSteps.includes(event.step)) return;
+	// 		console.log("Event received:", event);
+
+	// 		if (event.plant_disease_detection) {
+	// 		}
+	// 		else if (event.overview_query_generation) {
+	// 		}
+	// 		else if (event.overview_rag) {
+	// 		}
+	// 		else if (event.treatment_query_generation) {
+	// 		}
+	// 		else if (event.treatment_rag) {
+	// 		}
+	// 		else if (event.product_query_generation) {
+	// 		}
+	// 		else if (event.product_rag) {
+	// 		}
+	// 		else if (event.create_final_response) {
+	// 		}
+	// 	}
+	// });
+
 	const [processedSteps, setProcessedSteps] = useState<LGStep_[]>([]);
 	const [processedStatus, setProcessedStatus] = useState<string[]>(["loading"]);
 	const router = useRouter();
@@ -68,29 +102,39 @@ export function LangGraphVisual ({
 			if (uploadStatus === "success") {
 				statusHelper("success");
 				setProcessedSteps(prev => [...prev, LGStart]);
-			}
 
-			await delay(3000);
-			for (const step of LGSteps) {
-				console.log(`================\n${step.title}`);
-				statusHelper("success");
-				setProcessedSteps(prev => [...prev, step]);
 				await delay(3000);
-			}
+				const dataSubmit = {
+					image_url: diagnose_data?.image_url || "",
+					diagnoses_ref: diagnose_data?.id || "",
+				}
+				console.log("Submitting data to thread:", dataSubmit);
+				// thread.submit({
+				// 	messages: thread.messages || [],
+				// 	image_url: diagnose_data?.image_url || "",
+				// 	diagnoses_ref: diagnose_data?.id || "",
+				// })
+				for (const step of LGSteps) {
+					console.log(`================\n${step.title}`);
+					statusHelper("success");
+					setProcessedSteps(prev => [...prev, step]);
+					await delay(3000);
+				}
 
-			setProcessedSteps(prev => [...prev, {
-				step: "end",
-				title: "Mengumpulkan hasil akhir",
-				description: "Proses diagnosis selesai. Mengalihkan ke halaman hasil.",
-				icon: "check"
-			}]);
-			await delay(3000);
-			statusHelper("success");
-			await delay(500);
-			router.push("/result/"+diagnose_data?.id);
+				setProcessedSteps(prev => [...prev, {
+					step: "end",
+					title: "Mengumpulkan hasil akhir",
+					description: "Proses diagnosis selesai. Mengalihkan ke halaman hasil.",
+					icon: "check"
+				}]);
+				await delay(3000);
+				statusHelper("success");
+				await delay(500);
+				router.push("/result/"+diagnose_data?.id);
+			}
 		})()
 	// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [router, uploadStatus]);
+	}, [trigger, uploadStatus]);
 
 	if (!trigger) {
 		return <></>;
