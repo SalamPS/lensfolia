@@ -1,41 +1,79 @@
 /* eslint-disable @next/next/no-img-element */
 "use client"
 
-import { LGSteps } from "@/components/detect/ module/langgrapht";
+import { LGFail, LGPrepare, LGStart, LGSteps, LGUpload } from "@/components/detect/ module/langgrapht";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { LGStep_ } from "./ module/langgraph_type";
 import { useRouter } from "next/navigation";
+import { LFD_ } from "../types/diagnoseResult";
+import { Button } from "../ui/button";
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 type LangGraphVisualProps = {
-	image_url: string;
-	trigger?: boolean;
+	setTrigger: (trigger: boolean) => void;
+	trigger: boolean;
+	diagnose_data: LFD_ | null;
+	uploadStatus: string;
 }
 
-export function LangGraphVisual ({image_url, trigger = false}: LangGraphVisualProps) {
+export function LangGraphVisual ({
+	setTrigger,
+	trigger = false, 
+	diagnose_data, 
+	uploadStatus
+}: LangGraphVisualProps) {
 	const [processedSteps, setProcessedSteps] = useState<LGStep_[]>([]);
+	const [processedStatus, setProcessedStatus] = useState<string[]>(["loading"]);
 	const router = useRouter();
+
+	const statusHelper = (status:string, future?:string) => {
+		setProcessedStatus(prev => {
+			const newStatus = [...prev];
+			const index = newStatus.length;
+			if (index > 0) {
+				newStatus[index - 1] = status;
+			}
+			newStatus.push(future || "loading");
+			return [...newStatus]
+		})
+	}
 
 	useEffect(() => {
 		(async () => {
-			if (!trigger) {
+			if (uploadStatus === "idle") {
 				setProcessedSteps([]);
+				setProcessedStatus(["loading"]);
+				return;
+			}
+			if (uploadStatus === "prepare") {
+				setProcessedSteps(prev => [...prev, LGPrepare]);
+				await delay(3000);
+				statusHelper("success");
+				setProcessedSteps(prev => [...prev, LGUpload]);
 				return;
 			}
 
-			setProcessedSteps(prev => [...prev, {
-				step: "start",
-				title: "Menghubungi server Lensfolia.",
-				description: "Mengirim permintaan untuk memulai proses diagnosis.",
-				icon: "start"
-			}]);
-			await delay(1000);
+			await delay(3000);
+			if (uploadStatus === "error" || !diagnose_data) {
+				statusHelper("error", "error");
+				setProcessedSteps(prev => [...prev, LGFail({
+					title: "Gagal memproses diagnosis",
+					description: "Terjadi kesalahan dalam proses diagnosis. Silakan coba lagi.",
+					icon: "error"
+				})]);
+				return;
+			}
+			if (uploadStatus === "success") {
+				statusHelper("success");
+				setProcessedSteps(prev => [...prev, LGStart]);
+			}
 
+			await delay(3000);
 			for (const step of LGSteps) {
-				await delay(1000);
 				console.log(`================\n${step.title}`);
+				statusHelper("success");
 				setProcessedSteps(prev => [...prev, step]);
 				await delay(3000);
 			}
@@ -47,9 +85,12 @@ export function LangGraphVisual ({image_url, trigger = false}: LangGraphVisualPr
 				icon: "check"
 			}]);
 			await delay(3000);
-			router.push("/result/123");
+			statusHelper("success");
+			await delay(500);
+			router.push("/result/"+diagnose_data?.id);
 		})()
-	}, [trigger, router])
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [router, uploadStatus]);
 
 	if (!trigger) {
 		return <></>;
@@ -68,7 +109,7 @@ export function LangGraphVisual ({image_url, trigger = false}: LangGraphVisualPr
 					zIndex: 998,
 					y: "0",
 				}}
-				transition={{ duration: 1 }}
+				transition={{ duration: .4 }}
 				className="flex flex-col justify-start bg-background/98 fixed overflow-hidden top-0 left-0 w-full h-full rounded-t-4xl"
 				style={{ 
 					zIndex: trigger ? 998 : -100,
@@ -78,7 +119,7 @@ export function LangGraphVisual ({image_url, trigger = false}: LangGraphVisualPr
 						<AnimatePresence mode="popLayout">
 							{processedSteps.map((step, index) => (
 								<motion.div
-									key={step.step}
+									key={step.step + index}
 									initial={{ opacity: 0, y: 20, height: 0, marginTop: '0' }}
 									animate={{ 
 										opacity: index === processedSteps.length - 1 ? 1 : 0.7,
@@ -107,41 +148,38 @@ export function LangGraphVisual ({image_url, trigger = false}: LangGraphVisualPr
 											</> 
 											: <>
 											</>}
-											<AnimatedCheckIcon isVisible={processedSteps.length - 1 > index} />
+											<AnimatedCheckIcon isVisible={processedSteps.length - 1 > index} fail={processedStatus[index] === "error"}/>
 										</div>
 									</div>
 								</motion.div>
 							))}
 						</AnimatePresence>
 					</div>
-					<div>
-
+					{/* <div className="flex flex-col">
 						<div className="flex flex-col md:flex-row gap-4 mb-4">
-							<h2 className="text-2xl grow-0 font-bold">MEMPROSES DIAGNOSIS</h2>
+							<h2 className="text-2xl grow-0 font-bold">
+								{processedStatus.includes("error") ? "GAGAL MEMPROSES DIAGNOSIS" : "MEMPROSES DIAGNOSIS"}
+							</h2>
 							<div className="grow mt-2 bg-foreground/40 rounded-full h-4">
-								<div
-									className="bg-primary h-4 rounded-full transition-all duration-500"
-									style={{
-											width: `${((processedSteps.length / (LGSteps.length+2)) * 100)}%`,
-									}}
-								></div>
+								{processedStatus.includes("error") ? (
+									<div
+										className="bg-destructive/60 h-4 rounded-full transition-all duration-500 w-full"
+									/>
+								) : (
+									<div
+										className="bg-primary h-4 rounded-full transition-all duration-500"
+										style={{
+												width: `${((processedSteps.length / (LGSteps.length+4)) * 100)}%`,
+										}}
+									></div>
+								)}
 							</div>
 						</div>
-						{/* <div className="grid grid-cols-1 md:grid-cols-2 gap-8"
-							style={{
-								zIndex: trigger ? 1000 : -100,
-							}}>
-							<img className="w-full aspect-video rounded-2xl" src={image_url} alt={"requested_image"} />
-							<div className="h-full pr-4 text-justify">
-								<div className="grow h-full">
-									<h3 className="text-xl font-semibold mb-2">Fun Fact</h3>
-									<p>
-										Lorem ipsum dolor sit amet consectetur adipisicing elit. Rem in inventore esse libero neque consectetur eius obcaecati recusandae, repellat explicabo unde labore at laudantium totam ex consequuntur, et a sunt odit aspernatur cumque? Alias, qui odit unde ratione sunt veniam atque earum odio ipsum sed dolorum a quaerat vero consequatur asperiores esse illum laudantium quidem iure autem! Magnam dignissimos expedita eaque explicabo eius maiores quas beatae facere vero, odio eos, rerum possimus temporibus minima rem qui iure. Deleniti ipsam facere quaerat magni optio ratione non recusandae maxime animi aut quis, quam accusamus corrupti alias vitae et temporibus adipisci architecto culpa. lorem50
-									</p>
-								</div>
-							</div>
-						</div> */}
-					</div>
+						{processedStatus.includes("error") 
+						&& <Button variant={"destructive"} className="w-full cursor-pointer" onClick={() => {setTrigger(false)}}>
+							Kembali
+						</Button>}
+					</div> */}
 				</div>
 			</motion.div>
 			<motion.div
@@ -161,23 +199,54 @@ export function LangGraphVisual ({image_url, trigger = false}: LangGraphVisualPr
 				}}
 				className="fixed overflow-hidden top-0 left-0 w-full h-full rounded-t-4xl"
 				>
+				<div className="h-full grid grid-rows-2 gap-6 p-6 md:p-12 xl:p-18">
+					<div></div>
+					<div className="flex flex-col">
+						<div className="flex flex-col md:flex-row gap-4 mb-4">
+							<h2 className="text-2xl grow-0 font-bold">
+								{processedStatus.includes("error") ? "GAGAL MEMPROSES DIAGNOSIS" : "MEMPROSES DIAGNOSIS"}
+							</h2>
+							<div className="grow mt-2 bg-foreground/40 rounded-full h-4">
+								{processedStatus.includes("error") ? (
+									<div
+										className="bg-destructive/60 h-4 rounded-full transition-all duration-500 w-full"
+									/>
+								) : (
+									<div
+										className="bg-primary h-4 rounded-full transition-all duration-500"
+										style={{
+												width: `${((processedSteps.length / (LGSteps.length+4)) * 100)}%`,
+										}}
+									></div>
+								)}
+							</div>
+						</div>
+						{processedStatus.includes("error") 
+						&& <Button variant={"destructive"} className="w-full rounded-2xl py-2" onClick={() => {
+								setTrigger(false);
+								setProcessedSteps([]);
+								setProcessedStatus(["loading"]);
+							}}>
+							Kembali
+						</Button>}
+					</div>
+				</div>
 			</motion.div>
 		</div>
 	</AnimatePresence>);
 }
 
-function AnimatedCheckIcon({ initial = false, isVisible = false }) {
+function AnimatedCheckIcon({ initial = false, isVisible = false, fail = false }) {
   return (
     <div className="flex items-center">
 			<AnimatePresence initial={initial}>
-				{isVisible && (
+				{(isVisible || fail) && (
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
 						fill="none"
 						viewBox="0 0 24 24"
 						strokeWidth={1.5}
-						stroke="var(--primary)"
-						className="CheckIcon"
+						stroke={fail ? "var(--destructive)" : "var(--primary)"}
 						height={32}
 						width={32}
 					>
@@ -193,14 +262,18 @@ function AnimatedCheckIcon({ initial = false, isVisible = false }) {
 							}}
 							strokeLinecap="round"
 							strokeLinejoin="round"
-							d="M4.5 12.75l6 6 9-13.5"
+							d={
+								fail
+									? "M6 6l12 12M6 18L18 6" // Cross icon path
+									: "M4.5 12.75l6 6 9-13.5" // Check icon path
+							}
 						/>
 					</svg>
 				)}
 			</AnimatePresence>
 
 			<AnimatePresence initial={initial}>
-        {!isVisible && (
+        {!isVisible && !fail && (
           <motion.div
             className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary"
             initial={{ opacity: 1 }}

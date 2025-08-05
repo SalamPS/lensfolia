@@ -2,24 +2,24 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
 import LFDWrapper from "@/components/detect/Wrapper";
-import Loading from "@/components/Loading";
 import { IconCamera, IconUpload } from "@tabler/icons-react";
 import { Button } from "../ui/button";
 import { LangGraphVisual } from "./Langgraph";
+import { supabase } from "@/lib/supabase";
+import { LFD_ } from "../types/diagnoseResult";
 
 export default function DetectionMenu() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
-  const [captureUrl, setCaptureUrl] = useState<string | null>(null);
-  const [capturedFileInfo, setCapturedFileInfo] = useState<{
-    name: string;
-    size: number;
-  } | null>(null);
+  const [capturedFile, setCapturedFile] = useState<File | null>(null);
+  const [capturedImageUrl, setCapturedImageUrl] = useState<string | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [uploaded, setUploaded] = useState<LFD_ | null>(null);
+  const [uploadStatus, setUploadStatus] = useState<string>("idle");
 
   // Membuka kamera dan menampilkan stream ke elemen video
   const openCamera = async () => {
@@ -40,12 +40,19 @@ export default function DetectionMenu() {
 
   // Menutup popup preview
   const closePreview = () => {
-    setCaptureUrl(null);
-    setCapturedFileInfo(null);
+    setCapturedFile(null);
+    if (capturedImageUrl) {
+      URL.revokeObjectURL(capturedImageUrl);
+      setCapturedImageUrl(null);
+    }
     setIsPreviewOpen(false);
     if (stream) {
       stream.getTracks().forEach((track) => track.stop());
       setStream(null);
+    }
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -57,13 +64,17 @@ export default function DetectionMenu() {
         console.error("File yang diunggah bukan gambar.");
         return;
       }
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onloadend = () => {
-        const dataUrl = reader.result as string;
-        setCaptureUrl(dataUrl);
-        setCapturedFileInfo({ name: file.name, size: file.size });
-      };
+      
+      // Clean up previous URL if exists
+      if (capturedImageUrl) {
+        URL.revokeObjectURL(capturedImageUrl);
+      }
+      
+      // Save the file object and create URL
+      setCapturedFile(file);
+      const imageUrl = URL.createObjectURL(file);
+      setCapturedImageUrl(imageUrl);
+      console.log(file)
     }
   };
 
@@ -74,7 +85,7 @@ export default function DetectionMenu() {
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    if (captureUrl || isPreviewOpen) return;
+    if (isPreviewOpen) return; // Only block if camera preview is open
     setIsDragging(true);
   };
 
@@ -89,13 +100,16 @@ export default function DetectionMenu() {
         setIsDragging(false);
         return;
       }
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onloadend = () => {
-        const dataUrl = reader.result as string;
-        setCaptureUrl(dataUrl);
-        setCapturedFileInfo({ name: file.name, size: file.size });
-      };
+      
+      // Clean up previous URL if exists
+      if (capturedImageUrl) {
+        URL.revokeObjectURL(capturedImageUrl);
+      }
+      
+      // Save the file object and create URL
+      setCapturedFile(file);
+      const imageUrl = URL.createObjectURL(file);
+      setCapturedImageUrl(imageUrl);
     }
     setIsDragging(false);
   };
@@ -114,10 +128,17 @@ export default function DetectionMenu() {
       // Mengubah canvas menjadi data URL dan menampilkannya
       const dataUrl = canvas.toDataURL("image/png");
       const blob = await (await fetch(dataUrl)).blob();
-      const fileSize = blob.size;
-
-      setCaptureUrl(dataUrl);
-      setCapturedFileInfo({ name: "captured-image.png", size: fileSize });
+      
+      // Clean up previous URL if exists
+      if (capturedImageUrl) {
+        URL.revokeObjectURL(capturedImageUrl);
+      }
+      
+      // Create File object from blob and URL
+      const file = new File([blob], "captured-image.png", { type: "image/png" });
+      setCapturedFile(file);
+      const imageUrl = URL.createObjectURL(file);
+      setCapturedImageUrl(imageUrl);
 
       setIsPreviewOpen(false);
       if (stream) {
@@ -127,43 +148,61 @@ export default function DetectionMenu() {
     }
   };
 
-  // Membersihkan stream kamera saat komponen unmount
+  // Membersihkan stream kamera dan URL gambar saat komponen unmount
   useEffect(() => {
     return () => {
       if (stream) {
         stream.getTracks().forEach((track) => track.stop());
       }
+      if (capturedImageUrl) {
+        URL.revokeObjectURL(capturedImageUrl);
+      }
     };
-  }, [stream]);
+  }, [stream, capturedImageUrl]);
 
-  const processImage = async (imageUrl: string) => {
+  const processImage = async () => {
     setIsLoading(true);
+    setUploadStatus("prepare");
     try {
-      // console.log("Processing image:", imageUrl);
-      // const response = await fetch('/api/detect', {
-      // 	method: 'POST',
-      // 	headers: {
-      // 		'Content-Type': 'application/json',
-      // 	},
-      // 	body: JSON.stringify({ imageUrl }),
-      // });
-      // if (!response.ok) {
-      // 	throw new Error('Failed to process image');
-      // }
-      // const data = await response.json();
-      // console.log('Detection result:', data);
-      await new Promise((resolve) => setTimeout(resolve, 5000));
-      // router.push("/result/123");
+      if (!capturedFile) {
+        throw new Error('No file to upload');
+      }
+      
+      // Get user session
+      const authUser = await supabase.auth.getSession()
+      console.log("Auth User:", authUser.data.session?.user.id);
+
+      // Create FormData
+      const formData = new FormData();
+      formData.append('image', capturedFile);
+      formData.append('auth_user', authUser.data.session?.user.id || "");
+
+      // Send to API
+      const uploadResponse = await fetch('/api/detect', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload image');
+      }
+      
+      const data = await uploadResponse.json();
+      setUploaded(data);
+      setUploadStatus("success");
     } catch (error) {
       console.error("Error processing image:", error);
+      setUploadStatus("error");
     }
   };
 
   return (
     <LFDWrapper onDrop={handleDrop} onDragOver={handleDragOver}>
       <LangGraphVisual 
-        image_url="https://plantvillage-production-new.s3.amazonaws.com/image/99416/file/default-eb4701036f717c99bf95001c1a8f7b40.jpg" 
+        diagnose_data={uploaded}
         trigger={isLoading}
+        setTrigger={setIsLoading}
+        uploadStatus={uploadStatus}
       />
       <div
         className="fixed top-0 left-0 z-100 flex h-screen w-screen"
@@ -182,7 +221,7 @@ export default function DetectionMenu() {
           </div>
         </div>
       </div>
-      {!captureUrl ? (
+      {!capturedFile ? (
         <section
           className="bg-card/[0.4] border-border m-4 grid grid-cols-1 items-center gap-5 rounded-2xl border-[1px] p-4 backdrop-blur-xs md:grid-cols-2"
           id="set-image"
@@ -209,30 +248,40 @@ export default function DetectionMenu() {
         >
           <h1 className="mb-6 text-center text-foreground font-mono uppercase font-bold">Pratinjau</h1>
           <div className="border-border dark:bg-input flex flex-col items-center justify-center gap-1 rounded-[20px] border-[1px] bg-zinc-100 p-4">
-            {captureUrl && (
+            {capturedImageUrl && (
               <img
-                src={captureUrl}
+                src={capturedImageUrl}
                 alt="Captured Image"
                 className="max-w-md rounded-md"
               />
             )}
-            <h1 className="mt-4 text-sm text-foreground font-bold">{capturedFileInfo?.name}</h1>
+            <h1 className="mt-4 text-sm text-foreground font-bold">{capturedFile?.name}</h1>
             <h2 className="text-muted-foreground text-xs">
-              {capturedFileInfo
-                ? `${(capturedFileInfo.size / 1024).toFixed(2)} KB`
+              {capturedFile
+                ? `${(capturedFile.size / 1024).toFixed(2)} KB`
                 : "Tidak ada file yang diunggah"}
             </h2>
           </div>
           <div className="mt-6 grid grid-cols-2 gap-2">
             <Button
               variant="secondary"
-              onClick={setCaptureUrl.bind(null, null)}
+              onClick={() => {
+                if (capturedImageUrl) {
+                  URL.revokeObjectURL(capturedImageUrl);
+                  setCapturedImageUrl(null);
+                }
+                setCapturedFile(null);
+                // Reset file input
+                if (fileInputRef.current) {
+                  fileInputRef.current.value = '';
+                }
+              }}
             >
               Kembali
             </Button>
             <button
-              onClick={processImage.bind(null, captureUrl!)}
-              className={`bg-primary dark:shadow-foreground/[0.3] hover:bg-primary/80 rounded-md p-2 text-sm font-medium text-white transition-all duration-200 dark:shadow-inner ${!captureUrl ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
+              onClick={processImage}
+              className={`bg-primary dark:shadow-foreground/[0.3] hover:bg-primary/80 rounded-md p-2 text-sm font-medium text-white transition-all duration-200 dark:shadow-inner ${!capturedFile ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
             >
               Deteksi
             </button>
@@ -261,13 +310,6 @@ export default function DetectionMenu() {
                 className="my-4 aspect-video w-full rounded-2xl"
               />
               <canvas ref={canvasRef} className="hidden" />
-              {captureUrl && (
-                <img
-                  src={captureUrl}
-                  alt="Captured Image"
-                  className="mt-4 w-full"
-                />
-              )}
             </div>
             <div className="flex justify-center">
               <button
