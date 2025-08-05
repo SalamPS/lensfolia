@@ -3,13 +3,11 @@
 import React, { useState, useRef, useEffect } from "react";
 import LFDWrapper from "@/components/detect/Wrapper";
 import Loading from "@/components/Loading";
-import { useRouter } from "next/navigation";
 import { IconCamera, IconUpload } from "@tabler/icons-react";
 import { Button } from "../ui/button";
 import { LangGraphVisual } from "./Langgraph";
 
 export default function DetectionMenu() {
-  const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -141,7 +139,7 @@ export default function DetectionMenu() {
   const processImage = async (imageUrl: string) => {
     setIsLoading(true);
     try {
-      console.log("Processing image:", imageUrl);
+      // console.log("Processing image:", imageUrl);
       // const response = await fetch('/api/detect', {
       // 	method: 'POST',
       // 	headers: {
@@ -155,7 +153,7 @@ export default function DetectionMenu() {
       // const data = await response.json();
       // console.log('Detection result:', data);
       await new Promise((resolve) => setTimeout(resolve, 5000));
-      router.push("/result/123");
+      // router.push("/result/123");
     } catch (error) {
       console.error("Error processing image:", error);
     }
@@ -165,7 +163,7 @@ export default function DetectionMenu() {
     <LFDWrapper onDrop={handleDrop} onDragOver={handleDragOver}>
       <LangGraphVisual 
         image_url="https://plantvillage-production-new.s3.amazonaws.com/image/99416/file/default-eb4701036f717c99bf95001c1a8f7b40.jpg" 
-        trigger={true}
+        trigger={isLoading}
       />
       <div
         className="fixed top-0 left-0 z-100 flex h-screen w-screen"
@@ -184,7 +182,6 @@ export default function DetectionMenu() {
           </div>
         </div>
       </div>
-      {isLoading && <Loading>Memproses Deteksi Daun ...</Loading>}
       {!captureUrl ? (
         <section
           className="bg-card/[0.4] border-border m-4 grid grid-cols-1 items-center gap-5 rounded-2xl border-[1px] p-4 backdrop-blur-xs md:grid-cols-2"
