@@ -14,12 +14,14 @@ import CommentItem from "./CommentItem";
 import { ForumCommentConverter, ForumConverter } from "./ForumQueryUtils";
 import { supabase } from "@/lib/supabase";
 import { Comment, ForumPost } from "./MockData";
+import { notFound } from "next/navigation";
 
 const PostPage = ({slug}: {slug:string}) => {
 
   const [post, setPost] = React.useState<ForumPost | null>(null);
   const [comments, setComments] = React.useState<Comment[]>([]);
   const [commentContent, setCommentContent] = React.useState("");
+  const [isLoading, setIsLoading] = React.useState(true);
   
   useEffect(() => {
     (async () => {
@@ -56,10 +58,11 @@ const PostPage = ({slug}: {slug:string}) => {
       setPost(response_post);
       setComments(response_comments);
       console.log(response_post, response_comments);
+      setIsLoading(false);
     })();
   }, [slug]);
 
-  if (!post) return null;
+  if (!isLoading && !post) return notFound();
 
   return (
     <div className="bg-background min-h-screen p-4">
@@ -68,23 +71,23 @@ const PostPage = ({slug}: {slug:string}) => {
         <div className="mb-8">
           <div className="mb-4 flex items-center gap-2">
             <Avatar>
-              <AvatarImage src={post.authorImg} />
+              <AvatarImage src={post?.authorImg} />
             </Avatar>
             <div>
-              <p className="font-medium">{post.author}</p>
-              <p className="text-muted-foreground text-sm">{post.timeAgo}</p>
+              <p className="font-medium">{post?.author}</p>
+              <p className="text-muted-foreground text-sm">{post?.timeAgo}</p>
             </div>
           </div>
 
-          <h1 className="text-2xl font-bold">{post.title}</h1>
+          <h1 className="text-2xl font-bold">{post?.title}</h1>
 
           <div className="my-4">
-            <p className="text-muted-foreground">{post.content}</p>
+            <p className="text-muted-foreground">{post?.content}</p>
           </div>
 
           {/* Tags */}
           <div className="mb-6 flex flex-wrap gap-2">
-            {post.tags.map((tag, index) => (
+            {post?.tags.map((tag, index) => (
               <span
                 key={index}
                 className="bg-muted text-muted-foreground rounded-full px-3 py-1 text-sm"
@@ -98,19 +101,19 @@ const PostPage = ({slug}: {slug:string}) => {
           <div className="flex items-center gap-4 border-t border-b py-3">
             <div className="flex items-center gap-1">
               <IconArrowBigUpLines size={18} />
-              <span>{post.upvotes.length}</span>
+              <span>{post?.upvotes.length}</span>
             </div>
             <div className="flex items-center gap-1">
               <IconArrowBigDownLines size={18} />
-              <span>{post.downvotes.length}</span>
+              <span>{post?.downvotes.length}</span>
             </div>
             <div className="flex items-center gap-1">
               <IconMessageCircle size={18} />
-              <span>{post.comments.length} Komentar</span>
+              <span>{post?.comments.length} Komentar</span>
             </div>
             <div className="flex items-center gap-1">
               <IconEye size={18} />
-              <span>{post.views} Dilihat</span>
+              <span>{post?.views} Dilihat</span>
             </div>
           </div>
         </div>
