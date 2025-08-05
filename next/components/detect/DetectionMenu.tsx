@@ -243,26 +243,34 @@ export default function DetectionMenu() {
         </section>
       ) : (
         <section
-          className="border-border shadoew-md bg-card/[0.5] border-[2px] border-dashed p-6 backdrop-blur-xs"
+          className="border-border bg-card/[0.5] mx-2 border-[2px] border-dashed p-4 shadow-sm backdrop-blur-xs sm:mx-0 sm:p-6"
           id="preview-image"
         >
-          <h1 className="mb-6 text-center text-foreground font-mono uppercase font-bold">Pratinjau</h1>
-          <div className="border-border dark:bg-input flex flex-col items-center justify-center gap-1 rounded-[20px] border-[1px] bg-zinc-100 p-4">
-            {capturedImageUrl && (
+          <h1 className="text-foreground mb-4 text-center font-mono text-sm font-bold uppercase sm:mb-6 sm:text-base">
+            Pratinjau
+          </h1>
+
+          <div className="border-border dark:bg-input flex flex-col items-center justify-center gap-1 rounded-xl border-[1px] bg-zinc-100 p-3 sm:rounded-[20px] sm:p-4">
+            {capturedFile && (
               <img
-                src={capturedImageUrl}
+                src={capturedImageUrl || ""}
                 alt="Captured Image"
-                className="max-w-md rounded-md"
+                className="max-h-[50vh] w-full max-w-full rounded-md object-contain"
               />
             )}
-            <h1 className="mt-4 text-sm text-foreground font-bold">{capturedFile?.name}</h1>
-            <h2 className="text-muted-foreground text-xs">
-              {capturedFile
-                ? `${(capturedFile.size / 1024).toFixed(2)} KB`
-                : "Tidak ada file yang diunggah"}
-            </h2>
+            <div className="mt-3 text-center sm:mt-4">
+              <h1 className="text-foreground line-clamp-1 text-xs font-bold sm:text-sm">
+                {capturedFile?.name}
+              </h1>
+              <h2 className="text-muted-foreground mt-1 text-xs">
+                {capturedFile
+                  ? `${(capturedFile.size / 1024).toFixed(2)} KB`
+                  : "Tidak ada file yang diunggah"}
+              </h2>
+            </div>
           </div>
-          <div className="mt-6 grid grid-cols-2 gap-2">
+
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:mt-6">
             <Button
               variant="secondary"
               onClick={() => {
@@ -276,12 +284,16 @@ export default function DetectionMenu() {
                   fileInputRef.current.value = '';
                 }
               }}
+              className="py-2 text-xs sm:text-sm"
             >
               Kembali
             </Button>
             <button
               onClick={processImage}
-              className={`bg-primary dark:shadow-foreground/[0.3] hover:bg-primary/80 rounded-md p-2 text-sm font-medium text-white transition-all duration-200 dark:shadow-inner ${!capturedFile ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
+              className={`bg-primary hover:bg-primary/80 rounded-md py-2 text-xs font-medium text-white transition-all duration-200 sm:text-sm ${
+                !capturedFile ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+              }`}
+              disabled={!capturedFile}
             >
               Deteksi
             </button>

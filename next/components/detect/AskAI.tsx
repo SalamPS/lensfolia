@@ -168,7 +168,7 @@ export function AskAI ({disease}: {disease: LFDResult_ | null}) {
 
 	return (
 		<div id="ask-ai" className="border-border rounded-3xl border-[1px]">
-			<h3 className="border-border flex items-center justify-center border-b-[1px] p-2 py-6 font-semibold">
+			<h3 className="border-border text-foreground flex items-center justify-center border-b-[1px] p-2 py-6 font-semibold">
 				<IconSparkles className="mr-2 inline" size={24} />
 				Konsultasi lebih lanjut dengan AI
 			</h3>
@@ -184,7 +184,7 @@ export function AskAI ({disease}: {disease: LFDResult_ | null}) {
 					{/* Chat Messages Area */}
 					<div className="flex-1 overflow-y-auto px-2 py-4">
 						{messages.length === 0 ? (
-							<div className="flex h-full flex-col items-center justify-center">
+							<div className="flex h-full flex-col items-center justify-center text-foreground">
 								<h4 className="mb-8 font-semibold">
 									Apa yang bisa saya bantu?
 								</h4>
