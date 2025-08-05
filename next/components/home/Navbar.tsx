@@ -3,14 +3,23 @@
 
 import Image from "next/image";
 import { ModeToggle } from "@/components/ui/mode-toggle";
-import { IconArrowUpRight, IconMenu2, IconX } from "@tabler/icons-react";
+import { IconArrowUpRight, IconMenu2, IconX, IconBookmark, IconLogout, IconUser, IconMail } from "@tabler/icons-react";
 import Link from "next/link";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import SignupModal from "../auth/signup-modal";
 import { userNavbar_ } from "../types/user";
 import { useAuth } from "@/hooks/useAuth";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export const navItems = [
   { label: "Intro", href: "#intro" },
@@ -26,7 +35,8 @@ export const navItemsFeatures = [
 ];
 
 const Navbar = () => {
-  const { user } = useAuth()
+  const { user, signOut } = useAuth()
+  const router = useRouter()
   
   const userForNavbar: userNavbar_ = {
     id: user?.id || "",
@@ -45,6 +55,15 @@ const Navbar = () => {
 
   const closeMobileMenu = () => {
     setIsMobileMenuOpen(false);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut()
+      router.push('/')
+    } catch (error) {
+      console.error('Error logging out:', error)
+    }
   };
 
   return (
@@ -109,18 +128,50 @@ const Navbar = () => {
           <div className="flex items-center justify-end gap-2">
             <ModeToggle />
             {userForNavbar && userForNavbar?.id ? (
-              <Link
-                href="/bookmarks"
-                className="text-muted-foreground hover:bg-card/50 focus:ring-primary flex items-center justify-center rounded-md px-3 py-2 transition-colors duration-200"
-              >
-                <div className="bg-primary relative aspect-square h-6 shrink-0 overflow-hidden rounded-full">
-                  <img
-                    src={userForNavbar.profilePicture || "/profile.jpg"}
-                    alt={userForNavbar.name[0]}
-                    className="aspect-square w-full rounded-full"
-                  />
-                </div>
-              </Link>
+              <DropdownMenu>
+                <DropdownMenuTrigger className="focus:ring-primary flex items-center justify-center rounded-md px-3 py-2 transition-colors duration-200 hover:bg-card/50 focus:ring-1 focus:outline-none">
+                  <div className="cursor-pointer bg-primary relative aspect-square h-6 shrink-0 overflow-hidden rounded-full">
+                    <img
+                      src={userForNavbar.profilePicture || "/profile.jpg"}
+                      alt={userForNavbar.name[0]}
+                      className="aspect-square w-full rounded-full"
+                    />
+                  </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <div className="flex items-center gap-2">
+                        <IconUser size={16} className="text-muted-foreground" />
+                        <p className="text-sm font-medium leading-none">
+                          {userForNavbar.name}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <IconMail size={16} className="text-muted-foreground" />
+                        <p className="text-xs leading-none text-muted-foreground">
+                          {userForNavbar.email}
+                        </p>
+                      </div>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/bookmarks" className="flex items-center gap-2 cursor-pointer">
+                      <IconBookmark size={16} />
+                      Bookmark
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 cursor-pointer text-red-600 focus:text-red-600"
+                  >
+                    <IconLogout size={16} />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : pathname == "/" ? (
               <Link
                 className="bg-primary hover:shadow-primary/25 hover:from-primary hover:to-primary/80 group relative hidden items-center justify-center gap-2 overflow-hidden rounded-md px-3 py-2 transition-all duration-300 ease-out hover:scale-105 hover:bg-gradient-to-r hover:shadow-lg md:flex md:gap-2"
