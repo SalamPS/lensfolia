@@ -10,7 +10,7 @@ import Link from "next/link";
 import { Avatar, AvatarImage } from "../ui/avatar";
 import { cn } from "@/lib/utils";
 
-export type PostType = "penyakit" | "hama" | "umum";
+export type PostType = "diseases" | "pests" | "general";
 
 interface ForumCardProps {
   id: string;
@@ -31,17 +31,17 @@ const typeStyles: Record<
   PostType,
   { bg: string; text: string; border: string }
 > = {
-  penyakit: {
+  diseases: {
     bg: "bg-blue-500/20",
     text: "text-blue-500 dark:text-blue-300",
     border: "border-blue-500 dark:border-blue-300",
   },
-  hama: {
+  pests: {
     bg: "bg-yellow-500/20",
     text: "text-yellow-500 dark:text-yellow-300",
     border: "border-yellow-500 dark:border-yellow-300",
   },
-  umum: {
+  general: {
     bg: "bg-green-500/20",
     text: "text-green-500 dark:text-green-300",
     border: "border-green-500 dark:border-green-300",

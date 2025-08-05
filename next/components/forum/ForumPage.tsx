@@ -23,7 +23,7 @@ const ForumPage = () => {
   const [currentPage, setCurrentPage] = React.useState(1);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [activeTab, setActiveTab] = React.useState<
-    "all" | "umum" | "penyakit" | "hama"
+    "all" | "general" | "diseases" | "pests"
   >("all");
   const [loading, setLoading] = React.useState(false);
 
@@ -99,14 +99,14 @@ const ForumPage = () => {
                 defaultValue="all"
                 value={activeTab}
                 onValueChange={(val) =>
-                  setActiveTab(val as "all" | "umum" | "penyakit" | "hama")
+                  setActiveTab(val as "all" | "general" | "diseases" | "pests")
                 }
               >
                 <TabsList className="w-full shrink-0 flex-wrap">
                   <TabsTrigger value="all">Semua</TabsTrigger>
-                  <TabsTrigger value="umum">Umum</TabsTrigger>
-                  <TabsTrigger value="penyakit">Penyakit</TabsTrigger>
-                  <TabsTrigger value="hama">Hama</TabsTrigger>
+                  <TabsTrigger value="general">Umum</TabsTrigger>
+                  <TabsTrigger value="diseases">Penyakit</TabsTrigger>
+                  <TabsTrigger value="pests">Hama</TabsTrigger>
                 </TabsList>
               </Tabs>
 
