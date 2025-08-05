@@ -1,6 +1,4 @@
-import PostPage from '@/components/forum/PostPage';
-import { notFound } from 'next/navigation';
-import { getPostDetail } from '@/components/forum/MockData';
+import PostPage from "@/components/forum/PostPage";
 
 export default async function Page({
   params,
@@ -8,12 +6,6 @@ export default async function Page({
   params: Promise<{ slug: string }>;
 }) {
   const resolvedParams = await params;
-  const post = await getPostDetail(resolvedParams.slug);
-  console.log("Post Detail:", post);
-
-  if (!post) {
-    return notFound();
-  }
-
-  return <PostPage params={resolvedParams} />;
+  const { slug } = resolvedParams;
+  return <PostPage slug={slug}/>;
 }

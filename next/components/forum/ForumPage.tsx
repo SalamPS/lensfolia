@@ -15,9 +15,10 @@ import {
   PaginationPrevious,
 } from "../ui/pagination";
 import ForumCard from "./ForumCard";
-import { forumPosts } from "./MockData";
 import ForumCardSkeleton from "./ForumCardSkeleton";
 import Image from "next/image";
+import { ForumPost } from "./MockData";
+import { ForumConverter, ForumQuery } from "./ForumQueryUtils";
 
 const ForumPage = () => {
   const [currentPage, setCurrentPage] = React.useState(1);
@@ -25,15 +26,22 @@ const ForumPage = () => {
   const [activeTab, setActiveTab] = React.useState<
     "all" | "general" | "diseases" | "pests"
   >("all");
-  const [loading, setLoading] = React.useState(false);
+  const [loading, setLoading] = React.useState(true);
+  const [forumPosts, setForumPosts] = React.useState<ForumPost[]>([]);
 
   const postsPerPage = 5;
 
   // Simulasi skeleton
   React.useEffect(() => {
-    setLoading(true);
-    const timeout = setTimeout(() => setLoading(false), 1500);
-    return () => clearTimeout(timeout);
+    (async () => {
+      const response = await ForumQuery();
+      if (response) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const finalForm: ForumPost[] = response.map((post: any) => ForumConverter(post));
+        setForumPosts(finalForm);
+      }
+      setLoading(false);
+    })();
   }, []);
 
   const filteredByTab =
@@ -145,10 +153,10 @@ const ForumPage = () => {
                     timeAgo={post.timeAgo}
                     type={post.type}
                     tags={post.tags}
-                    commentCount={post.commentCount}
-                    upvoteCount={post.upvoteCount}
-                    downvoteCount={post.downvoteCount}
-                    viewsCount={post.viewsCount}
+                    comments={post.comments}
+                    upvotes={post.upvotes}
+                    downvotes={post.downvotes}
+                    views={post.views}
                   />
                 ))
               ) : (

@@ -13,8 +13,8 @@ interface CommentItemProps {
   authorImg: string;
   timeAgo: string;
   content: string;
-  upvoteCount: number;
-  downvoteCount: number;
+  upvotes: string[];
+  downvotes: string[];
   replies?: CommentItemProps[];
 }
 
@@ -24,8 +24,8 @@ const CommentItem = ({
   authorImg,
   timeAgo,
   content,
-  upvoteCount,
-  downvoteCount,
+  upvotes,
+  downvotes,
   replies = [],
 }: CommentItemProps) => {
   const [showReplyForm, setShowReplyForm] = React.useState(false);
@@ -72,7 +72,7 @@ const CommentItem = ({
               className="gap-1"
             >
               <IconArrowBigUpLines size={16} />
-              <span>{upvoteCount}</span>
+              <span>{upvotes.length}</span>
             </Button>
             <Button
               onClick={handleDownvote}
@@ -81,7 +81,7 @@ const CommentItem = ({
               className="gap-1"
             >
               <IconArrowBigDownLines size={16} />
-              <span>{downvoteCount}</span>
+              <span>{downvotes.length}</span>
             </Button>
             <Button
               variant="ghost"

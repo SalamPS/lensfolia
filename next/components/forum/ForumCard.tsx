@@ -6,9 +6,10 @@ import {
   IconEye,
   IconMessageCircle,
 } from "@tabler/icons-react";
-import Link from "next/link";
 import { Avatar, AvatarImage } from "../ui/avatar";
 import { cn } from "@/lib/utils";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 
 export type PostType = "diseases" | "pests" | "general";
 
@@ -21,10 +22,10 @@ interface ForumCardProps {
   timeAgo: string;
   type: PostType;
   tags: string[];
-  commentCount: number;
-  upvoteCount: number;
-  downvoteCount: number;
-  viewsCount: number;
+  comments: string[];
+  upvotes: string[];
+  downvotes: string[];
+  views: number;
 }
 
 const typeStyles: Record<
@@ -57,43 +58,55 @@ const ForumCard = ({
   timeAgo,
   type,
   tags,
-  commentCount,
-  upvoteCount: initialUpvoteCount,
-  downvoteCount: initialDownvoteCount,
-  viewsCount,
+  comments,
+  upvotes: initialUpvoteCount,
+  downvotes: initialDownvoteCount,
+  views,
 }: ForumCardProps) => {
-  const [upvoteCount, setUpvoteCount] = useState(initialUpvoteCount);
-  const [downvoteCount, setDownvoteCount] = useState(initialDownvoteCount);
+  const [upvoteCount, setUpvoteCount] = useState(initialUpvoteCount.length);
+  const [downvoteCount, setDownvoteCount] = useState(initialDownvoteCount.length);
   const [userVote, setUserVote] = useState<"up" | "down" | null>(null);
+  const router = useRouter();
 
   const handleUpvote = () => {
     if (userVote === "up") {
-      setUpvoteCount((prev) => prev - 1);
+      // setUpvoteCount((prev) => prev - 1);
       setUserVote(null);
     } else if (userVote === "down") {
-      setUpvoteCount((prev) => prev + 1);
-      setDownvoteCount((prev) => prev - 1);
+      // setUpvoteCount((prev) => prev + 1);
+      // setDownvoteCount((prev) => prev - 1);
       setUserVote("up");
     } else {
-      setUpvoteCount((prev) => prev + 1);
+      // setUpvoteCount((prev) => prev + 1);
       setUserVote("up");
     }
   };
 
   const handleDownvote = () => {
     if (userVote === "down") {
-      setDownvoteCount((prev) => prev - 1);
+      // setDownvoteCount((prev) => prev - 1);
       setUserVote(null);
     } else if (userVote === "up") {
-      setDownvoteCount((prev) => prev + 1);
-      setUpvoteCount((prev) => prev - 1);
+      // setDownvoteCount((prev) => prev + 1);
+      // setUpvoteCount((prev) => prev - 1);
       setUserVote("down");
     } else {
-      setDownvoteCount((prev) => prev + 1);
+      // setDownvoteCount((prev) => prev + 1);
       setUserVote("down");
     }
   };
 
+  const goToPostHandler = async (cid?: string) => {
+    const { error } = await supabase
+      .from('forums')
+      .update({ views: views + 1 })
+      .eq('id', id);
+    if (error) {
+      console.error("Error updating views:", error);
+      return;
+    }
+    router.push(`/forum/post/${id}${cid ? `#d-${cid}` : ""}`);
+  }
 
   return (
     <div className="bg-background border-border rounded-2xl border p-4 shadow-sm transition-all hover:shadow-md">
@@ -122,7 +135,7 @@ const ForumCard = ({
         </div>
 
         {/* Konten postingan */}
-        <Link href={`/forum/post/${id}`}>
+        <div onClick={() => {goToPostHandler();}} className="cursor-pointer">
           <div className="space-y-2">
             <h3 className="text-foreground text-lg font-semibold hover:underline">
               {title}
@@ -131,7 +144,7 @@ const ForumCard = ({
               {content}
             </p>
           </div>
-        </Link>
+        </div>
 
         {/* Tags */}
         <div className="flex flex-wrap gap-1">
@@ -146,18 +159,20 @@ const ForumCard = ({
         </div>
 
         {/* Action buttons */}
-        <div className="flex flex-wrap items-center gap-2 pt-2 font-mono">
-          <div
+        <div className="flex flex-wrap items-center pt-2 font-mono">
+            <Button
+            variant="ghost"
+            size="sm"
             className={cn(
-              "hover:bg-input text-foreground hover:text-accent-foreground dark:hover:bg-accent/50 inline-flex items-center justify-center gap-2",
+              "gap-2",
               userVote === "up" &&
-                "bg-green-500/20 text-green-500 dark:text-green-300",
+              "bg-green-500/20 text-green-500 dark:text-green-300",
             )}
             onClick={handleUpvote}
-          >
+            >
             <IconArrowBigUpLines size={16} />
-            <span>{upvoteCount}</span>
-          </div>
+            <span>{upvoteCount || 0}</span>
+            </Button>
           <Button
             variant="ghost"
             size="sm"
@@ -169,15 +184,15 @@ const ForumCard = ({
             onClick={handleDownvote}
           >
             <IconArrowBigDownLines size={16} />
-            <span>{downvoteCount}</span>
+            <span>{downvoteCount || 0}</span>
           </Button>
-          <Button variant="ghost" size="sm" className="gap-2">
+          <Button onClick={() => {goToPostHandler(comments[comments.length-1]);}} variant="ghost" size="sm" className="gap-2">
             <IconMessageCircle size={16} />
-            <span>{commentCount}</span>
+            <span>{comments.length}</span>
           </Button>
           <Button variant="ghost" size="sm" className="gap-2">
             <IconEye size={16} />
-            <span>{viewsCount}</span>
+            <span>{views}</span>
           </Button>
         </div>
       </div>

@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,19 +11,53 @@ import {
   IconEye,
 } from "@tabler/icons-react";
 import CommentItem from "./CommentItem";
-import { getPostDetail, getPostComments } from "./MockData";
+import { ForumCommentConverter, ForumConverter } from "./ForumQueryUtils";
+import { supabase } from "@/lib/supabase";
+import { Comment, ForumPost } from "./MockData";
 
-interface PostPageProps {
-  params: {
-    slug: string;
-  };
-}
+const PostPage = ({slug}: {slug:string}) => {
 
-const PostPage = ({ params }: PostPageProps) => {
-  const { slug } = params;
-  const post = getPostDetail(slug);
-  const comments = getPostComments(slug);
+  const [post, setPost] = React.useState<ForumPost | null>(null);
+  const [comments, setComments] = React.useState<Comment[]>([]);
   const [commentContent, setCommentContent] = React.useState("");
+  
+  useEffect(() => {
+    (async () => {
+      const response = await supabase
+        .from("forums")
+        .select(`*,
+          user_profiles (
+            name,
+            profile_picture
+          ),
+          diagnoses(*),
+          ratings(*),
+          forums_discussions(*,
+            user_profiles (
+              name,
+              profile_picture
+            ),
+            ratings(*),
+            forums_comments(*,
+              user_profiles (
+                name,
+                profile_picture
+              ),
+              ratings(*)
+            )
+          )
+        `)
+        .eq("id", slug.split("#")[0]);
+      if (!response.data) {
+        return
+      }
+      const response_post = ForumConverter(response.data[0]);
+      const response_comments = ForumCommentConverter(response.data[0])
+      setPost(response_post);
+      setComments(response_comments);
+      console.log(response_post, response_comments);
+    })();
+  }, [slug]);
 
   if (!post) return null;
 
@@ -64,19 +98,19 @@ const PostPage = ({ params }: PostPageProps) => {
           <div className="flex items-center gap-4 border-t border-b py-3">
             <div className="flex items-center gap-1">
               <IconArrowBigUpLines size={18} />
-              <span>{post.upvoteCount}</span>
+              <span>{post.upvotes.length}</span>
             </div>
             <div className="flex items-center gap-1">
               <IconArrowBigDownLines size={18} />
-              <span>{post.downvoteCount}</span>
+              <span>{post.downvotes.length}</span>
             </div>
             <div className="flex items-center gap-1">
               <IconMessageCircle size={18} />
-              <span>{post.commentCount} Komentar</span>
+              <span>{post.comments.length} Komentar</span>
             </div>
             <div className="flex items-center gap-1">
               <IconEye size={18} />
-              <span>{post.viewsCount} Dilihat</span>
+              <span>{post.views} Dilihat</span>
             </div>
           </div>
         </div>
