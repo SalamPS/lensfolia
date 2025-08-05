@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { usePathname } from "next/navigation";
 import SignupModal from "../auth/signup-modal";
 import { userNavbar_ } from "../types/user";
+import { useAuth } from "@/hooks/useAuth";
 
 export const navItems = [
   { label: "Intro", href: "#intro" },
@@ -24,7 +25,17 @@ export const navItemsFeatures = [
   { label: "Forum", href: "/forum" },
 ];
 
-const Navbar = ({ user }: { user?: userNavbar_ }) => {
+const Navbar = () => {
+  const { user } = useAuth()
+  
+  const userForNavbar: userNavbar_ = {
+    id: user?.id || "",
+    name: user?.user_metadata?.full_name || user?.email || 'User',
+    email: user?.email || '',
+    profilePicture: user?.user_metadata?.avatar_url || '/profile.jpg',
+    createdAt: user?.created_at || "",
+  }
+
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
 
@@ -97,21 +108,18 @@ const Navbar = ({ user }: { user?: userNavbar_ }) => {
 
           <div className="flex items-center justify-end gap-2">
             <ModeToggle />
-            {user && user?.id ? (
+            {userForNavbar && userForNavbar?.id ? (
               <Link
                 href="/bookmarks"
                 className="text-muted-foreground hover:bg-card/50 focus:ring-primary flex items-center justify-center rounded-md px-3 py-2 transition-colors duration-200"
               >
                 <div className="bg-primary relative aspect-square h-6 shrink-0 overflow-hidden rounded-full">
                   <img
-                    src={user.profilePicture || "/profile.jpg"}
-                    alt={user.name[0]}
+                    src={userForNavbar.profilePicture || "/profile.jpg"}
+                    alt={userForNavbar.name[0]}
                     className="aspect-square w-full rounded-full"
                   />
                 </div>
-                <span className="text-foreground ml-2 hidden text-sm font-semibold md:inline-block">
-                  {user.name}
-                </span>
               </Link>
             ) : pathname == "/" ? (
               <Link

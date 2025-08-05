@@ -1,7 +1,6 @@
 import Navbar from "@/components/home/Navbar";
 import React from "react";
 import LFDResultPage from "@/components/detect/Result";
-import { userNavbar_ } from "@/components/types/user";
 import StaticBG from "@/components/StaticBG";
 
 export default async function LFDResultContainer({
@@ -15,7 +14,7 @@ export default async function LFDResultContainer({
   }
   return (
     <main className="bg-background h-full w-full">
-      <Navbar user={user} />
+      <Navbar/>
       <StaticBG>
         <div className="relative z-10 mt-4 flex h-[20rem] items-center justify-center">
           <div className="flex flex-col items-center justify-center gap-4 px-4">
@@ -33,11 +32,3 @@ export default async function LFDResultContainer({
     </main>
   );
 }
-
-const user: userNavbar_ = {
-  id: "123",
-  name: "Salam PS",
-  email: "salamp@salamp.id",
-  profilePicture: "/profile.jpg",
-  createdAt: "2023-01-01",
-};
