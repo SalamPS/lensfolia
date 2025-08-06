@@ -29,8 +29,7 @@ export function useAuth() {
         }
       } else {
         anon = {
-          // id: uuidv4(),
-          id: "966ee02e-857f-41b4-b3e0-d55408a9ca01",
+          id: uuidv4(),
           anon: true,
           expired: new Date().getTime() + 60 * 60 * 1000
         }
