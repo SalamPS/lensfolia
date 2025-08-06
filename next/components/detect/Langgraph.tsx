@@ -10,7 +10,6 @@ import { LFD_ } from "../types/diagnoseResult";
 import { Button } from "../ui/button";
 import { useStream } from "@langchain/langgraph-sdk/react";
 import type { Message } from "@langchain/langgraph-sdk";
-import { useAuth } from "@/hooks/useAuth";
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
