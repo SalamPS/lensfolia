@@ -11,8 +11,7 @@ import {
   IconEye,
 } from "@tabler/icons-react";
 import CommentItem from "./CommentItem";
-import { ForumCommentConverter, ForumConverter } from "./ForumQueryUtils";
-import { supabase } from "@/lib/supabase";
+import { ForumCommentConverter, ForumConverter, ForumDetailQuery } from "./ForumQueryUtils";
 import { Comment, ForumPost } from "./MockData";
 import { notFound } from "next/navigation";
 
@@ -25,39 +24,12 @@ const PostPage = ({slug}: {slug:string}) => {
   
   useEffect(() => {
     (async () => {
-      const response = await supabase
-        .from("forums")
-        .select(`*,
-          user_profiles (
-            id,
-            name,
-            profile_picture
-          ),
-          diagnoses(*),
-          rating(*),
-          forums_discussions(*,
-            user_profiles (
-              id,
-              name,
-              profile_picture
-            ),
-            rating(*),
-            forums_comments(*,
-              user_profiles (
-                id,
-                name,
-                profile_picture
-              ),
-              rating(*)
-            )
-          )
-        `)
-        .eq("id", slug.split("#")[0]);
-      if (!response.data) {
+      const response = await ForumDetailQuery(slug.split("#")[0]);
+      if (!response) {
         return
       }
-      const response_post = ForumConverter(response.data[0]);
-      const response_comments = ForumCommentConverter(response.data[0])
+      const response_post = ForumConverter(response[0]);
+      const response_comments = ForumCommentConverter(response[0])
       setPost(response_post);
       setComments(response_comments);
       setIsLoading(false);
