@@ -10,6 +10,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { PostgrestSingleResponse } from "@supabase/supabase-js";
 import { PostContext } from "./PostContext";
+import { cn } from "@/lib/utils";
 
 interface CommentItemProps {
   isReply?: string;
@@ -208,7 +209,7 @@ const CommentItem = ({
 
   return (
     <div
-      className="border-border mb-4 rounded-lg border p-4"
+      className={`mb-4 ${!isReply ? "border-border bg-card rounded-lg border p-4" : ""}`}
       id={`comment-${id}`}
     >
       <div className="flex gap-3">
@@ -222,34 +223,70 @@ const CommentItem = ({
           </div>
           <p className="my-2 text-sm">{content}</p>
 
-          <div className="flex items-center gap-4">
-            <Button
-              onClick={handleUpvote}
-              variant="ghost"
-              size="sm"
-              className="gap-1"
-            >
-              <IconArrowBigUpLines size={16} />
-              <span>{upvoteCount}</span>
-            </Button>
-            <Button
-              onClick={handleDownvote}
-              variant="ghost"
-              size="sm"
-              className="gap-1"
-            >
-              <IconArrowBigDownLines size={16} />
-              <span>{downvoteCount}</span>
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-1"
+          <div className="flex items-center gap-2">
+            {/* Votes */}
+            <div className="dark:bg-card bg-input flex items-center justify-between gap-2 rounded-full p-1 pr-4">
+              {/* Upvote */}
+              <div
+                className={cn(
+                  "flex items-center gap-1",
+                  userVote === "up" && "text-green-500 dark:text-green-300",
+                )}
+              >
+                <button
+                  className={cn(
+                    "group rounded-full p-1.5 transition-colors hover:bg-green-500/10",
+                    userVote === "up" && "bg-green-500/20",
+                  )}
+                  onClick={handleUpvote}
+                >
+                  <IconArrowBigUpLines
+                    size={18}
+                    className={cn(
+                      "group-hover:text-green-500",
+                      userVote === "up" && "text-green-500 dark:text-green-300",
+                    )}
+                  />
+                </button>
+                <span className="text-xs">{upvoteCount || 0}</span>
+              </div>
+
+              {/* Downvote */}
+              <div
+                className={cn(
+                  "flex items-center gap-1",
+                  userVote === "down" && "text-red-500 dark:text-red-300",
+                )}
+              >
+                <button
+                  className={cn(
+                    "group rounded-full p-1.5 transition-colors hover:bg-red-500/10",
+                    userVote === "down" && "bg-red-500/20",
+                  )}
+                  onClick={handleDownvote}
+                >
+                  <IconArrowBigDownLines
+                    size={18}
+                    className={cn(
+                      "group-hover:text-red-500",
+                      userVote === "down" && "text-red-500 dark:text-red-300",
+                    )}
+                  />
+                </button>
+                <span className="text-xs">{downvoteCount || 0}</span>
+              </div>
+            </div>
+
+            {/* Reply Button */}
+            <button
+              className="dark:bg-card bg-input rounded-full px-3 py-[7px] hover:bg-foreground/15 transition-colors"
               onClick={() => setShowReplyForm(!showReplyForm)}
             >
-              <IconMessageCircle size={16} />
-              <span>Balas</span>
-            </Button>
+              <div className="flex items-center gap-1">
+                <IconMessageCircle size={18} />
+                <span className="text-xs">Balas</span>
+              </div>
+            </button>
           </div>
 
           {showReplyForm && (
@@ -261,9 +298,9 @@ const CommentItem = ({
                 value={replyContent}
                 onChange={(e) => setReplyContent(e.target.value)}
               />
-              <div className="mt-2 flex justify-end gap-2">
+              <div className="mt-1 flex justify-end gap-2">
                 <Button
-                  variant="outline"
+                  variant="secondary"
                   size="sm"
                   onClick={() => setShowReplyForm(false)}
                 >
@@ -277,7 +314,7 @@ const CommentItem = ({
           )}
 
           {replies.length > 0 && (
-            <div className="mt-4 border-l-2 pl-4">
+            <div className="mt-4">
               {replies.map((reply) => (
                 <CommentItem key={reply.id} {...reply} isReply={id} />
               ))}

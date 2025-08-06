@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { Button } from "../ui/button";
 import {
   IconArrowBigDownLines,
   IconArrowBigUpLines,
@@ -255,7 +254,12 @@ const ForumCard = ({
         </div>
 
         {/* Konten postingan */}
-        <div onClick={() => {goToPostHandler();}} className="cursor-pointer">
+        <div
+          onClick={() => {
+            goToPostHandler();
+          }}
+          className="cursor-pointer"
+        >
           <div className="space-y-2">
             <h3 className="text-foreground text-lg font-semibold hover:underline">
               {title}
@@ -271,7 +275,7 @@ const ForumCard = ({
           {tags.map((tag, index) => (
             <div
               key={index}
-              className="dark:bg-card bg-input text-foreground rounded px-3 py-2 text-sm"
+              className="dark:bg-muted bg-input text-foreground/70 rounded px-3 py-1 text-xs font-semibold uppercase"
             >
               {tag}
             </div>
@@ -279,41 +283,85 @@ const ForumCard = ({
         </div>
 
         {/* Action buttons */}
-        <div className="flex flex-wrap items-center pt-2 font-mono">
-            <Button
-            variant="ghost"
-            size="sm"
-            className={cn(
-              "gap-2",
-              userVote === "up" &&
-              "bg-green-500/20 text-green-500 dark:text-green-300",
-            )}
-            onClick={handleUpvote}
+        <div className="flex items-center gap-2">
+          {/* Votes */}
+          <div className="dark:bg-card bg-input flex items-center justify-between gap-2 rounded-full p-1 pr-4">
+            {/* Upvote */}
+            <div
+              className={cn(
+                "flex items-center gap-1",
+                userVote === "up" && "text-green-500 dark:text-green-300",
+              )}
             >
-            <IconArrowBigUpLines size={16} />
-            <span>{upvoteCount || 0}</span>
-            </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className={cn(
-              "gap-2",
-              userVote === "down" &&
-                "bg-red-500/20 text-red-500 dark:text-red-300",
-            )}
-            onClick={handleDownvote}
+              <button
+                className={cn(
+                  "group cursor-pointer rounded-full p-1.5 transition-colors hover:bg-green-500/10",
+                  userVote === "up" && "bg-green-500/20",
+                )}
+                onClick={handleUpvote}
+              >
+                <IconArrowBigUpLines
+                  size={18}
+                  className={cn(
+                    "text-xs group-hover:text-green-500",
+                    userVote === "up" && "text-green-500 dark:text-green-300",
+                  )}
+                />
+              </button>
+              <span className="text-xs">{upvoteCount || 0}</span>
+            </div>
+
+            {/* Downvote */}
+            <div
+              className={cn(
+                "flex items-center gap-1",
+                userVote === "down" && "text-red-500 dark:text-red-300",
+              )}
+            >
+              <button
+                className={cn(
+                  "group cursor-pointer rounded-full p-1.5 transition-colors hover:bg-red-500/10",
+                  userVote === "down" && "bg-red-500/20",
+                )}
+                onClick={handleDownvote}
+              >
+                <IconArrowBigDownLines
+                  size={18}
+                  className={cn(
+                    "group-hover:text-red-500",
+                    userVote === "down" && "text-red-500 dark:text-red-300",
+                  )}
+                />
+              </button>
+              <span className="text-xs">{downvoteCount || 0}</span>
+            </div>
+          </div>
+
+          {/* Comments */}
+          <button
+            className="dark:bg-card bg-input cursor-pointer rounded-full px-3 py-[10px] hover:bg-foreground/15 transition-colors"
+            onClick={() => {
+              goToPostHandler(comments[comments.length - 1]);
+            }}
           >
-            <IconArrowBigDownLines size={16} />
-            <span>{downvoteCount || 0}</span>
-          </Button>
-          <Button onClick={() => {goToPostHandler(comments[comments.length-1]);}} variant="ghost" size="sm" className="gap-2">
-            <IconMessageCircle size={16} />
-            <span>{comments.length}</span>
-          </Button>
-          <Button variant="ghost" size="sm" className="gap-2">
-            <IconEye size={16} />
-            <span>{views}</span>
-          </Button>
+            <div className="flex items-center gap-1">
+              <IconMessageCircle size={18} />
+              <span className="text-xs">
+                {comments.length}{" "}
+                <span className="hidden md:inline">Komentar</span>
+              </span>
+            </div>
+          </button>
+
+          {/* Views */}
+          <div className="dark:bg-card bg-input rounded-full px-3 py-[10px]">
+            <div className="flex items-center gap-1">
+              <IconEye size={18} />
+              <span className="text-xs">
+                {views} <span className="hidden md:inline">Dilihat</span>
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </div>

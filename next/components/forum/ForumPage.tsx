@@ -19,6 +19,7 @@ import ForumCardSkeleton from "./ForumCardSkeleton";
 import Image from "next/image";
 import { ForumPost } from "./MockData";
 import { ForumConverter, ForumQuery } from "./ForumQueryUtils";
+import Link from "next/link";
 
 const ForumPage = () => {
   const [currentPage, setCurrentPage] = React.useState(1);
@@ -128,10 +129,12 @@ const ForumPage = () => {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
-                <Button variant="default" className="gap-2 shadow-lg">
-                  <IconPlus size={16} />
-                  Buat postingan
-                </Button>
+                <Link href="/forum/new-post">
+                  <Button variant="default" className="gap-2 shadow-lg">
+                    <IconPlus size={16} />
+                    Buat postingan
+                  </Button>
+                </Link>
               </form>
             </div>
 
@@ -180,7 +183,7 @@ const ForumPage = () => {
                 </div>
               )}
             </div>
-           
+
             <Pagination className="my-8">
               <PaginationContent>
                 <PaginationItem>
