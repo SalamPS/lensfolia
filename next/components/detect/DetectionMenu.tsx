@@ -240,7 +240,7 @@ export default function DetectionMenu() {
           <div className="flex animate-pulse flex-col items-center justify-center text-lg font-bold text-white">
             <IconUpload size={40} />
             <p className="mt-4">Drop it like it{"'"}s hot</p>
-          </div>
+          </div>  
         </div>
       </div>
       {!capturedFile ? (

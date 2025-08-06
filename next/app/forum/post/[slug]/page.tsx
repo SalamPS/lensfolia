@@ -1,5 +1,6 @@
 import { PostContextProvider } from "@/components/forum/PostContext";
 import PostPage from "@/components/forum/PostPage";
+import Navbar from "@/components/home/Navbar";
 
 export default async function Page({
   params,
@@ -14,6 +15,7 @@ export default async function Page({
 const PostWithContext = ({slug}: {slug: string}) => {
   return (
     <PostContextProvider>
+      <Navbar />
       <PostPage slug={slug} />
     </PostContextProvider>
   );

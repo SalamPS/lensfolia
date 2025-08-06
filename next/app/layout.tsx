@@ -30,7 +30,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${inter.variable} ${geistMono.variable} scroll-smooth antialiased`}
+      className={`${inter.variable} ${geistMono.variable} text-foreground scroll-smooth antialiased`}
     >
       <body>
         <ThemeProvider
