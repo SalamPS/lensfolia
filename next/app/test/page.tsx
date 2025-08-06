@@ -2,12 +2,10 @@
 
 import { OfflineTest } from "@/components/pwa/OfflineTest";
 import { ServiceWorkerDebug } from "@/components/pwa/ServiceWorkerDebug";
-import { LangGraphTestBox } from "@/components/lang/Tester";
+import { LangGraphTestBox } from "@/components/lang/LangGraphTestBox";
 import Navbar from "@/components/home/Navbar";
 
 export default function App() {
-  
-
   return (
     <div>
       <Navbar/>
