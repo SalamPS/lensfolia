@@ -12,10 +12,14 @@ declare global {
   }
 }
 
-declare const self: ServiceWorkerGlobalScope;
+declare const self: ServiceWorkerGlobalScope & {
+  __WB_DISABLE_DEV_LOGS: boolean;
+};
 
 // Detect environment
 const isDevelopment = self.location.hostname === 'localhost' || self.location.hostname === '127.0.0.1';
+
+if (isDevelopment) self.__WB_DISABLE_DEV_LOGS = true;
 
 // Enhanced runtime caching for better offline support
 const customRuntimeCaching: RuntimeCaching[] = [
