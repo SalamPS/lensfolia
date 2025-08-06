@@ -27,9 +27,17 @@ import { ProductRecommendation } from "./ProductRecommendation";
 import { AskAI } from "./AskAI";
 import { supabase } from "@/lib/supabase";
 import { LFD_, LFDProduct_, LFDResult_, } from "../types/diagnoseResult";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function LFDResultPage({detId}: {detId?: string}) {
   const [result, setResult] = React.useState<LFD_ | null>(null);
+  const [bookmarked, setBookmarked] = React.useState(false);
+  const [api, setApi] = React.useState<CarouselApi>();
+  const [currentDisease, setCurrentDisease] = React.useState<LFDResult_ | null>(null);
+  const [current, setCurrent] = React.useState(0);
+  const [count, setCount] = React.useState(0);
+  const {user, anonUser} = useAuth();
+  const router = useRouter();
 
   React.useEffect(() => {
     (async () => {
@@ -67,20 +75,33 @@ export default function LFDResultPage({detId}: {detId?: string}) {
             }
           })
         );
-        
-        console.log(res_clone)
         setResult(res_clone);
       }
     })();
   }, []);
 
-
-  const router = useRouter();
-  const [bookmarked, setBookmarked] = React.useState(false);
-  const [api, setApi] = React.useState<CarouselApi>();
-  const [currentDisease, setCurrentDisease] = React.useState<LFDResult_ | null>(null);
-  const [current, setCurrent] = React.useState(0);
-  const [count, setCount] = React.useState(0);
+  React.useEffect(() => {
+    (async () => {
+      if (result && !result.created_by && user && anonUser) {
+        const res = await supabase
+          .from("diagnoses")
+          .update({ 
+            created_by: user.id,
+            id_anon: null,
+            is_public: false,
+            is_bookmark: true,
+          })
+          .eq("id", result.id)
+          .eq("id_anon", anonUser.id);
+        if (res.error) {
+          console.error("Error updating diagnosis:", res.error);
+        }
+        else {
+          setBookmarked(true);
+        }
+      }
+    })();
+  }, [user, anonUser, result]);
 
   React.useEffect(() => {
     if (!api) {

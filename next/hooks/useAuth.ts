@@ -19,28 +19,28 @@ export function useAuth() {
   useEffect(() => {
     // Get initial session
     const getSession = async () => {
+      const currentTime = new Date().getTime()
+      const anonRaw = sessionStorage.getItem('user')
+      let anon: anonUser_
+      if (anonRaw) {
+        anon = JSON.parse(anonRaw) as anonUser_
+        if (anon.expired < currentTime) {
+          sessionStorage.removeItem('user')
+        }
+      } else {
+        anon = {
+          // id: uuidv4(),
+          id: "966ee02e-857f-41b4-b3e0-d55408a9ca01",
+          anon: true,
+          expired: new Date().getTime() + 60 * 60 * 1000
+        }
+        sessionStorage.setItem('user', JSON.stringify(anon))
+      }
       const { data: { session } } = await supabase.auth.getSession()
       if (session?.user) {
         setUser(session.user)
-        setAnonUser(null)
-        sessionStorage.removeItem('user')
       }
-      else {
-        const anonRaw = sessionStorage.getItem('user')
-        let anon: anonUser_
-        if (anonRaw) {
-          anon = JSON.parse(anonRaw)
-        } else {
-          anon = {
-            id: uuidv4(),
-            anon: true,
-            expired: new Date().getTime() + 10 * 60 * 1000
-          }
-          sessionStorage.setItem('user', JSON.stringify(anon))
-        }
-        setAnonUser(anon)
-        setUser(null)
-      }
+      setAnonUser(anon)
       setLoading(false)
     }
 
