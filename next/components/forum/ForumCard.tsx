@@ -215,10 +215,11 @@ const ForumCard = ({
   };
 
   const goToPostHandler = async (cid?: string) => {
-    const { error } = await supabase
-      .from('forums')
-      .update({ views: views + 1 })
-      .eq('id', id);
+    const { error } = await supabase.rpc('insert_if_not_exists_forums_views', {
+      forum_id: id,
+      user_id: user?.id || null,
+      anon_id: null
+    });
     if (error) {
       console.error("Error updating views:", error);
       return;

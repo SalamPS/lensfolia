@@ -44,6 +44,7 @@ export const ForumQuery = async () => {
 		),
 		diagnoses(*),
 		rating(*),
+		forums_views(*),
 		forums_discussions(*,
 			rating(*),
 			forums_comments(*,
@@ -65,6 +66,7 @@ export const ForumDetailQuery = async (id:string) => {
 		),
 		diagnoses(*),
 		rating(*),
+		forums_views(*),
 		forums_discussions(*,
 			user_profiles (
 				id,
@@ -116,6 +118,7 @@ export const ForumCommentConverter = (post: any): Comment[] => {
 }
 
 export const ForumConverter = (post: any):ForumPost => {
+	console.log("Post data:", post);
 	return {
 		id: post.id,
 		title: post.content,
@@ -128,7 +131,7 @@ export const ForumConverter = (post: any):ForumPost => {
 		tags: post.tags,
 		imageUrl: post.media_url,
 		comments: post.forums_discussions.map((discussion: any) => (discussion.id)),
-		views: post.views,
+		views: post.forums_views.length,
 		upvotes: post.rating.filter((rating: any) => rating.is_upvote === true).map((rating: any) => rating?.created_by),
 		downvotes: post.rating.filter((rating: any) => rating.is_upvote === false).map((rating: any) => rating?.created_by),
 		nullvotes: post.rating.filter((rating: any) => rating.is_upvote === null).map((rating: any) => rating?.created_by),
