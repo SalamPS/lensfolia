@@ -85,7 +85,7 @@ export default function RootLayout({
           {children}
         </ThemeProvider>
         <PWAInstaller />
-        <PWAStatus />
+        {/* <PWAStatus /> */}
       </body>
     </html>
   );

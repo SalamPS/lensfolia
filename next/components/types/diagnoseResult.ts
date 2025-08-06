@@ -28,15 +28,23 @@ export type LFDResultEncyclopedia_ = {
 	content: string;
 }
 
+export type LFDDisease_ = {
+	base64_image: string;
+	confidence: number;
+	label: string;
+}
+
 export type LFDResult_ = {
 	id: string;
 	created_at: Date;
 	created_by: string;
 	score: number;
-	image_url: string;
+	annotated_image: string;
 	overview: string;
 	treatment: string;
-	recommend: string;
+	recommendations: string;
+	list_of_diseases: LFDDisease_[];
+	cropped_images: string;
 	ai_bubble: string[];
 	products: string[];
 	product_list: LFDProduct_[];

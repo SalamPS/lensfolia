@@ -28,12 +28,12 @@ import { AskAI } from "./AskAI";
 import { supabase } from "@/lib/supabase";
 import { LFD_, LFDProduct_, LFDResult_, } from "../types/diagnoseResult";
 import { useAuth } from "@/hooks/useAuth";
+import ReactMarkdown from "react-markdown";
 
 export default function LFDResultPage({detId}: {detId?: string}) {
   const [result, setResult] = React.useState<LFD_ | null>(null);
   const [bookmarked, setBookmarked] = React.useState(false);
   const [api, setApi] = React.useState<CarouselApi>();
-  const [currentDisease, setCurrentDisease] = React.useState<LFDResult_ | null>(null);
   const [current, setCurrent] = React.useState(0);
   const [count, setCount] = React.useState(0);
   const {user, anonUser} = useAuth();
@@ -59,6 +59,8 @@ export default function LFDResultPage({detId}: {detId?: string}) {
       }
       else {
         const res_clone:LFD_ = res.data;
+        const parsedDiseases = JSON.parse(res.data.diagnoses_result[0].cropped_images);
+        res_clone.diagnoses_result[0].list_of_diseases = parsedDiseases;
         
         // Gunakan Promise.all untuk menunggu semua query produk selesai
         await Promise.all(
@@ -116,12 +118,6 @@ export default function LFDResultPage({detId}: {detId?: string}) {
     });
   }, [api]);
 
-  React.useEffect(() => {
-    if (result && result.diagnoses_result.length > 0) {
-      setCurrentDisease(result.diagnoses_result[current - 1]);
-    }
-  }, [current, result]);
-
   const handleBookmark = () => {
     setBookmarked(!bookmarked);
   };
@@ -147,7 +143,7 @@ export default function LFDResultPage({detId}: {detId?: string}) {
           </div>
           <div className="border-border bg-card flex flex-col items-center justify-center gap-1 overflow-hidden rounded-lg border-[1px] p-2 sm:rounded-[20px] sm:p-4">
             <img
-              src={result?.image_url || "/placeholder.svg"}
+              src={result?.diagnoses_result[0].annotated_image || "/placeholder.svg"}
               alt="Captured Image"
               className="w-full max-w-xs rounded-md object-cover sm:max-w-md"
             />
@@ -169,34 +165,33 @@ export default function LFDResultPage({detId}: {detId?: string}) {
           )}
         </h1>
 
-        {result?.diagnoses_result.length ? (
+        {result?.diagnoses_result[0]?.list_of_diseases.length ? (
           <div className="my-14">
             <div className="flex justify-center px-4">
               <Carousel setApi={setApi} className="w-fit max-w-[350px]">
                 <CarouselContent>
-                  {result.diagnoses_result.map((disease, index) => (
+                  {result.diagnoses_result[0]?.list_of_diseases.map((disease, index) => (
                     <CarouselItem key={index}>
                       <Card className="border-border w-full">
                         <CardContent className="flex flex-col items-center justify-center">
                           <img
-                            src={disease.image_url || "/placeholder.svg"}
-                            alt={disease.encyclopedia?.name || "Disease Image"}
+                            src={disease.base64_image || "/placeholder.svg"}
+                            alt={disease.label || "Disease Image"}
                             className="mb-4 aspect-[4/3] min-h-[200px] w-full rounded-md object-cover"
                           />
                           <h2 className="my-2 text-lg font-semibold">
-                            {disease.encyclopedia?.name ||
-                              "Penyakit Tidak Diketahui"}
+                            {disease.label || "Penyakit Tidak Diketahui"}
                           </h2>
                           <p
                             className={`text-foreground mt-1 mb-2 rounded-full border-[1px] p-2 px-4 text-xs font-semibold ${
-                              disease.score > 0.8
+                              disease.confidence > 80
                                 ? "bg-primary/30 border-primary"
-                                : disease.score > 0.5
+                                : disease.confidence > 50
                                   ? "border-[#FF8904] bg-[#FF8904]/30"
                                   : "bg-destructive/30 border-destructive"
                             }`}
                           >
-                            Tingkat Keyakinan: {Math.round(disease.score * 100)}
+                            Tingkat Keyakinan: {Math.round(disease.confidence/100 * 100)}
                             %
                           </p>
                         </CardContent>
@@ -255,12 +250,12 @@ export default function LFDResultPage({detId}: {detId?: string}) {
         >
           <h2 className="text-foreground mb-4 text-center text-2xl font-semibold">
             Pembahasan Terkait{" "}
-            {currentDisease?.encyclopedia?.name || "Penyakit Tanaman"}
+            {result?.diagnoses_result[0]?.encyclopedia?.name || "Penyakit Tanaman"}
           </h2>
           <Discussion
             title="Overview"
             description={
-              currentDisease?.overview || "Tidak ada overview yang tersedia."
+              result?.diagnoses_result[0]?.overview || "Tidak ada overview yang tersedia."
             }
           >
             <IconClipboardText className="text-primary" size={24} />
@@ -268,7 +263,7 @@ export default function LFDResultPage({detId}: {detId?: string}) {
           <Discussion
             title="Perawatan"
             description={
-              currentDisease?.treatment ||
+              result?.diagnoses_result[0]?.treatment ||
               "Tidak ada rekomendasi yang tersedia."
             }
           >
@@ -277,21 +272,21 @@ export default function LFDResultPage({detId}: {detId?: string}) {
           <Discussion
             title="Rekomendasi"
             description={
-              currentDisease?.recommend ||
+              result?.diagnoses_result[0]?.recommendations ||
               "Tidak ada catatan penting yang tersedia."
             }
           >
             <IconThumbUp className="text-[#FB7185]" size={24} />
           </Discussion>
-          {currentDisease?.product_list && (
-            <ProductRecommendation products={currentDisease.product_list} />
+          {result?.diagnoses_result[0]?.product_list && (
+            <ProductRecommendation products={result?.diagnoses_result[0].product_list} />
           )}
           <p className="text-muted-foreground px-6 text-sm">
             *Catatan: Informasi ini hanya sebagai referensi. Untuk penanganan
             lebih lanjut, konsultasikan dengan ahli pertanian atau dokter
             tanaman.
           </p>
-          <AskAI disease={currentDisease} />
+          <AskAI disease={result?.diagnoses_result[0]} />
         </div>
       </section>
     </LFDWrapper>
@@ -317,7 +312,9 @@ const Discussion: React.FC<DiscussionProps> = ({
         </div>
         <h3 className="text-lg font-semibold text-foreground">{title}</h3>
       </div>
-      <p className="text-muted-foreground">{description}</p>
+      <div className="text-muted-foreground">
+        <ReactMarkdown>{description}</ReactMarkdown>
+      </div>
     </div>
   );
 };

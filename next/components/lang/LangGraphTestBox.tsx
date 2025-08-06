@@ -1,14 +1,17 @@
 /* eslint-disable @next/next/no-img-element */
 import { useStream } from "@langchain/langgraph-sdk/react";
 import type { Message } from "@langchain/langgraph-sdk";
+import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
 
 export function LangGraphTestBox () {
+	const {user} = useAuth();
+
 	const thread = useStream<{ 
     messages: Message[];
     image_url: string;
     diagnoses_ref: string;
+		created_by: string;
    }>({
     apiUrl: "https://jay-fit-safely.ngrok-free.app/",
     assistantId: "agent",
@@ -23,15 +26,7 @@ export function LangGraphTestBox () {
   const [image, setImage] = useState<string | null>(null);
   useEffect(() => {
     (async () => {
-      const response = await supabase
-        .from("test_diagnosis_results")
-        .select("annotated_image")
-        .eq("id", "63c83253-e966-4b64-a9f1-cc3f5b5b6cd0")
-        .single();
-      if (response.data) {
-        const base64Image = response.data.annotated_image;
-        setImage(base64Image);
-      }
+			setImage("https://ucofsfjumfhpuhnptaro.supabase.co/storage/v1/object/public/image-plant/uploads/1754496896731-ejiocaylkm.jpg")
     })();
   }, []);
 	
@@ -45,7 +40,7 @@ export function LangGraphTestBox () {
 					<img src={image} alt="Annotated result" style={{ maxWidth: "100%", height: "auto" }} />
 				</div>
 			)}
-			<div>
+			<div className="mt-4">
 				{thread.messages.map((message) => (
 					<div key={message.id}>{message.content as string}</div>
 				))}
@@ -67,10 +62,15 @@ export function LangGraphTestBox () {
 							id: Date.now().toString(),
 						},
 					];
+					const submitData ={
+						image_url: image || "",
+						diagnoses_ref: "d54e907f-63aa-47e3-a08e-4db19fd75c7a",
+						created_by: user?.id || "anonymous",
+					}
+					console.log("New messages:", submitData);
 					thread.submit({
+						...submitData,
 						messages: newMessages,
-						image_url: "https://plantvillage-production-new.s3.amazonaws.com/image/99416/file/default-eb4701036f717c99bf95001c1a8f7b40.jpg",
-						diagnoses_ref: "32af0ef8-bd5d-4074-8733-99d5f393910d",
 					});
 					}}
 				>
