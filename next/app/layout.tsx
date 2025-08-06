@@ -4,7 +4,7 @@ import { ThemeProvider } from "@/components/ui/theme-provider";
 import { Inter, Geist_Mono } from "next/font/google";
 import PWAInstaller from "@/components/pwa/PWAInstaller";
 import OfflineIndicator from "@/components/pwa/OfflineIndicator";
-// import PWAStatus from "@/components/pwa/PWAStatus";
+import PWAStatus from "@/components/pwa/PWAStatus";
 
 const APP_NAME = "LensFolia";
 const APP_DEFAULT_TITLE = "LensFolia - Deteksi Penyakit Tanaman";
@@ -85,7 +85,7 @@ export default function RootLayout({
           {children}
         </ThemeProvider>
         <PWAInstaller />
-        {/* <PWAStatus /> */}
+        <PWAStatus />
       </body>
     </html>
   );

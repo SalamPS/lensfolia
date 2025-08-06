@@ -116,7 +116,7 @@ export function ServiceWorkerDebug() {
       <h2 className="text-2xl font-bold mb-6">Service Worker Debug Panel</h2>
       
       {/* Service Worker Status */}
-      <div className="bg-white p-4 rounded-lg shadow mb-6">
+      <div className="bg-background p-4 rounded-lg shadow mb-6">
         <h3 className="font-semibold mb-2">Service Worker Status</h3>
         <p className={`font-mono text-sm ${swStatus.includes('✅') ? 'text-green-600' : 'text-red-600'}`}>
           {swStatus}
@@ -124,14 +124,14 @@ export function ServiceWorkerDebug() {
       </div>
 
       {/* Cache Information */}
-      <div className="bg-white p-4 rounded-lg shadow mb-6">
+      <div className="bg-background p-4 rounded-lg shadow mb-6">
         <h3 className="font-semibold mb-2">Cache Information</h3>
         {cacheInfo.length === 0 ? (
           <p className="text-gray-500">No caches found</p>
         ) : (
           <div className="space-y-3">
             {cacheInfo.map((cache, index) => (
-              <div key={index} className="border-l-4 border-blue-500 pl-4">
+              <div key={index} className="border-l-4 border-blue-800 pl-4">
                 <h4 className="font-medium">{cache.name}</h4>
                 <p className="text-sm text-gray-600">Items: {cache.size}</p>
                 <details className="mt-2">
@@ -168,7 +168,7 @@ export function ServiceWorkerDebug() {
       </div>
 
       {/* Test Section */}
-      <div className="bg-yellow-50 p-4 rounded-lg shadow mb-6">
+      <div className="bg-background p-4 rounded-lg shadow mb-6">
         <h3 className="font-semibold mb-2">Offline Test</h3>
         <p className="text-sm text-gray-700 mb-3">
           To test offline functionality: Make sure caches are populated, then turn off internet and reload.
@@ -179,7 +179,7 @@ export function ServiceWorkerDebug() {
       </div>
 
       {/* Logs */}
-      <div className="bg-gray-50 p-4 rounded-lg">
+      <div className="bg-background p-4 rounded-lg">
         <div className="flex justify-between items-center mb-2">
           <h3 className="font-semibold">Debug Logs</h3>
           <Button 
@@ -196,7 +196,7 @@ export function ServiceWorkerDebug() {
             <p className="text-gray-500 text-sm">No logs yet</p>
           ) : (
             swLogs.map((log, index) => (
-              <div key={index} className="text-sm font-mono bg-white p-2 rounded">
+              <div key={index} className="text-sm font-mono bg-background p-2 rounded">
                 [{new Date().toLocaleTimeString()}] {log}
               </div>
             ))

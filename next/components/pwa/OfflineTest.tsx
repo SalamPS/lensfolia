@@ -99,7 +99,7 @@ export function OfflineTest() {
         </Button>
       </div>
 
-      <div className="bg-gray-50 p-4 rounded-lg">
+      <div className="bg-background p-4 rounded-lg">
         <h3 className="font-semibold mb-2">Test Results:</h3>
         {testResults.length === 0 ? (
           <p className="text-gray-500">No tests run yet</p>
