@@ -1,6 +1,12 @@
-const CACHE_NAME = 'lensfolia-v2';
-const STATIC_CACHE = 'lensfolia-static-v2';
-const PAGES_CACHE = 'lensfolia-pages-v2';
+const CACHE_NAME = 'lensfolia-v4';
+const STATIC_CACHE = 'lensfolia-static-v4';
+const PAGES_CACHE = 'lensfolia-pages-v4';
+
+// Check if we're in development mode
+const isDevelopment = self.location.hostname === 'localhost' || 
+                     self.location.hostname.includes('127.0.0.1') ||
+                     self.location.port === '3000' ||
+                     self.location.port === '3001';
 
 // Static assets to cache immediately
 const staticAssets = [
@@ -25,23 +31,34 @@ const importantPages = [
 
 // Install service worker and cache resources
 self.addEventListener('install', (event) => {
-  console.log('Service Worker installing...');
-  event.waitUntil(
-    Promise.all([
-      // Cache static assets
-      caches.open(STATIC_CACHE).then((cache) => {
-        console.log('Caching static assets');
-        return cache.addAll(staticAssets);
-      }),
-      // Pre-cache important pages
+  console.log('Service Worker installing...', isDevelopment ? '(Development Mode)' : '(Production Mode)');
+  
+  if (isDevelopment) {
+    // In development, cache less aggressively
+    event.waitUntil(
       caches.open(PAGES_CACHE).then(async (cache) => {
-        console.log('Pre-caching important pages');
-        // Cache offline page immediately
+        console.log('Pre-caching offline page only (dev mode)');
         await cache.add('/offline');
-        // Note: Home and encyclopedia will be cached on first visit
-      }),
-    ])
-  );
+      })
+    );
+  } else {
+    // In production, cache everything
+    event.waitUntil(
+      Promise.all([
+        // Cache static assets
+        caches.open(STATIC_CACHE).then((cache) => {
+          console.log('Caching static assets');
+          return cache.addAll(staticAssets);
+        }),
+        // Pre-cache important pages
+        caches.open(PAGES_CACHE).then(async (cache) => {
+          console.log('Pre-caching important pages');
+          await cache.add('/offline');
+        }),
+      ])
+    );
+  }
+  
   // Force activation of new service worker
   self.skipWaiting();
 });
@@ -49,19 +66,38 @@ self.addEventListener('install', (event) => {
 // Fetch event - serve from cache when offline
 self.addEventListener('fetch', (event) => {
   const { request } = event;
+  const url = new URL(request.url);
+
+  // Skip non-http(s) requests
+  if (!url.protocol.startsWith('http')) {
+    return;
+  }
+
+  // Skip chrome-extension and other non-standard protocols
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    return;
+  }
+
+  // Skip Next.js internal requests during development
+  if (url.pathname.startsWith('/_next/webpack-hmr') || 
+      url.pathname.startsWith('/_next/static/webpack/') ||
+      url.search.includes('_rsc') ||
+      url.pathname.includes('__nextjs_launch-editor')) {
+    return;
+  }
 
   // Handle different types of requests
   if (request.destination === 'document') {
     // For HTML pages
     event.respondWith(handlePageRequest(request));
   } else if (request.destination === 'script' || request.destination === 'style') {
-    // For JS/CSS assets - cache first strategy
+    // For JS/CSS assets - be more careful in dev mode
     event.respondWith(handleAssetRequest(request));
   } else if (request.destination === 'image') {
     // For images - cache first strategy
     event.respondWith(handleImageRequest(request));
   } else {
-    // For other requests - network first with cache fallback
+    // For other requests (API calls, fonts, etc.) - network first with cache fallback
     event.respondWith(handleOtherRequest(request));
   }
 });
@@ -70,7 +106,36 @@ self.addEventListener('fetch', (event) => {
 async function handlePageRequest(request) {
   const url = new URL(request.url);
   
-  // For important pages, use stale-while-revalidate strategy
+  // In development mode, always prioritize network
+  if (url.hostname === 'localhost' || url.hostname.includes('127.0.0.1')) {
+    try {
+      const networkResponse = await fetch(request);
+      
+      // Cache successful responses for offline fallback
+      if (networkResponse.status === 200 && importantPages.includes(url.pathname)) {
+        const cache = await caches.open(PAGES_CACHE);
+        cache.put(request, networkResponse.clone());
+      }
+      
+      return networkResponse;
+    } catch {
+      // Fallback to cache only if network completely fails
+      if (importantPages.includes(url.pathname)) {
+        const cache = await caches.open(PAGES_CACHE);
+        const cachedResponse = await cache.match(request);
+        if (cachedResponse) {
+          console.log('Serving from cache (network failed):', url.pathname);
+          return cachedResponse;
+        }
+      }
+      
+      // Show offline page
+      const cache = await caches.open(PAGES_CACHE);
+      return await cache.match('/offline') || new Response('Offline', { status: 503 });
+    }
+  }
+  
+  // For production, use stale-while-revalidate strategy
   if (importantPages.includes(url.pathname)) {
     try {
       // Try to get from cache first
@@ -123,6 +188,33 @@ async function handlePageRequest(request) {
 
 // Handle asset requests (JS/CSS)
 async function handleAssetRequest(request) {
+  const url = new URL(request.url);
+  
+  // In development mode, always prioritize network for CSS/JS
+  // to avoid FOUC and ensure HMR works
+  if (url.hostname === 'localhost' || url.hostname.includes('127.0.0.1')) {
+    try {
+      // Network first for development
+      const networkResponse = await fetch(request);
+      
+      // Only cache successful responses that are not dev-specific
+      if (networkResponse.status === 200 && 
+          !url.pathname.includes('webpack') && 
+          !url.pathname.includes('hmr')) {
+        const cache = await caches.open(STATIC_CACHE);
+        cache.put(request, networkResponse.clone());
+      }
+      
+      return networkResponse;
+    } catch {
+      // Fallback to cache if network fails
+      const cache = await caches.open(STATIC_CACHE);
+      const cachedResponse = await cache.match(request);
+      return cachedResponse || new Response('Asset not available', { status: 503 });
+    }
+  }
+  
+  // For production, cache first
   const cache = await caches.open(STATIC_CACHE);
   const cachedResponse = await cache.match(request);
   
@@ -168,6 +260,32 @@ async function handleImageRequest(request) {
 
 // Handle other requests (API calls, etc.)
 async function handleOtherRequest(request) {
+  const url = new URL(request.url);
+  
+  // Allow external API calls (Supabase, GitHub avatars, etc.)
+  const allowedDomains = [
+    'ucofsfjumfhpuhnptaro.supabase.co',
+    'avatars.githubusercontent.com',
+		'lh3.googleusercontent.com',
+    'a-z-animals.com',
+    's3.amazonaws.com',
+    'tse2.mm.bing.net'
+  ];
+  
+  // If it's an external API call to allowed domains, pass through
+  if (allowedDomains.some(domain => url.hostname.includes(domain))) {
+    try {
+      return await fetch(request);
+    } catch (error) {
+      console.log('External API call failed:', url.href, error);
+      return new Response(JSON.stringify({ error: 'Service unavailable' }), { 
+        status: 503,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+  }
+  
+  // For other requests, try cache first then network
   try {
     return await fetch(request);
   } catch {

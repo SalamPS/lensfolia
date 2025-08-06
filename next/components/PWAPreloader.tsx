@@ -8,6 +8,15 @@ export default function PWAPreloader() {
     const preloadPages = async () => {
       if ('serviceWorker' in navigator && 'caches' in window) {
         try {
+          // Check if we're in development
+          const isDevelopment = window.location.hostname === 'localhost' || 
+                               window.location.hostname.includes('127.0.0.1');
+          
+          if (isDevelopment) {
+            console.log('Skipping aggressive pre-caching in development mode');
+            return;
+          }
+          
           // Wait for service worker to be ready
           const registration = await navigator.serviceWorker.ready;
           
@@ -16,7 +25,7 @@ export default function PWAPreloader() {
             
             // Force cache important pages
             const pagesToCache = ['/', '/encyclopedia'];
-            const cache = await caches.open('lensfolia-pages-v2');
+            const cache = await caches.open('lensfolia-pages-v4');
             
             for (const page of pagesToCache) {
               try {
@@ -36,7 +45,7 @@ export default function PWAPreloader() {
     };
 
     // Run preloading after a short delay to not block initial render
-    const timer = setTimeout(preloadPages, 1000);
+    const timer = setTimeout(preloadPages, 2000);
     
     return () => clearTimeout(timer);
   }, []);
