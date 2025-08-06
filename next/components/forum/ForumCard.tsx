@@ -74,7 +74,7 @@ const ForumCard = ({
   const [userVote, setUserVote] = useState<"up" | "down" | null>(null);
   const [userVoted, setUserVoted] = useState(false);
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, anonUser } = useAuth();
 
   useEffect(() => {
     if (user) {
@@ -219,7 +219,7 @@ const ForumCard = ({
     const { error } = await supabase.rpc('insert_if_not_exists_forums_views', {
       forum_id: id,
       user_id: user?.id || null,
-      anon_id: null
+      anon_id: anonUser?.id || null,
     });
     if (error) {
       console.error("Error updating views:", error);

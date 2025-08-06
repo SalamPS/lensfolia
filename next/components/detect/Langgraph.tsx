@@ -14,6 +14,7 @@ import { Button } from "../ui/button";
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 type LangGraphVisualProps = {
+	setUploadStatus: (status: string) => void;
 	setTrigger: (trigger: boolean) => void;
 	trigger: boolean;
 	diagnose_data: LFD_ | null;
@@ -24,7 +25,8 @@ export function LangGraphVisual ({
 	setTrigger,
 	trigger = false, 
 	diagnose_data, 
-	uploadStatus
+	uploadStatus,
+	setUploadStatus
 }: LangGraphVisualProps) {
 	// const thread = useStream<{ 
 	// 	messages: Message[];
@@ -58,6 +60,7 @@ export function LangGraphVisual ({
 	// 	}
 	// });
 
+	const [countdown, setCountdown] = useState(0);
 	const [processedSteps, setProcessedSteps] = useState<LGStep_[]>([]);
 	const [processedStatus, setProcessedStatus] = useState<string[]>(["loading"]);
 	const router = useRouter();
@@ -75,6 +78,7 @@ export function LangGraphVisual ({
 	}
 
 	useEffect(() => {
+		console.log("Status changed:", uploadStatus);
 		(async () => {
 			if (uploadStatus === "idle") {
 				setProcessedSteps([]);
@@ -127,7 +131,17 @@ export function LangGraphVisual ({
 					description: "Proses diagnosis selesai. Mengalihkan ke halaman hasil.",
 					icon: "check"
 				}]);
-				await delay(3000);
+				setCountdown(5);
+				const countdownInterval = setInterval(() => {
+					setCountdown(prev => {
+						if (prev <= 1) {
+							clearInterval(countdownInterval);
+							return 0;
+						}
+						return prev - 1;
+					});
+				}, 1000);	
+				await delay(5000);
 				statusHelper("success");
 				await delay(500);
 				router.push("/result/"+diagnose_data?.id);
@@ -135,6 +149,10 @@ export function LangGraphVisual ({
 		})()
 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [trigger, uploadStatus]);
+
+	useEffect(() => {
+
+	})
 
 	if (!trigger) {
 		return <></>;
@@ -199,31 +217,6 @@ export function LangGraphVisual ({
 							))}
 						</AnimatePresence>
 					</div>
-					{/* <div className="flex flex-col">
-						<div className="flex flex-col md:flex-row gap-4 mb-4">
-							<h2 className="text-2xl grow-0 font-bold">
-								{processedStatus.includes("error") ? "GAGAL MEMPROSES DIAGNOSIS" : "MEMPROSES DIAGNOSIS"}
-							</h2>
-							<div className="grow mt-2 bg-foreground/40 rounded-full h-4">
-								{processedStatus.includes("error") ? (
-									<div
-										className="bg-destructive/60 h-4 rounded-full transition-all duration-500 w-full"
-									/>
-								) : (
-									<div
-										className="bg-primary h-4 rounded-full transition-all duration-500"
-										style={{
-												width: `${((processedSteps.length / (LGSteps.length+4)) * 100)}%`,
-										}}
-									></div>
-								)}
-							</div>
-						</div>
-						{processedStatus.includes("error") 
-						&& <Button variant={"destructive"} className="w-full cursor-pointer" onClick={() => {setTrigger(false)}}>
-							Kembali
-						</Button>}
-					</div> */}
 				</div>
 			</motion.div>
 			<motion.div
@@ -248,7 +241,10 @@ export function LangGraphVisual ({
 					<div className="flex flex-col">
 						<div className="flex flex-col md:flex-row gap-4 mb-4">
 							<h2 className="text-2xl grow-0 font-bold">
-								{processedStatus.includes("error") ? "GAGAL MEMPROSES DIAGNOSIS" : "MEMPROSES DIAGNOSIS"}
+								{processedStatus.includes("error") 
+								? "GAGAL MEMPROSES DIAGNOSIS" 
+								: processedSteps.some(step => step.step === 'end') ? "DIAGNOSIS SELESAI" 
+								: "MEMPROSES DIAGNOSIS"}
 							</h2>
 							<div className="grow mt-2 bg-foreground/40 rounded-full h-4">
 								{processedStatus.includes("error") ? (
@@ -268,10 +264,18 @@ export function LangGraphVisual ({
 						{processedStatus.includes("error") 
 						&& <Button variant={"destructive"} className="w-full rounded-2xl py-2" onClick={() => {
 								setTrigger(false);
+								setUploadStatus("idle");
 								setProcessedSteps([]);
 								setProcessedStatus(["loading"]);
 							}}>
 							Kembali
+						</Button>}
+						{processedSteps.some(step => step.step === 'end') 
+						&& <Button className="w-full rounded-2xl py-2 text-black font-semibold" onClick={async () => {
+								await delay(500);
+								router.push("/result/"+diagnose_data?.id);
+							}}>
+							Lanjut {`( ${countdown} )`}
 						</Button>}
 					</div>
 				</div>

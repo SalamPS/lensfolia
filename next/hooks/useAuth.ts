@@ -3,16 +3,44 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { User } from '@supabase/supabase-js'
+import { v4 as uuidv4 } from 'uuid'
+
+export type anonUser_ = {
+  id: string
+  anon: boolean
+  expired: number
+}
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null)
+  const [anonUser, setAnonUser] = useState<anonUser_ | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     // Get initial session
     const getSession = async () => {
       const { data: { session } } = await supabase.auth.getSession()
-      setUser(session?.user ?? null)
+      if (session?.user) {
+        setUser(session.user)
+        setAnonUser(null)
+        sessionStorage.removeItem('user')
+      }
+      else {
+        const anonRaw = sessionStorage.getItem('user')
+        let anon: anonUser_
+        if (anonRaw) {
+          anon = JSON.parse(anonRaw)
+        } else {
+          anon = {
+            id: uuidv4(),
+            anon: true,
+            expired: new Date().getTime() + 10 * 60 * 1000
+          }
+          sessionStorage.setItem('user', JSON.stringify(anon))
+        }
+        setAnonUser(anon)
+        setUser(null)
+      }
       setLoading(false)
     }
 
@@ -67,6 +95,7 @@ export function useAuth() {
   }
 
   return {
+    anonUser,
     user,
     loading,
     signInWithProvider,
