@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect } from "react";
+import React, { useContext, useEffect } from "react";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,18 +14,23 @@ import CommentItem from "./CommentItem";
 import { ForumCommentConverter, ForumConverter, ForumDetailQuery } from "./ForumQueryUtils";
 import { Comment, ForumPost } from "./MockData";
 import { notFound } from "next/navigation";
+import { PostContext } from "./PostContext";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/lib/supabase";
 
 const PostPage = ({slug}: {slug:string}) => {
-
   const [post, setPost] = React.useState<ForumPost | null>(null);
   const [comments, setComments] = React.useState<Comment[]>([]);
   const [commentContent, setCommentContent] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(true);
-  
+  const { refresh, setRefresh } = useContext(PostContext);
+  const { user } = useAuth();
+
   useEffect(() => {
     (async () => {
       const response = await ForumDetailQuery(slug.split("#")[0]);
       if (!response) {
+        setIsLoading(false);
         return
       }
       const response_post = ForumConverter(response[0]);
@@ -34,7 +39,31 @@ const PostPage = ({slug}: {slug:string}) => {
       setComments(response_comments);
       setIsLoading(false);
     })();
-  }, [slug]);
+  }, [refresh, slug]);
+  
+  const handleCommentSubmit = async () => {
+    if (!user) {
+      alert("Please log in to reply.");
+      return;
+    }
+    if (!post) {
+      console.error("Post not found");
+      return;
+    }
+    const submitted = await supabase
+      .from("forums_discussions")
+      .insert({
+        content: commentContent,
+        media_url: null,
+        forums_ref: post.id,
+      });
+    if (submitted.error) {
+      console.error("Error submitting reply:", submitted.error);
+      return;
+    }
+    setRefresh((prev) => prev + 1);
+    setCommentContent("");
+  };
 
   if (!isLoading && !post) return notFound();
 
@@ -103,7 +132,7 @@ const PostPage = ({slug}: {slug:string}) => {
             onChange={(e) => setCommentContent(e.target.value)}
           />
           <div className="flex justify-end">
-            <Button>Kirim</Button>
+            <Button onClick={handleCommentSubmit}>Kirim</Button>
           </div>
         </div>
 

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useContext } from "react";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,9 +9,10 @@ import {
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { PostgrestSingleResponse } from "@supabase/supabase-js";
+import { PostContext } from "./PostContext";
 
 interface CommentItemProps {
-  isReply?: boolean;
+  isReply?: string;
   id: string;
   author: string;
   authorId: string;
@@ -25,7 +26,7 @@ interface CommentItemProps {
 }
 
 const CommentItem = ({
-  isReply = false,
+  isReply = "",
   id,
   author,
   authorId,
@@ -45,6 +46,7 @@ const CommentItem = ({
     const [userVote, setUserVote] = React.useState<"up" | "down" | null>(null);
     const [userVoted, setUserVoted] = React.useState(false);
     const { user } = useAuth();
+    const { setRefresh } = useContext(PostContext);
 
     React.useEffect(() => {
       if (user) {
@@ -115,6 +117,7 @@ const CommentItem = ({
         return;
       }
       setUserVoted(true);
+      setRefresh((prev) => prev + 1);
     };
 
     const handleDownvote = async () => {
@@ -178,10 +181,26 @@ const CommentItem = ({
         return;
       }
       setUserVoted(true);
+      setRefresh((prev) => prev + 1);
     };
 
-    const handleReplySubmit = () => {
-      console.log(`Replying to comment ${id} with:`, replyContent);
+    const handleReplySubmit = async () => {
+      if (!user) {
+        alert("Please log in to reply.");
+        return;
+      }
+      const submitted = await supabase
+        .from("forums_comments")
+        .insert({
+          content: replyContent,
+          media_url: null,
+          discussions_ref: isReply || id,
+        });
+      if (submitted.error) {
+        console.error("Error submitting reply:", submitted.error);
+        return;
+      }
+      setRefresh((prev) => prev + 1);
       setReplyContent("");
       setShowReplyForm(false);
     };
@@ -259,7 +278,7 @@ const CommentItem = ({
           {replies.length > 0 && (
             <div className="mt-4 border-l-2 pl-4">
               {replies.map((reply) => (
-                <CommentItem key={reply.id} {...reply} isReply />
+                <CommentItem key={reply.id} {...reply} isReply={id} />
               ))}
             </div>
           )}

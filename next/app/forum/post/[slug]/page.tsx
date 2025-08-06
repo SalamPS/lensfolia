@@ -1,3 +1,4 @@
+import { PostContextProvider } from "@/components/forum/PostContext";
 import PostPage from "@/components/forum/PostPage";
 
 export default async function Page({
@@ -7,5 +8,13 @@ export default async function Page({
 }) {
   const resolvedParams = await params;
   const { slug } = resolvedParams;
-  return <PostPage slug={slug}/>;
+  return <PostWithContext slug={slug} />;
+}
+
+const PostWithContext = ({slug}: {slug: string}) => {
+  return (
+    <PostContextProvider>
+      <PostPage slug={slug} />
+    </PostContextProvider>
+  );
 }
