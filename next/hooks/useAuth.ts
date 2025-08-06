@@ -59,12 +59,18 @@ export function useAuth() {
 
   const signInWithProvider = async (provider: 'google' | 'github') => {
     try {
+      // Simpan URL halaman saat ini untuk redirect setelah login
+      const currentUrl = window.location.pathname + window.location.search
+      
       const response = await fetch('/api/v1/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ provider }),
+        body: JSON.stringify({ 
+          provider,
+          redirectUrl: currentUrl 
+        }),
       })
 
       const data = await response.json()
