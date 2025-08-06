@@ -1,6 +1,6 @@
-const CACHE_NAME = 'lensfolia-v3';
-const STATIC_CACHE = 'lensfolia-static-v3';
-const PAGES_CACHE = 'lensfolia-pages-v3';
+const CACHE_NAME = 'lensfolia-v2';
+const STATIC_CACHE = 'lensfolia-static-v2';
+const PAGES_CACHE = 'lensfolia-pages-v2';
 
 // Static assets to cache immediately
 const staticAssets = [
@@ -16,14 +16,6 @@ const staticAssets = [
   '/spotlight.svg',
 ];
 
-// CSS and JS patterns to cache
-const assetPatterns = [
-  /_next\/static\/css\/.*/,
-  /_next\/static\/chunks\/.*/,
-  /_next\/static\/js\/.*/,
-  /globals\.css/,
-];
-
 // Pages to pre-cache (will be cached when first visited)
 const importantPages = [
   '/',
@@ -33,30 +25,20 @@ const importantPages = [
 
 // Install service worker and cache resources
 self.addEventListener('install', (event) => {
-  // console.log('Service Worker installing...');
+  console.log('Service Worker installing...');
   event.waitUntil(
     Promise.all([
       // Cache static assets
       caches.open(STATIC_CACHE).then((cache) => {
-        // console.log('Caching static assets');
+        console.log('Caching static assets');
         return cache.addAll(staticAssets);
       }),
       // Pre-cache important pages
       caches.open(PAGES_CACHE).then(async (cache) => {
-        // console.log('Pre-caching important pages');
+        console.log('Pre-caching important pages');
         // Cache offline page immediately
         await cache.add('/offline');
         // Note: Home and encyclopedia will be cached on first visit
-      }),
-      // Pre-cache common CSS/JS patterns
-      caches.open(STATIC_CACHE).then(async () => {
-        try {
-          // Try to cache common Next.js assets
-          // console.log('Pre-caching Next.js assets');
-          // These will be attempted but may fail on first install - that's OK
-        } catch {
-          // console.log('Could not pre-cache Next.js assets (normal on first install)');
-        }
       }),
     ])
   );
@@ -67,15 +49,13 @@ self.addEventListener('install', (event) => {
 // Fetch event - serve from cache when offline
 self.addEventListener('fetch', (event) => {
   const { request } = event;
-  const url = new URL(request.url);
 
   // Handle different types of requests
   if (request.destination === 'document') {
     // For HTML pages
     event.respondWith(handlePageRequest(request));
-  } else if (request.destination === 'script' || request.destination === 'style' || 
-             assetPatterns.some(pattern => pattern.test(url.pathname))) {
-    // For JS/CSS assets - cache first strategy with aggressive caching
+  } else if (request.destination === 'script' || request.destination === 'style') {
+    // For JS/CSS assets - cache first strategy
     event.respondWith(handleAssetRequest(request));
   } else if (request.destination === 'image') {
     // For images - cache first strategy
@@ -107,9 +87,9 @@ async function handlePageRequest(request) {
       }).catch(() => null);
       
       // If we have cached version, return it immediately
-      // Update cache in background (fire and forget)
       if (cachedResponse) {
-        // console.log('Serving from cache:', url.pathname);
+        console.log('Serving from cache:', url.pathname);
+        // Update cache in background (fire and forget)
         networkPromise.catch(() => console.log('Background update failed'));
         return cachedResponse;
       }
@@ -123,9 +103,8 @@ async function handlePageRequest(request) {
       // Network failed and no cache, show offline page
       return await cache.match('/offline') || new Response('Offline', { status: 503 });
       
-    // } catch (error) {
-    } catch {
-      // console.log('Error handling page request:', error);
+    } catch (error) {
+      console.log('Error handling page request:', error);
       const cache = await caches.open(PAGES_CACHE);
       return await cache.match('/offline') || new Response('Offline', { status: 503 });
     }
@@ -142,39 +121,25 @@ async function handlePageRequest(request) {
   }
 }
 
-// Handle asset requests (JS/CSS) - More aggressive caching for Tailwind
+// Handle asset requests (JS/CSS)
 async function handleAssetRequest(request) {
   const cache = await caches.open(STATIC_CACHE);
-  const url = new URL(request.url);
-  
-  // For CSS and JS files, try cache first (aggressive caching)
   const cachedResponse = await cache.match(request);
   
   if (cachedResponse) {
-    // console.log('Serving asset from cache:', url.pathname);
     return cachedResponse;
   }
   
   try {
-    // console.log('Fetching and caching asset:', url.pathname);
     const networkResponse = await fetch(request);
     
     if (networkResponse.status === 200) {
-      // Clone and cache the response
-      const responseClone = networkResponse.clone();
-      
-      // Cache with long expiration for static assets
-      await cache.put(request, responseClone);
-      // console.log('Cached asset:', url.pathname);
+      cache.put(request, networkResponse.clone());
     }
     
     return networkResponse;
-  } catch (error) {
-    console.warn('Failed to fetch asset:', url.pathname, error);
-    return new Response('Asset not available offline', { 
-      status: 503,
-      headers: { 'Content-Type': 'text/plain' }
-    });
+  } catch {
+    return new Response('Asset not available offline', { status: 503 });
   }
 }
 
@@ -213,7 +178,7 @@ async function handleOtherRequest(request) {
 
 // Update service worker
 self.addEventListener('activate', (event) => {
-  // console.log('Service Worker activating...');
+  console.log('Service Worker activating...');
   const cacheWhitelist = [CACHE_NAME, STATIC_CACHE, PAGES_CACHE];
   event.waitUntil(
     Promise.all([
@@ -222,7 +187,7 @@ self.addEventListener('activate', (event) => {
         return Promise.all(
           cacheNames.map((cacheName) => {
             if (!cacheWhitelist.includes(cacheName)) {
-              // console.log('Deleting old cache:', cacheName);
+              console.log('Deleting old cache:', cacheName);
               return caches.delete(cacheName);
             }
           })
@@ -255,7 +220,7 @@ self.addEventListener('push', function (event) {
 });
 
 self.addEventListener('notificationclick', function (event) {
-  // console.log('Notification click received.');
+  console.log('Notification click received.');
   event.notification.close();
   event.waitUntil(
     clients.openWindow('/')
