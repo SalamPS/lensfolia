@@ -6,6 +6,8 @@ import { useStream } from "@langchain/langgraph-sdk/react";
 import type { Message } from "@langchain/langgraph-sdk";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { OfflineTest } from "@/components/pwa/OfflineTest";
+import { ServiceWorkerDebug } from "@/components/pwa/ServiceWorkerDebug";
 
 export default function App() {
   const thread = useStream<{ 
@@ -89,6 +91,14 @@ export default function App() {
           <button style={{backgroundColor: "#f00"}} type="submit">Send</button>
         )}
       </form>
+      
+      <div className="mt-8 border-t pt-8">
+        <ServiceWorkerDebug />
+      </div>
+      
+      <div className="mt-8 border-t pt-8">
+        <OfflineTest />
+      </div>
     </div>
   );
 }
