@@ -100,6 +100,7 @@ const CommentItem = ({
             .eq("created_by", user.id);
         }
       } else {
+        setUserVote("up");
         setUpvoteCount((prev) => prev + 1);
         result = await supabase
           .from("rating")
@@ -162,6 +163,7 @@ const CommentItem = ({
             .eq("created_by", user.id);
         }
       } else {
+        setUserVote("down");
         setDownvoteCount((prev) => prev + 1);
         const setup = {
           [REFERENCE]: id,
@@ -169,7 +171,6 @@ const CommentItem = ({
           content_creator: authorId,
           is_upvote: false,
         };
-        console.log("Inserting downvote:", setup);
         result = await supabase
           .from("rating")
           .insert(setup);

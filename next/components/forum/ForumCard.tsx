@@ -127,6 +127,7 @@ const ForumCard = ({
           .eq("created_by", user.id);
       }
     } else {
+      setUserVote("up");
       setUpvoteCount((prev) => prev + 1);
       result = await supabase
         .from("rating")
@@ -163,7 +164,6 @@ const ForumCard = ({
       statusText: "OK",
     };
     if (userVoted) {
-      console.log(user);
       if (userVote === "down") {
         setDownvoteCount((prev) => prev - 1);
         setUserVote(null);
@@ -191,6 +191,7 @@ const ForumCard = ({
           .eq("created_by", user.id);
       }
     } else {
+      setUserVote("down");
       setDownvoteCount((prev) => prev + 1);
       result = await supabase
         .from("rating")
