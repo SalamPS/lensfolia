@@ -4,6 +4,7 @@ import Hero from "@/components/home/Hero";
 import HowItWorks from "@/components/home/HowItWorks";
 import Intro from "@/components/home/Intro";
 import Navbar from "@/components/home/Navbar";
+import InstallPWA from "@/components/InstallPWA";
 
 export default function HomePage() {
   return (
@@ -14,6 +15,7 @@ export default function HomePage() {
       <Features />
       <HowItWorks />
       <Faq />
+      <InstallPWA />
     </main>
   );
 }

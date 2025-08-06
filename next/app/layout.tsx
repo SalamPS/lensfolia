@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { Inter, Geist_Mono } from "next/font/google";
+import OfflineIndicator from "@/components/OfflineIndicator";
+import PWAPreloader from "@/components/PWAPreloader";
 
 export const metadata: Metadata = {
   icons: {
@@ -32,6 +34,10 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${inter.variable} ${geistMono.variable} text-foreground scroll-smooth antialiased`}
     >
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#f0fdfa" />
+      </head>
       <body>
         <ThemeProvider
           attribute="class"
@@ -39,6 +45,8 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <OfflineIndicator />
+          <PWAPreloader />
           {children}
         </ThemeProvider>
       </body>
