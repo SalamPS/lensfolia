@@ -104,7 +104,7 @@ const ForumCard = ({
         setUpvoteCount((prev) => prev - 1);
         setUserVote(null);
         result = await supabase
-          .from("ratings")
+          .from("rating")
           .update({ is_upvote: null })
           .eq("ref_forums", id)
           .eq("created_by", user.id);
@@ -113,7 +113,7 @@ const ForumCard = ({
         setDownvoteCount((prev) => prev - 1);
         setUserVote("up");
         result = await supabase
-          .from("ratings")
+          .from("rating")
           .update({ is_upvote: true })
           .eq("ref_forums", id)
           .eq("created_by", user.id);
@@ -121,7 +121,7 @@ const ForumCard = ({
         setUpvoteCount((prev) => prev + 1);
         setUserVote("up");
         result = await supabase
-          .from("ratings")
+          .from("rating")
           .update({ is_upvote: true })
           .eq("ref_forums", id)
           .eq("created_by", user.id);
@@ -129,7 +129,7 @@ const ForumCard = ({
     } else {
       setUpvoteCount((prev) => prev + 1);
       result = await supabase
-        .from("ratings")
+        .from("rating")
         .insert({
           ref_forums: id,
           content: title.length > 30 ? `${title.slice(0, 30)}...` : title,
@@ -168,7 +168,7 @@ const ForumCard = ({
         setDownvoteCount((prev) => prev - 1);
         setUserVote(null);
         result = await supabase
-          .from("ratings")
+          .from("rating")
           .update({ is_upvote: null })
           .eq("ref_forums", id)
           .eq("created_by", user.id);
@@ -177,7 +177,7 @@ const ForumCard = ({
         setUpvoteCount((prev) => prev - 1);
         setUserVote("down");
         result = await supabase
-          .from("ratings")
+          .from("rating")
           .update({ is_upvote: false })
           .eq("ref_forums", id)
           .eq("created_by", user.id);
@@ -185,7 +185,7 @@ const ForumCard = ({
         setDownvoteCount((prev) => prev + 1);
         setUserVote("down");
         result = await supabase
-          .from("ratings")
+          .from("rating")
           .update({ is_upvote: false })
           .eq("ref_forums", id)
           .eq("created_by", user.id);
@@ -193,7 +193,7 @@ const ForumCard = ({
     } else {
       setDownvoteCount((prev) => prev + 1);
       result = await supabase
-        .from("ratings")
+        .from("rating")
         .insert({
           ref_forums: id,
           content: title.length > 30 ? `${title.slice(0, 30)}...` : title,

@@ -43,11 +43,11 @@ export const ForumQuery = async () => {
 			profile_picture
 		),
 		diagnoses(*),
-		ratings(*),
+		rating(*),
 		forums_discussions(*,
-			ratings(*),
+			rating(*),
 			forums_comments(*,
-				ratings(*)
+				rating(*)
 			)
 		)
 	`);
@@ -64,21 +64,21 @@ export const ForumDetailQuery = async (id:string) => {
 			profile_picture
 		),
 		diagnoses(*),
-		ratings(*),
+		rating(*),
 		forums_discussions(*,
 			user_profiles (
 				id,
 				name,
 				profile_picture
 			),
-			ratings(*),
+			rating(*),
 			forums_comments(*,
 				user_profiles (
 					id,
 					name,
 					profile_picture
 				),
-				ratings(*)
+				rating(*)
 			)
 		)
 	`)

@@ -106,7 +106,6 @@ const CommentItem = ({
             content: content.length > 30 ? `${content.slice(0, 30)}...` : content,
             content_creator: authorId,
             is_upvote: true,
-            created_by: user.id,
           });
       }
       if (result.error) {
@@ -162,15 +161,11 @@ const CommentItem = ({
       } else {
         setDownvoteCount((prev) => prev + 1);
         const setup = {
-          content_type: "forums",
-          ref_forums: "ba1863af-e5d2-4573-bb3b-e9393016c371",
-          ref_discussions: "002082b9-b86e-4429-81ff-62c27614e6c6",
-          ref_comments: "2188d8d9-3238-4998-b293-b6bd82cc9edd",
-          created_by: "05e5fc52-e58a-4213-b560-7ead5aa6c2e7",
-          content_creator: "05e5fc52-e58a-4213-b560-7ead5aa6c2e7",
-          content: "Gapapa. Iseng aja.",
+          [REFERENCE]: id,
+          content: content.slice(0, 30) + (content.length > 30 ? "..." : ""),
+          content_creator: authorId,
           is_upvote: false,
-        }
+        };
         console.log("Inserting downvote:", setup);
         result = await supabase
           .from("rating")
