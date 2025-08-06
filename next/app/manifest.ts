@@ -13,22 +13,46 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: '/',
     icons: [
       {
-        src: '/logo-asset-black.svg',
-        sizes: 'any',
+        src: '/pwa/LogoRounded_72_Asset 12.svg',
+        sizes: '72x72',
         type: 'image/svg+xml',
         purpose: 'any'
       },
       {
-        src: '/logo-asset-white.svg',
-        sizes: 'any',
+        src: '/pwa/LogoRounded_144_Asset.svg',
+        sizes: '144x144',
         type: 'image/svg+xml',
         purpose: 'any'
       },
       {
-        src: '/LogoIcon.svg',
-        sizes: 'any',
+        src: '/pwa/LogoRounded_192_Asset.svg',
+        sizes: '192x192',
+        type: 'image/svg+xml',
+        purpose: 'any'
+      },
+      {
+        src: '/pwa/LogoRounded_512_Asset.svg',
+        sizes: '512x512',
+        type: 'image/svg+xml',
+        purpose: 'any'
+      },
+      {
+        src: '/pwa/LogoRounded_192_Asset.ico',
+        sizes: '192x192',
         type: 'image/svg+xml',
         purpose: 'maskable'
+      }
+    ],
+    screenshots: [
+      {
+        src: '/pwa/screenshot1.svg',
+        sizes: '1080x1920',
+        type: 'image/svg+xml',
+      },
+      {
+        src: '/pwa/screenshot2.svg',
+        sizes: '1920x1080',
+        type: 'image/svg+xml',
       }
     ],
     categories: ['education', 'utilities', 'productivity'],
