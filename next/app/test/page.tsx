@@ -14,7 +14,7 @@ export default function App() {
       <div className="flex pt-20 items-center justify-between bg-primary/60 p-4 text-white">
         <h1 className="text-2xl font-bold">LensFolia Debug Page</h1>
       </div>
-      <div className="flex flex-col justify-center bg-background p-18 px-72">
+      <div className="flex flex-col justify-center bg-background py-8">
         <LangGraphTestBox />
       </div>
       
