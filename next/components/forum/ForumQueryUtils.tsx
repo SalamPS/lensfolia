@@ -118,7 +118,6 @@ export const ForumCommentConverter = (post: any): Comment[] => {
 }
 
 export const ForumConverter = (post: any):ForumPost => {
-	console.log("Post data:", post);
 	return {
 		id: post.id,
 		title: post.content,
