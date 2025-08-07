@@ -33,7 +33,7 @@ const PostPage = ({ slug }: { slug: string }) => {
   const [isLoading, setIsLoading] = React.useState(true);
   const { refresh, setRefresh } = useContext(PostContext);
   const { user } = useAuth();
-  const rating = useVote()
+  const rating = useVote({ user })
 
   useEffect(() => {
     (async () => {
@@ -43,7 +43,7 @@ const PostPage = ({ slug }: { slug: string }) => {
         return;
       }
       const response_post = ForumConverter(response[0]);
-      const response_comments = ForumCommentConverter(response[0]);
+      const response_comments = ForumCommentConverter(response[0], user);
       setPost(response_post);
       setComments(response_comments);
       setIsLoading(false);
@@ -58,7 +58,7 @@ const PostPage = ({ slug }: { slug: string }) => {
       });
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [refresh, slug]);
+  }, [user, refresh, slug]);
 
   const handleCommentSubmit = async () => {
     if (!user) {
@@ -247,9 +247,11 @@ const PostPage = ({ slug }: { slug: string }) => {
 
           {comments.length > 0 ? (
             <div className="space-y-4">
-              {comments.map((comment) => (
-                <CommentItem key={comment.id} {...comment} />
-              ))}
+              {comments.map((comment) => {
+                return (
+                  <CommentItem key={comment.id} {...comment} />
+                );
+              })}
             </div>
           ) : (
             <p className="text-muted-foreground py-8 text-center">

@@ -74,7 +74,7 @@ const ForumCard = ({
   views,
 }: ForumCardProps) => {
   const router = useRouter();
-  const rating = useVote()
+  const rating = useVote({ user });
 
   useEffect(() => {
     rating.syncVote({

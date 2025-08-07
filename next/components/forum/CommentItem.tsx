@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useEffect } from "react";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -7,12 +7,13 @@ import {
   IconMessageCircle,
 } from "@tabler/icons-react";
 import { supabase } from "@/lib/supabase";
-import { useAuth } from "@/hooks/useAuth";
-import { PostgrestSingleResponse } from "@supabase/supabase-js";
 import { PostContext } from "./PostContext";
 import { cn } from "@/lib/utils";
+import { useVote } from "@/hooks/useVote";
+import { User } from "@supabase/supabase-js";
 
 interface CommentItemProps {
+  user: User | null;
   isReply?: string;
   id: string;
   author: string;
@@ -27,6 +28,7 @@ interface CommentItemProps {
 }
 
 const CommentItem = ({
+  user,
   isReply = "",
   id,
   author,
@@ -41,171 +43,42 @@ const CommentItem = ({
 }: CommentItemProps) => {
   const [showReplyForm, setShowReplyForm] = React.useState(false);
   const [replyContent, setReplyContent] = React.useState("");
+  const { setRefresh } = useContext(PostContext);
+  const rating = useVote({ user });
 
-    const [upvoteCount, setUpvoteCount] = React.useState(upvotes.length);
-    const [downvoteCount, setDownvoteCount] = React.useState(downvotes.length);
-    const [userVote, setUserVote] = React.useState<"up" | "down" | null>(null);
-    const [userVoted, setUserVoted] = React.useState(false);
-    const { user } = useAuth();
-    const { setRefresh } = useContext(PostContext);
+  useEffect(() => {
+    rating.syncVote({
+      initialUpvotes: upvotes,
+      initialDownvotes: downvotes,
+      initialNullvotes: nullvotes,
+      id,
+      title: content,
+      authorId,
+      reference: isReply ? "comment" : "discussion",
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [upvotes, downvotes, nullvotes, id, content, authorId]);
 
-    React.useEffect(() => {
-      if (user) {
-        const upvoted = upvotes.includes(user.id);
-        const downvoted = downvotes.includes(user.id);
-        const nullvoted = nullvotes?.includes(user.id) || false;
-        setUserVote(upvoted ? "up" : downvoted ? "down" : null);
-        setUserVoted(upvoted || downvoted || nullvoted);
-      }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [user]);
-
-    const handleUpvote = async () => {
-      if (!user) {
-        alert("Please log in to vote.");
-        return;
-      }
-      const REFERENCE = isReply ? "ref_comments" : "ref_discussions";
-      let result: PostgrestSingleResponse<null> = {
-        error: null,
-        data: null,
-        count: null,
-        status: 200,
-        statusText: "OK",
-      };
-      if (userVoted) {
-        if (userVote === "up") {
-          setUpvoteCount((prev) => prev - 1);
-          setUserVote(null);
-          result = await supabase
-            .from("rating")
-            .update({ is_upvote: null })
-            .eq(REFERENCE, id)
-            .eq("created_by", user.id);
-        } else if (userVote === "down") {
-          setUpvoteCount((prev) => prev + 1);
-          setDownvoteCount((prev) => prev - 1);
-          setUserVote("up");
-          result = await supabase
-            .from("rating")
-            .update({ is_upvote: true })
-            .eq(REFERENCE, id)
-            .eq("created_by", user.id);
-        } else {
-          setUpvoteCount((prev) => prev + 1);
-          setUserVote("up");
-          result = await supabase
-            .from("rating")
-            .update({ is_upvote: true })
-            .eq(REFERENCE, id)
-            .eq("created_by", user.id);
-        }
-      } else {
-        setUserVote("up");
-        setUpvoteCount((prev) => prev + 1);
-        result = await supabase
-          .from("rating")
-          .insert({
-            [REFERENCE]: id,
-            content: content.length > 30 ? `${content.slice(0, 30)}...` : content,
-            content_creator: authorId,
-            is_upvote: true,
-          });
-      }
-      if (result.error) {
-        console.error("Error upvoting:", result.error);
-        setDownvoteCount(downvotes.length);
-        setUpvoteCount(upvotes.length);
-        return;
-      }
-      setUserVoted(true);
-      setRefresh((prev) => prev + 1);
-    };
-
-    const handleDownvote = async () => {
-      if (!user) {
-        alert("Please log in to vote.");
-        return;
-      }
-      const REFERENCE = isReply ? "ref_comments" : "ref_discussions";
-      let result: PostgrestSingleResponse<null> = {
-        error: null,
-        data: null,
-        count: null,
-        status: 200,
-        statusText: "OK",
-      };
-
-      if (userVoted) {
-        if (userVote === "down") {
-          setDownvoteCount((prev) => prev - 1);
-          setUserVote(null);
-          result = await supabase
-            .from("rating")
-            .update({ is_upvote: null })
-            .eq(REFERENCE, id)
-            .eq("created_by", user.id);
-        } else if (userVote === "up") {
-          setDownvoteCount((prev) => prev + 1);
-          setUpvoteCount((prev) => prev - 1);
-          setUserVote("down");
-          result = await supabase
-            .from("rating")
-            .update({ is_upvote: false })
-            .eq(REFERENCE, id)
-            .eq("created_by", user.id);
-        } else {
-          setDownvoteCount((prev) => prev + 1);
-          setUserVote("down");
-          result = await supabase
-            .from("rating")
-            .update({ is_upvote: false })
-            .eq(REFERENCE, id)
-            .eq("created_by", user.id);
-        }
-      } else {
-        setUserVote("down");
-        setDownvoteCount((prev) => prev + 1);
-        const setup = {
-          [REFERENCE]: id,
-          content: content.slice(0, 30) + (content.length > 30 ? "..." : ""),
-          content_creator: authorId,
-          is_upvote: false,
-        };
-        result = await supabase
-          .from("rating")
-          .insert(setup);
-      }
-      if (result.error) {
-        console.error("Error downvoting:", result.error);
-        setDownvoteCount(downvotes.length);
-        setUpvoteCount(upvotes.length);
-        return;
-      }
-      setUserVoted(true);
-      setRefresh((prev) => prev + 1);
-    };
-
-    const handleReplySubmit = async () => {
-      if (!user) {
-        alert("Please log in to reply.");
-        return;
-      }
-      const submitted = await supabase
-        .from("forums_comments")
-        .insert({
-          content: replyContent,
-          media_url: null,
-          discussions_ref: isReply || id,
-        });
-      if (submitted.error) {
-        console.error("Error submitting reply:", submitted.error);
-        return;
-      }
-      setRefresh((prev) => prev + 1);
-      setReplyContent("");
-      setShowReplyForm(false);
-    };
+  const handleReplySubmit = async () => {
+    if (!user) {
+      alert("Please log in to reply.");
+      return;
+    }
+    const submitted = await supabase
+      .from("forums_comments")
+      .insert({
+        content: replyContent,
+        media_url: null,
+        discussions_ref: isReply || id,
+      });
+    if (submitted.error) {
+      console.error("Error submitting reply:", submitted.error);
+      return;
+    }
+    setRefresh((prev) => prev + 1);
+    setReplyContent("");
+    setShowReplyForm(false);
+  };
 
   return (
     <div
@@ -230,50 +103,50 @@ const CommentItem = ({
               <div
                 className={cn(
                   "flex items-center gap-1",
-                  userVote === "up" && "text-green-500 dark:text-green-300",
+                  rating.getUserVote() === "up" && "text-green-500 dark:text-green-300",
                 )}
               >
                 <button
                   className={cn(
                     "group rounded-full p-1.5 transition-colors hover:bg-green-500/10",
-                    userVote === "up" && "bg-green-500/20",
+                    rating.getUserVote() === "up" && "bg-green-500/20",
                   )}
-                  onClick={handleUpvote}
+                  onClick={rating.upVote}
                 >
                   <IconArrowBigUpLines
                     size={18}
                     className={cn(
                       "group-hover:text-green-500",
-                      userVote === "up" && "text-green-500 dark:text-green-300",
+                      rating.getUserVote() === "up" && "text-green-500 dark:text-green-300",
                     )}
                   />
                 </button>
-                <span className="text-xs">{upvoteCount || 0}</span>
+                <span className="text-xs">{rating.getUpVoteCount() || 0}</span>
               </div>
 
               {/* Downvote */}
               <div
                 className={cn(
                   "flex items-center gap-1",
-                  userVote === "down" && "text-red-500 dark:text-red-300",
+                  rating.getUserVote() === "down" && "text-red-500 dark:text-red-300",
                 )}
               >
                 <button
                   className={cn(
                     "group rounded-full p-1.5 transition-colors hover:bg-red-500/10",
-                    userVote === "down" && "bg-red-500/20",
+                    rating.getUserVote() === "down" && "bg-red-500/20",
                   )}
-                  onClick={handleDownvote}
+                  onClick={rating.downVote}
                 >
                   <IconArrowBigDownLines
                     size={18}
                     className={cn(
                       "group-hover:text-red-500",
-                      userVote === "down" && "text-red-500 dark:text-red-300",
+                      rating.getUserVote() === "down" && "text-red-500 dark:text-red-300",
                     )}
                   />
                 </button>
-                <span className="text-xs">{downvoteCount || 0}</span>
+                <span className="text-xs">{rating.getDownVoteCount() || 0}</span>
               </div>
             </div>
 

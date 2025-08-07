@@ -1,3 +1,4 @@
+import { User } from "@supabase/supabase-js";
 import { PostType } from "./ForumCard";
 
 export interface ForumPost {
@@ -39,6 +40,7 @@ export interface ForumPostDetail {
 }
 
 export interface Comment {
+  user: User | null;
   id: string;
   author: string;
   authorImg: string;
