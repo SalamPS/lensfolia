@@ -24,6 +24,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
+import { useVote } from "../../hooks/useVote";
+import { cn } from "@/lib/utils";
 import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
 
 const PostPage = ({ slug }: { slug: string }) => {
@@ -33,6 +35,7 @@ const PostPage = ({ slug }: { slug: string }) => {
   const [isLoading, setIsLoading] = React.useState(true);
   const { refresh, setRefresh } = useContext(PostContext);
   const { user } = useAuth();
+  const rating = useVote({ user })
 
   useEffect(() => {
     (async () => {
@@ -46,8 +49,18 @@ const PostPage = ({ slug }: { slug: string }) => {
       setPost(response_post);
       setComments(response_comments);
       setIsLoading(false);
+      rating.syncVote({
+        initialUpvotes: response_post.upvotes as string[],
+        initialDownvotes: response_post.downvotes as string[],
+        initialNullvotes: response_post.nullvotes as string[],
+        id: response_post.id,
+        title: response_post.title,
+        authorId: response_post.authorId,
+        reference: "forum",
+      });
     })();
-  }, [refresh, slug]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, refresh, slug]);
 
   const handleCommentSubmit = async () => {
     if (!user) {
@@ -118,24 +131,36 @@ const PostPage = ({ slug }: { slug: string }) => {
             <div className="dark:bg-card bg-input flex items-center justify-between gap-2 rounded-full p-1 pr-4">
               {/* up */}
               <div className="flex items-center gap-1">
-                <div className="group rounded-full p-2 transition-colors hover:bg-green-500/10">
+                <div className={cn(
+                  "group rounded-full p-2 transition-colors hover:bg-green-500/10",
+                  rating.getUserVote() === "up" && "bg-green-500/20"
+                )}
+                  onClick={() => rating.upVote()}>
                   <IconArrowBigUpLines
                     size={18}
                     className="group-hover:text-green-500"
                   />
                 </div>
-                <span className="text-sm">{post?.upvotes.length}</span>
+                <span className={
+                  cn("text-sm", rating.getUserVote() === "up" && "text-green-500 dark:text-green-300")
+                }>{rating.getUpVoteCount()}</span>
               </div>
 
               {/* down */}
               <div className="flex items-center gap-1">
-                <div className="group rounded-full p-2 transition-colors hover:bg-red-500/10">
+                <div className={cn(
+                  "group rounded-full p-2 transition-colors hover:bg-red-500/10",
+                  rating.getUserVote() === "down" && "bg-red-500/20"
+                )}
+                  onClick={() => rating.downVote()}>
                   <IconArrowBigDownLines
                     size={18}
                     className="group-hover:text-red-500"
                   />
                 </div>
-                <span className="text-sm">{post?.upvotes.length}</span>
+                <span className={
+                  cn("text-sm", rating.getUserVote() === "down" && "text-red-500 dark:text-red-300")
+                }>{rating.getDownVoteCount()}</span>
               </div>
             </div>
 
@@ -244,9 +269,11 @@ const PostPage = ({ slug }: { slug: string }) => {
 
           {comments.length > 0 ? (
             <div className="space-y-4">
-              {comments.map((comment) => (
-                <CommentItem key={comment.id} {...comment} />
-              ))}
+              {comments.map((comment) => {
+                return (
+                  <CommentItem key={comment.id} {...comment} />
+                );
+              })}
             </div>
           ) : (
             <p className="text-muted-foreground py-8 text-center">

@@ -5,8 +5,9 @@ import LFDWrapper from "@/components/detect/Wrapper";
 import { IconCamera, IconUpload } from "@tabler/icons-react";
 import { Button } from "../ui/button";
 import { LangGraphVisual } from "./Langgraph";
-import { supabase } from "@/lib/supabase";
 import { LFD_ } from "../types/diagnoseResult";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/lib/supabase";
 
 export default function DetectionMenu() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -20,6 +21,7 @@ export default function DetectionMenu() {
   const [isDragging, setIsDragging] = useState(false);
   const [uploaded, setUploaded] = useState<LFD_ | null>(null);
   const [uploadStatus, setUploadStatus] = useState<string>("idle");
+  const { user, anonUser } = useAuth();
 
   // Membuka kamera dan menampilkan stream ke elemen video
   const openCamera = async () => {
@@ -74,7 +76,6 @@ export default function DetectionMenu() {
       setCapturedFile(file);
       const imageUrl = URL.createObjectURL(file);
       setCapturedImageUrl(imageUrl);
-      console.log(file)
     }
   };
 
@@ -167,27 +168,47 @@ export default function DetectionMenu() {
       if (!capturedFile) {
         throw new Error('No file to upload');
       }
-      
-      // Get user session
-      const authUser = await supabase.auth.getSession()
-      console.log("Auth User:", authUser.data.session?.user.id);
 
       // Create FormData
       const formData = new FormData();
       formData.append('image', capturedFile);
-      formData.append('auth_user', authUser.data.session?.user.id || "");
+      formData.append('bucket', 'image-plant');
+      formData.append('path', 'uploads');
 
       // Send to API
-      const uploadResponse = await fetch('/api/detect', {
+      const uploadResponse = await fetch('/api/v1/upload', {
         method: 'POST',
         body: formData,
       });
-      
       if (!uploadResponse.ok) {
+        setUploadStatus("error");
         throw new Error('Failed to upload image');
       }
+      const imageData = await uploadResponse.json();
+
+      const dataPrepare = {
+        image_url: imageData.url,
+        created_by: user?.id || null,
+        id_anon: anonUser?.id || null,
+        is_public: user ? false : true,
+        is_bookmark: user ? true : false,
+      }
+      const { data, error: dbError } = await supabase
+        .from('diagnoses')
+        .insert(dataPrepare)
+        .select()
+        .single();
+
+      if (dbError) {
+        console.error('Database error:', dbError);
+        setUploadStatus("error");
+        return;
+      } else if (!data) {
+        console.error('No data returned from database');
+        setUploadStatus("error");
+        return;
+      }
       
-      const data = await uploadResponse.json();
       setUploaded(data);
       setUploadStatus("success");
     } catch (error) {
@@ -203,6 +224,7 @@ export default function DetectionMenu() {
         trigger={isLoading}
         setTrigger={setIsLoading}
         uploadStatus={uploadStatus}
+        setUploadStatus={setUploadStatus}
       />
       <div
         className="fixed top-0 left-0 z-100 flex h-screen w-screen"

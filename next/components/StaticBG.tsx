@@ -4,9 +4,10 @@ import React from "react";
 
 interface HeroSectionProps {
   children?: React.ReactNode;
+  overlay?: boolean;
 }
 
-const StaticBG: React.FC<HeroSectionProps> = ({ children }) => {
+const StaticBG: React.FC<HeroSectionProps> = ({ children, overlay }) => {
   return (
     <section className="bg-background relative h-fit w-full overflow-hidden">
       {/* Background spotlight */}
@@ -47,9 +48,14 @@ const StaticBG: React.FC<HeroSectionProps> = ({ children }) => {
       <div className="bg-background pointer-events-none absolute inset-0 z-0 flex items-center justify-center [mask-image:radial-gradient(ellipse_at_center,transparent_10%,white_80%)] dark:bg-zinc-900"></div>
 
       {/* Content */}
-      <div className="relative z-10 mt-16 flex h-[20rem] items-center justify-center">
+      {overlay ? 
+      <div className="relative z-10 mt-16 flex items-center justify-center">
         <div className="w-full max-w-7xl">{children}</div>
       </div>
+      : 
+      <div className="relative z-10 mt-16 flex h-[20rem] items-center justify-center">
+        <div className="w-full max-w-7xl">{children}</div>
+      </div>}
     </section>
   );
 };

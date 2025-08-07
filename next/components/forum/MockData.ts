@@ -16,6 +16,7 @@ export interface ForumPost {
   downvotes: string[];
   nullvotes: string[];
   views: number;
+  diagnoses_ref?: string | null;
 }
 
 export interface ForumPostDetail {
@@ -34,6 +35,7 @@ export interface ForumPostDetail {
   downvotes: string[];
   nullvotes: string[];
   views: number;
+  diagnoses_ref?: string | null;
 }
 
 export interface Comment {

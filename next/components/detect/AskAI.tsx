@@ -36,7 +36,7 @@ const ChatMessageComponent = ({ message }: { message: ChatMessage }) => {
 	);
 };
 
-export function AskAI ({disease}: {disease: LFDResult_ | null}) {
+export function AskAI ({disease}: {disease: LFDResult_ | undefined}) {
 	const [inputValue, setInputValue] = useState("");
 	const [error, setError] = useState<string | null>(null);
 	const [messages, setMessages] = useState<ChatMessage[]>([]);

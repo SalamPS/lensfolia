@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect } from "react";
 import {
   IconArrowBigDownLines,
   IconArrowBigUpLines,
@@ -9,8 +9,8 @@ import { Avatar, AvatarImage } from "../ui/avatar";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { useAuth } from "@/hooks/useAuth";
-import { PostgrestSingleResponse } from "@supabase/supabase-js";
+import { useVote } from "@/hooks/useVote";
+import { PostContext } from "./PostContext";
 
 export type PostType = "diseases" | "pests" | "general";
 
@@ -68,157 +68,28 @@ const ForumCard = ({
   nullvotes: initialNullvotes,
   views,
 }: ForumCardProps) => {
-  const [upvoteCount, setUpvoteCount] = useState(initialUpvotes.length);
-  const [downvoteCount, setDownvoteCount] = useState(initialDownvotes.length);
-  const [userVote, setUserVote] = useState<"up" | "down" | null>(null);
-  const [userVoted, setUserVoted] = useState(false);
+  const { user, anonUser } = useContext(PostContext);
   const router = useRouter();
-  const { user } = useAuth();
+  const rating = useVote({ user });
 
   useEffect(() => {
-    if (user) {
-      const upvoted = initialUpvotes.includes(user.id);
-      const downvoted = initialDownvotes.includes(user.id);
-      const nullvoted = initialNullvotes?.includes(user.id) || false;
-      setUserVote(upvoted ? "up" : downvoted ? "down" : null);
-      setUserVoted(upvoted || downvoted || nullvoted);
-    }
+    rating.syncVote({
+      initialUpvotes: initialUpvotes,
+      initialDownvotes: initialDownvotes,
+      initialNullvotes: initialNullvotes,
+      id,
+      title,
+      authorId,
+      reference: "forum",
+    });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user])
-
-  const handleUpvote = async () => {
-    if (!user) {
-      alert("Please log in to vote.");
-      return;
-    }
-    let result: PostgrestSingleResponse<null> = {
-      error: null,
-      data: null,
-      count: null,
-      status: 200,
-      statusText: "OK",
-    };
-    if (userVoted) {
-      if (userVote === "up") {
-        setUpvoteCount((prev) => prev - 1);
-        setUserVote(null);
-        result = await supabase
-          .from("rating")
-          .update({ is_upvote: null })
-          .eq("ref_forums", id)
-          .eq("created_by", user.id);
-      } else if (userVote === "down") {
-        setUpvoteCount((prev) => prev + 1);
-        setDownvoteCount((prev) => prev - 1);
-        setUserVote("up");
-        result = await supabase
-          .from("rating")
-          .update({ is_upvote: true })
-          .eq("ref_forums", id)
-          .eq("created_by", user.id);
-      } else {
-        setUpvoteCount((prev) => prev + 1);
-        setUserVote("up");
-        result = await supabase
-          .from("rating")
-          .update({ is_upvote: true })
-          .eq("ref_forums", id)
-          .eq("created_by", user.id);
-      }
-    } else {
-      setUserVote("up");
-      setUpvoteCount((prev) => prev + 1);
-      result = await supabase
-        .from("rating")
-        .insert({
-          ref_forums: id,
-          content: title.length > 30 ? `${title.slice(0, 30)}...` : title,
-          content_creator: authorId,
-          is_upvote: true,
-        });
-      if (result.error) {
-        console.error("Error upvoting:", result.error);
-        return;
-      }
-    }
-    if (result.error) {
-      console.error("Error upvoting:", result.error);
-      setDownvoteCount(initialDownvotes.length);
-      setUpvoteCount(initialUpvotes.length);
-      return;
-    }
-    setUserVoted(true);
-  };
-
-  const handleDownvote = async () => {
-    if (!user) {
-      alert("Please log in to vote.");
-      return;
-    }
-    let result: PostgrestSingleResponse<null> = {
-      error: null,
-      data: null,
-      count: null,
-      status: 200,
-      statusText: "OK",
-    };
-    if (userVoted) {
-      if (userVote === "down") {
-        setDownvoteCount((prev) => prev - 1);
-        setUserVote(null);
-        result = await supabase
-          .from("rating")
-          .update({ is_upvote: null })
-          .eq("ref_forums", id)
-          .eq("created_by", user.id);
-      } else if (userVote === "up") {
-        setDownvoteCount((prev) => prev + 1);
-        setUpvoteCount((prev) => prev - 1);
-        setUserVote("down");
-        result = await supabase
-          .from("rating")
-          .update({ is_upvote: false })
-          .eq("ref_forums", id)
-          .eq("created_by", user.id);
-      } else {
-        setDownvoteCount((prev) => prev + 1);
-        setUserVote("down");
-        result = await supabase
-          .from("rating")
-          .update({ is_upvote: false })
-          .eq("ref_forums", id)
-          .eq("created_by", user.id);
-      }
-    } else {
-      setUserVote("down");
-      setDownvoteCount((prev) => prev + 1);
-      result = await supabase
-        .from("rating")
-        .insert({
-          ref_forums: id,
-          content: title.length > 30 ? `${title.slice(0, 30)}...` : title,
-          content_creator: authorId,
-          is_upvote: false,
-        });
-      if (result.error) {
-        console.error("Error downvoting:", result.error);
-        return;
-      }
-    }
-    if (result.error) {
-      console.error("Error downvoting:", result.error);
-      setDownvoteCount(initialDownvotes.length);
-      setUpvoteCount(initialUpvotes.length);
-      return;
-    }
-    setUserVoted(true);
-  };
+  }, [id, title, authorId, initialUpvotes, initialDownvotes, initialNullvotes]);
 
   const goToPostHandler = async (cid?: string) => {
     const { error } = await supabase.rpc('insert_if_not_exists_forums_views', {
       forum_id: id,
       user_id: user?.id || null,
-      anon_id: null
+      anon_id: anonUser?.id || null,
     });
     if (error) {
       console.error("Error updating views:", error);
@@ -290,50 +161,50 @@ const ForumCard = ({
             <div
               className={cn(
                 "flex items-center gap-1",
-                userVote === "up" && "text-green-500 dark:text-green-300",
+                rating.getUserVote() === "up" && "text-green-500 dark:text-green-300",
               )}
             >
               <button
                 className={cn(
                   "group cursor-pointer rounded-full p-1.5 transition-colors hover:bg-green-500/10",
-                  userVote === "up" && "bg-green-500/20",
+                  rating.getUserVote() === "up" && "bg-green-500/20",
                 )}
-                onClick={handleUpvote}
+                onClick={rating.upVote}
               >
                 <IconArrowBigUpLines
                   size={18}
                   className={cn(
                     "text-xs group-hover:text-green-500",
-                    userVote === "up" && "text-green-500 dark:text-green-300",
+                    rating.getUserVote() === "up" && "text-green-500 dark:text-green-300",
                   )}
                 />
               </button>
-              <span className="text-xs">{upvoteCount || 0}</span>
+              <span className="text-xs">{rating.getUpVoteCount() || 0}</span>
             </div>
 
             {/* Downvote */}
             <div
               className={cn(
                 "flex items-center gap-1",
-                userVote === "down" && "text-red-500 dark:text-red-300",
+                rating.getUserVote() === "down" && "text-red-500 dark:text-red-300",
               )}
             >
               <button
                 className={cn(
                   "group cursor-pointer rounded-full p-1.5 transition-colors hover:bg-red-500/10",
-                  userVote === "down" && "bg-red-500/20",
+                  rating.getUserVote() === "down" && "bg-red-500/20",
                 )}
-                onClick={handleDownvote}
+                onClick={rating.downVote}
               >
                 <IconArrowBigDownLines
                   size={18}
                   className={cn(
                     "group-hover:text-red-500",
-                    userVote === "down" && "text-red-500 dark:text-red-300",
+                    rating.getUserVote() === "down" && "text-red-500 dark:text-red-300",
                   )}
                 />
               </button>
-              <span className="text-xs">{downvoteCount || 0}</span>
+              <span className="text-xs">{rating.getDownVoteCount() || 0}</span>
             </div>
           </div>
 

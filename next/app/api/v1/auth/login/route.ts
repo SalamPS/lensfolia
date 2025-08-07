@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase'
 
 export async function POST(request: NextRequest) {
   try {
-    const { provider } = await request.json()
+    const { provider, redirectUrl } = await request.json()
     
     if (!provider || !['google', 'github'].includes(provider)) {
       return NextResponse.json(
@@ -12,10 +12,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Encode redirect URL untuk menyimpannya dalam state parameter
+    const encodedRedirectUrl = encodeURIComponent(redirectUrl || '/')
+
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: provider as 'google' | 'github',
       options: {
-        redirectTo: `${request.nextUrl.origin}/api/v1/auth/callback`
+        redirectTo: `${request.nextUrl.origin}/api/v1/auth/callback?redirect_to=${encodedRedirectUrl}`
       }
     })
 

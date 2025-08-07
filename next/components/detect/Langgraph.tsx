@@ -8,12 +8,13 @@ import { LGStep_ } from "./ module/langgraph_type";
 import { useRouter } from "next/navigation";
 import { LFD_ } from "../types/diagnoseResult";
 import { Button } from "../ui/button";
-// import { useStream } from "@langchain/langgraph-sdk/react";
-// import { Message } from "@langchain/langgraph-sdk";
+import { useStream } from "@langchain/langgraph-sdk/react";
+import type { Message } from "@langchain/langgraph-sdk";
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 type LangGraphVisualProps = {
+	setUploadStatus: (status: string) => void;
 	setTrigger: (trigger: boolean) => void;
 	trigger: boolean;
 	diagnose_data: LFD_ | null;
@@ -24,43 +25,153 @@ export function LangGraphVisual ({
 	setTrigger,
 	trigger = false, 
 	diagnose_data, 
-	uploadStatus
+	uploadStatus,
+	setUploadStatus
 }: LangGraphVisualProps) {
-	// const thread = useStream<{ 
-	// 	messages: Message[];
-	// 	image_url: string;
-	// 	diagnoses_ref: string;
-	//  }>({
-	// 	apiUrl: "https://jay-fit-safely.ngrok-free.app/",
-	// 	assistantId: "agent",
-	// 	messagesKey: "messages",
-	// 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	// 	onUpdateEvent(event: any) {
-	// 		// if (!LGSteps.includes(event.step)) return;
-	// 		console.log("Event received:", event);
+	const thread = useStream<{ 
+		messages: Message[];
+		image_url: string;
+		diagnoses_ref: string;
+	 }>({
+		apiUrl: "https://jay-fit-safely.ngrok-free.app/",
+		assistantId: "agent",
+		messagesKey: "messages",
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		onUpdateEvent(event: any) {
+			// if (!LGSteps.includes(event.step)) return;
+			console.log("Event received:", event);
 
-	// 		if (event.plant_disease_detection) {
-	// 		}
-	// 		else if (event.overview_query_generation) {
-	// 		}
-	// 		else if (event.overview_rag) {
-	// 		}
-	// 		else if (event.treatment_query_generation) {
-	// 		}
-	// 		else if (event.treatment_rag) {
-	// 		}
-	// 		else if (event.product_query_generation) {
-	// 		}
-	// 		else if (event.product_rag) {
-	// 		}
-	// 		else if (event.create_final_response) {
-	// 		}
-	// 	}
-	// });
+			if (event.image_analysis) {
+				statusHelper("success");
+				setProcessedSteps(prev => [...prev, {
+					step: "image_analysis",
+					title: "Analisis Gambar",
+					description: "Menganalisis gambar tanaman untuk mendeteksi penyakit.",
+					icon: "image"
+				}]);
+				console.log("Image analysis result:", event.image_analysis);
+			}
+			else if (event.plant_disease_detection) {
+				statusHelper("success");
+				setProcessedSteps(prev => [...prev, {
+					step: "plant_disease_detection",
+					title: "Deteksi Penyakit Tanaman",
+					description: "Mendeteksi penyakit tanaman berdasarkan analisis gambar.",
+					icon: "leaf"
+				}]);
+				console.log("Plant disease detection result:", event.plant_disease_detection);
+			}
+			else if (event.retriever_agent) {
+				statusHelper("success");
+				setProcessedSteps(prev => [...prev, {
+					step: "retriever_agent",
+					title: "Pengambilan Data Penyakit",
+					description: "Mengambil data penyakit tanaman terkait.",
+					icon: "data"
+				}]);
+				console.log("Retriever agent result:", event.retriever_agent);
+			}
+			else if (event.overview_query_generation) {
+				statusHelper("success");
+				setProcessedSteps(prev => [...prev, {
+					step: "overview_query_generation",
+					title: "Pembuatan Query Overview",
+					description: "Membuat query untuk overview penyakit tanaman.",
+					icon: "query"
+				}]);
+				console.log("Overview query generation result:", event.overview_query_generation);
+			}
+			else if (event.overview_generation) {
+				statusHelper("success");
+				setProcessedSteps(prev => [...prev, {
+					step: "overview_generation",
+					title: "Pembuatan Overview",
+					description: "Membuat overview penyakit tanaman berdasarkan query.",
+					icon: "overview"
+				}]);
+				console.log("Overview generation result:", event.overview_generation);
+			}
+			else if (event.treatment_query_generation) {
+				statusHelper("success");
+				setProcessedSteps(prev => [...prev, {
+					step: "treatment_query_generation",
+					title: "Pembuatan Query Pengobatan",
+					description: "Membuat query untuk pengobatan penyakit tanaman.",
+					icon: "treatment_query"
+				}]);
+				console.log("Treatment query generation result:", event.treatment_query_generation);
+			}
+			else if (event.treatment_generation) {
+				statusHelper("success");
+				setProcessedSteps(prev => [...prev, {
+					step: "treatment_generation",
+					title: "Pembuatan Pengobatan",
+					description: "Membuat pengobatan untuk penyakit tanaman.",
+					icon: "treatment"
+				}]);
+				console.log("Treatment generation result:", event.treatment_generation);
+			}
+			else if (event.recommendation_query_generation) {
+				statusHelper("success");
+				setProcessedSteps(prev => [...prev, {
+					step: "recommendation_query_generation",
+					title: "Pembuatan Query Rekomendasi",
+					description: "Membuat query untuk rekomendasi penyakit tanaman.",
+					icon: "recommendation_query"
+				}]);
+				console.log("Recommendation query generation result:", event.recommendation_query_generation);
+			}
+			else if (event.recommendation_generation) {
+				statusHelper("success");
+				setProcessedSteps(prev => [...prev, {
+					step: "recommendation_generation",
+					title: "Pembuatan Rekomendasi",
+					description: "Membuat rekomendasi untuk penyakit tanaman.",
+					icon: "recommendation"
+				}]);
+				console.log("Recommendation generation result:", event.recommendation_generation);
+			}
+			else if (event.create_final_response) {
+				statusHelper("success");
+				setProcessedSteps(prev => [...prev, {
+					step: "end",
+					title: "Mengumpulkan Hasil Akhir",
+					description: "Proses diagnosis selesai. Mengalihkan ke halaman hasil.",
+					icon: "check"
+				}]);
+				console.log("Final response created:", event.create_final_response);
+				statusClearing();
+			}
+		}
+	});
 
+	const [countdown, setCountdown] = useState(0);
 	const [processedSteps, setProcessedSteps] = useState<LGStep_[]>([]);
 	const [processedStatus, setProcessedStatus] = useState<string[]>(["loading"]);
 	const router = useRouter();
+
+	const statusClearing = async () => {
+		setProcessedSteps(prev => [...prev, {
+			step: "end",
+			title: "Mengumpulkan hasil akhir",
+			description: "Proses diagnosis selesai. Mengalihkan ke halaman hasil.",
+			icon: "check"
+		}]);
+		setCountdown(5);
+		const countdownInterval = setInterval(() => {
+			setCountdown(prev => {
+				if (prev <= 1) {
+					clearInterval(countdownInterval);
+					return 0;
+				}
+				return prev - 1;
+			});
+		}, 1000);	
+		await delay(5000);
+		statusHelper("success");
+		await delay(500);
+		router.push("/result/"+diagnose_data?.id);
+	}
 
 	const statusHelper = (status:string, future?:string) => {
 		setProcessedStatus(prev => {
@@ -75,6 +186,7 @@ export function LangGraphVisual ({
 	}
 
 	useEffect(() => {
+		console.log("Status changed:", uploadStatus);
 		(async () => {
 			if (uploadStatus === "idle") {
 				setProcessedSteps([]);
@@ -107,34 +219,57 @@ export function LangGraphVisual ({
 				const dataSubmit = {
 					image_url: diagnose_data?.image_url || "",
 					diagnoses_ref: diagnose_data?.id || "",
+					created_by: diagnose_data?.created_by,
 				}
 				console.log("Submitting data to thread:", dataSubmit);
-				// thread.submit({
-				// 	messages: thread.messages || [],
-				// 	image_url: diagnose_data?.image_url || "",
-				// 	diagnoses_ref: diagnose_data?.id || "",
-				// })
-				for (const step of LGSteps) {
-					console.log(`================\n${step.title}`);
-					statusHelper("success");
-					setProcessedSteps(prev => [...prev, step]);
-					await delay(3000);
-				}
+				const newMessages: Message[] = [
+					...(thread.messages || []),
+					{
+						type: "human",
+						content: "Tolong deteksi penyakit tanaman ini.",
+						id: Date.now().toString(),
+					},
+				];
+				thread.submit({
+					messages: newMessages,
+					...dataSubmit,
+				})
+				
+				// for (const step of LGSteps) {
+				// 	console.log(`================\n${step.title}`);
+				// 	statusHelper("success");
+				// 	setProcessedSteps(prev => [...prev, step]);
+				// 	await delay(3000);
+				// }
 
-				setProcessedSteps(prev => [...prev, {
-					step: "end",
-					title: "Mengumpulkan hasil akhir",
-					description: "Proses diagnosis selesai. Mengalihkan ke halaman hasil.",
-					icon: "check"
-				}]);
-				await delay(3000);
-				statusHelper("success");
-				await delay(500);
-				router.push("/result/"+diagnose_data?.id);
+				// setProcessedSteps(prev => [...prev, {
+				// 	step: "end",
+				// 	title: "Mengumpulkan hasil akhir",
+				// 	description: "Proses diagnosis selesai. Mengalihkan ke halaman hasil.",
+				// 	icon: "check"
+				// }]);
+				// setCountdown(5);
+				// const countdownInterval = setInterval(() => {
+				// 	setCountdown(prev => {
+				// 		if (prev <= 1) {
+				// 			clearInterval(countdownInterval);
+				// 			return 0;
+				// 		}
+				// 		return prev - 1;
+				// 	});
+				// }, 1000);	
+				// await delay(5000);
+				// statusHelper("success");
+				// await delay(500);
+				// router.push("/result/"+diagnose_data?.id);
 			}
 		})()
 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [trigger, uploadStatus]);
+
+	useEffect(() => {
+
+	})
 
 	if (!trigger) {
 		return <></>;
@@ -199,31 +334,6 @@ export function LangGraphVisual ({
 							))}
 						</AnimatePresence>
 					</div>
-					{/* <div className="flex flex-col">
-						<div className="flex flex-col md:flex-row gap-4 mb-4">
-							<h2 className="text-2xl grow-0 font-bold">
-								{processedStatus.includes("error") ? "GAGAL MEMPROSES DIAGNOSIS" : "MEMPROSES DIAGNOSIS"}
-							</h2>
-							<div className="grow mt-2 bg-foreground/40 rounded-full h-4">
-								{processedStatus.includes("error") ? (
-									<div
-										className="bg-destructive/60 h-4 rounded-full transition-all duration-500 w-full"
-									/>
-								) : (
-									<div
-										className="bg-primary h-4 rounded-full transition-all duration-500"
-										style={{
-												width: `${((processedSteps.length / (LGSteps.length+4)) * 100)}%`,
-										}}
-									></div>
-								)}
-							</div>
-						</div>
-						{processedStatus.includes("error") 
-						&& <Button variant={"destructive"} className="w-full cursor-pointer" onClick={() => {setTrigger(false)}}>
-							Kembali
-						</Button>}
-					</div> */}
 				</div>
 			</motion.div>
 			<motion.div
@@ -248,7 +358,10 @@ export function LangGraphVisual ({
 					<div className="flex flex-col">
 						<div className="flex flex-col md:flex-row gap-4 mb-4">
 							<h2 className="text-2xl grow-0 font-bold">
-								{processedStatus.includes("error") ? "GAGAL MEMPROSES DIAGNOSIS" : "MEMPROSES DIAGNOSIS"}
+								{processedStatus.includes("error") 
+								? "GAGAL MEMPROSES DIAGNOSIS" 
+								: processedSteps.some(step => step.step === 'end') ? "DIAGNOSIS SELESAI" 
+								: "MEMPROSES DIAGNOSIS"}
 							</h2>
 							<div className="grow mt-2 bg-foreground/40 rounded-full h-4">
 								{processedStatus.includes("error") ? (
@@ -268,10 +381,18 @@ export function LangGraphVisual ({
 						{processedStatus.includes("error") 
 						&& <Button variant={"destructive"} className="w-full rounded-2xl py-2" onClick={() => {
 								setTrigger(false);
+								setUploadStatus("idle");
 								setProcessedSteps([]);
 								setProcessedStatus(["loading"]);
 							}}>
 							Kembali
+						</Button>}
+						{processedSteps.some(step => step.step === 'end') 
+						&& <Button className="w-full rounded-2xl py-2 text-black font-semibold" onClick={async () => {
+								await delay(500);
+								router.push("/result/"+diagnose_data?.id);
+							}}>
+							Lanjut {`( ${countdown} )`}
 						</Button>}
 					</div>
 				</div>

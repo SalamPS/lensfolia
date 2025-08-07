@@ -3,16 +3,43 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { User } from '@supabase/supabase-js'
+import { v4 as uuidv4 } from 'uuid'
+
+export type anonUser_ = {
+  id: string
+  anon: boolean
+  expired: number
+}
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null)
+  const [anonUser, setAnonUser] = useState<anonUser_ | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     // Get initial session
     const getSession = async () => {
+      const currentTime = new Date().getTime()
+      const anonRaw = sessionStorage.getItem('user')
+      let anon: anonUser_
+      if (anonRaw) {
+        anon = JSON.parse(anonRaw) as anonUser_
+        if (anon.expired < currentTime) {
+          sessionStorage.removeItem('user')
+        }
+      } else {
+        anon = {
+          id: uuidv4(),
+          anon: true,
+          expired: new Date().getTime() + 60 * 60 * 1000
+        }
+        sessionStorage.setItem('user', JSON.stringify(anon))
+      }
       const { data: { session } } = await supabase.auth.getSession()
-      setUser(session?.user ?? null)
+      if (session?.user) {
+        setUser(session.user)
+      }
+      setAnonUser(anon)
       setLoading(false)
     }
 
@@ -31,12 +58,18 @@ export function useAuth() {
 
   const signInWithProvider = async (provider: 'google' | 'github') => {
     try {
+      // Simpan URL halaman saat ini untuk redirect setelah login
+      const currentUrl = window.location.pathname + window.location.search
+      
       const response = await fetch('/api/v1/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ provider }),
+        body: JSON.stringify({ 
+          provider,
+          redirectUrl: currentUrl 
+        }),
       })
 
       const data = await response.json()
@@ -67,6 +100,7 @@ export function useAuth() {
   }
 
   return {
+    anonUser,
     user,
     loading,
     signInWithProvider,
