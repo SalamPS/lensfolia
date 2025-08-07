@@ -30,11 +30,15 @@ import { LFD_, LFDProduct_ } from "../types/diagnoseResult";
 import { useAuth } from "@/hooks/useAuth";
 import ReactMarkdown from "react-markdown";
 import { ProductList } from "@/lib/products";
+import ResultSkeleton from "./ResultSkeleton";
 
 export default function LFDResultPage({detId}: {detId?: string}) {
   const [result, setResult] = React.useState<LFD_ | null>(null);
   const [bookmarked, setBookmarked] = React.useState(false);
   const [api, setApi] = React.useState<CarouselApi>();
+  const [loading, setLoading] = React.useState(true);
+  const [loadingProgress, setLoadingProgress] = React.useState(0);
+  const [error, setError] = React.useState<string | null>(null);
   const [current, setCurrent] = React.useState(0);
   const [count, setCount] = React.useState(0);
   const {user, anonUser} = useAuth();
@@ -42,6 +46,8 @@ export default function LFDResultPage({detId}: {detId?: string}) {
 
   React.useEffect(() => {
     (async () => {
+      setLoadingProgress(10); // Start loading
+      
       const res = await supabase
       .from("diagnoses")
       .select(`
@@ -54,14 +60,21 @@ export default function LFDResultPage({detId}: {detId?: string}) {
       `)
       .eq("id", detId)
       .single();
+      
+      setLoadingProgress(40); // Data fetched
+      
       if (res.data === null) {
         console.error("Error fetching result:", res.error);
+        setError("Data tidak ditemukan atau terjadi kesalahan");
+        setLoading(false);
         return;
       }
       else {
         const res_clone:LFD_ = res.data;
         const parsedDiseases = JSON.parse(res.data.diagnoses_result[0].cropped_images);
         res_clone.diagnoses_result[0].list_of_diseases = parsedDiseases;
+
+        setLoadingProgress(60); // Data processed
 
         const recoms = res_clone.diagnoses_result[0].recommendations;
         const productList = ProductList.filter((product) => recoms.includes(product));
@@ -71,6 +84,8 @@ export default function LFDResultPage({detId}: {detId?: string}) {
           .from("products")
           .select("*")
           .in("name", productList);
+
+        setLoadingProgress(80); // Products fetched
 
         if (fetchedProducts.error) {
           console.error("Error fetching products:", fetchedProducts.error);
@@ -87,7 +102,10 @@ export default function LFDResultPage({detId}: {detId?: string}) {
           res_clone.diagnoses_result[0].product_list = products;
         }
         
+        setLoadingProgress(100); // Complete
         setResult(res_clone);
+        await new Promise(resolve => setTimeout(resolve, 500));
+        setLoading(false);
       }
     })();
   }, []);
@@ -131,6 +149,30 @@ export default function LFDResultPage({detId}: {detId?: string}) {
   const handleBookmark = () => {
     setBookmarked(!bookmarked);
   };
+
+  if (loading) {
+    return <ResultSkeleton progress={loadingProgress} />;
+  }
+
+  if (error) {
+    return (
+      <LFDWrapper>
+        <section className="flex w-full items-center justify-center px-4 py-20">
+          <div className="text-center">
+            <h1 className="mb-4 text-2xl font-bold text-foreground">
+              Oops! Terjadi Kesalahan
+            </h1>
+            <p className="text-muted-foreground mb-6">{error}</p>
+            <Button onClick={() => router.back()}>
+              <IconArrowLeft className="mr-2" size={16} />
+              Kembali
+            </Button>
+          </div>
+        </section>
+      </LFDWrapper>
+    );
+  }
+  
   return (
     <LFDWrapper>
       <section className="flex w-full items-center justify-center px-4">
