@@ -101,7 +101,7 @@ export default function OfflineIndicator() {
     <>
       {/* Offline Indicator */}
       {!isOnline && (
-        <div className="fixed top-0 left-0 right-0 z-50 bg-yellow-500 text-black px-4 py-2 text-center text-sm font-medium animate-pulse">
+        <div className="fixed top-0 left-0 right-0 z-50 bg-yellow-500 text-black pt-18 px-4 py-2 text-center text-sm font-medium animate-pulse">
           📴 Anda sedang offline. Beberapa fitur mungkin tidak tersedia.
         </div>
       )}
@@ -115,10 +115,10 @@ export default function OfflineIndicator() {
 
       {/* Install PWA Prompt */}
       {showInstallPrompt && !isInstalled && (
-        <div className="fixed bottom-4 left-4 right-4 z-50 bg-card border rounded-lg p-4 shadow-lg max-w-md mx-auto animate-in slide-in-from-bottom-2 duration-300">
+        <div className="fixed bottom-4 left-4 right-4 z-50 bg-card border rounded-lg p-4 shadow-lg w-[70vw] md:max-w-sm mx-auto animate-in slide-in-from-bottom-2 duration-300">
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <h3 className="font-semibold text-sm mb-1">📱 Install LensFolia</h3>
+              <h3 className="font-semibold text-sm mb-1">Install LensFolia</h3>
               <p className="text-xs text-muted-foreground mb-3">
                 Install aplikasi untuk akses lebih cepat dan fitur offline
               </p>
@@ -148,7 +148,7 @@ export default function OfflineIndicator() {
               className="flex-1"
               disabled={isInstalling}
             >
-              {isInstalling ? '⏳ Installing...' : '📲 Install'}
+              {isInstalling ? '⏳ Installing...' : 'Install'}
             </Button>
           </div>
         </div>

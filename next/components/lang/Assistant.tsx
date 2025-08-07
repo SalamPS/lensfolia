@@ -81,7 +81,7 @@ export default function DokterLensfoliaFloating () {
 				<div ref={scrollerRef} className="grow overflow-y-auto pt-2 pb-3 hidden-scroll">
 					{chatLog.map((chat, idx) => (
 						<div key={idx} className={`px-4 py-2 ${chat.role === 'bot' ? 'text-left text-foreground' : 'text-right text-background'}`}>
-							<div className={`${chat.role === 'bot' ? 'bg-primary/80' : 'bg-card'} px-4 py-2 rounded-lg shadow-md inline-block max-w-[80%]`}>
+							<div className={`${chat.role === 'bot' ? 'bg-primary/80' : 'bg-card text-foreground'} px-4 py-2 rounded-lg shadow-md inline-block max-w-[80%]`}>
 								<Markdown>
 									{chat.message}
 								</Markdown>
