@@ -195,7 +195,7 @@ export default function LFDResultPage({detId}: {detId?: string}) {
           </div>
           <div className="border-border bg-card flex flex-col items-center justify-center gap-1 overflow-hidden rounded-lg border-[1px] p-2 sm:rounded-[20px] sm:p-4">
             <img
-              src={result?.diagnoses_result[0].annotated_image || "/placeholder.svg"}
+              src={result?.diagnoses_result[0].annotated_image || "not-found.svg"}
               alt="Captured Image"
               className="w-full max-w-xs rounded-md object-cover sm:max-w-md"
             />
@@ -227,7 +227,7 @@ export default function LFDResultPage({detId}: {detId?: string}) {
                       <Card className="border-border w-full">
                         <CardContent className="flex flex-col items-center justify-center">
                           <img
-                            src={disease.base64_image || "/placeholder.svg"}
+                            src={disease.base64_image || "not-found.svg"}
                             alt={disease.label || "Disease Image"}
                             className="mb-4 aspect-[4/3] min-h-[200px] w-full rounded-md object-cover"
                           />

@@ -275,7 +275,7 @@ export default function DetectionMenu() {
           <div className="border-border dark:bg-input flex flex-col items-center justify-center gap-1 rounded-xl border-[1px] bg-zinc-100 p-3 sm:rounded-[20px] sm:p-4">
             {capturedFile && (
               <img
-                src={capturedImageUrl || ""}
+                src={capturedImageUrl || "not-found.svg"}
                 alt="Captured Image"
                 className="max-h-[50vh] w-full max-w-full rounded-md object-contain"
               />

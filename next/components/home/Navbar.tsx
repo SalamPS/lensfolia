@@ -132,7 +132,7 @@ const Navbar = () => {
                 <DropdownMenuTrigger className="focus:ring-primary flex items-center justify-center rounded-md px-3 py-2 transition-colors duration-200 hover:bg-card/50 focus:ring-1 focus:outline-none">
                   <div className="cursor-pointer bg-primary relative aspect-square h-6 shrink-0 overflow-hidden rounded-full">
                     <img
-                      src={userForNavbar.profilePicture || "/profile.jpg"}
+                      src={userForNavbar.profilePicture || "not-found.svg"}
                       alt={userForNavbar.name[0]}
                       className="aspect-square w-full rounded-full"
                     />

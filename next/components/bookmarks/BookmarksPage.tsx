@@ -239,7 +239,7 @@ export default function BookmarksPage () {
 								<div key={bookmark.id} className="bg-secondary border border-border rounded-2xl p-2">
 									<Link href={`/result/${bookmark.id}`}>
 										<img 
-											src={bookmark.diagnoses_result[0]?.annotated_image} 
+											src={bookmark.diagnoses_result[0]?.annotated_image || "not-found.svg"} 
 											alt={
 												bookmark.name
 													? bookmark.name
