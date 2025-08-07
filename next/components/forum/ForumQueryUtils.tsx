@@ -55,6 +55,31 @@ export const ForumQuery = async () => {
 	return response.data
 }
 
+export const ForumQueryWithID = async (userId:string) => {
+	const response = await supabase
+	.from("forums")
+	.select(`
+		*,
+		user_profiles (
+			id,
+			name,
+			profile_picture
+		),
+		diagnoses(*),
+		rating(*),
+		forums_views(*),
+		forums_discussions(*,
+			rating(*),
+			forums_comments(*,
+				rating(*)
+			)
+		)
+	`)
+	.eq("created_by", userId);
+	return response.data
+}
+
+
 export const ForumDetailQuery = async (id:string) => {
 	const response = await supabase
 	.from("forums")

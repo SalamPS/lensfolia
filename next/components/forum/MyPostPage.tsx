@@ -1,76 +1,105 @@
+"use client";
+
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
-import React from "react";
+import React, { useContext } from "react";
 import { Button } from "../ui/button";
 import { ChevronLeft } from "lucide-react";
 import { Avatar, AvatarImage } from "../ui/avatar";
 import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
 import { Input } from "../ui/input";
 import { IconPlus } from "@tabler/icons-react";
-import { PostType } from "./ForumCard";
 import MyPostCard from "./MyPostCard";
+import { ForumPost } from "./MockData";
+import { ForumConverter, ForumQueryWithID } from "./ForumQueryUtils";
+import ForumCardSkeleton from "./ForumCardSkeleton";
+import { PostContext } from "./PostContext";
 
 const MyPostPage = () => {
-  // Mock data untuk postingan user
-  const mockMyPosts = [
-    {
-      id: "1",
-      title: "Masalah pada daun jagung menguning",
-      content:
-        "Tanaman jagung saya mengalami masalah dengan daun yang menguning dan layu. Sudah saya beri pupuk tapi tidak membaik. Ada yang tahu solusinya?",
-      timeAgo: "2 jam yang lalu",
-      type: "diseases" as PostType,
-      tags: ["jagung", "penyakit", "daun"],
-      comments: ["c1", "c2"],
-      upvotes: ["u1", "u2", "u3"],
-      downvotes: ["d1"],
-      nullvotes: [],
-      views: 124,
-    },
-    {
-      id: "2",
-      title: "Hama ulat pada tanaman tomat",
-      content:
-        "Saya menemukan banyak ulat kecil di tanaman tomat saya. Bagaimana cara mengatasinya secara organik?",
-      timeAgo: "1 hari yang lalu",
-      type: "pests" as PostType,
-      tags: ["tomat", "hama", "ulat", "organik"],
-      comments: ["c3", "c4", "c5"],
-      upvotes: ["u4", "u5"],
-      downvotes: [],
-      nullvotes: ["n1"],
-      views: 89,
-    },
-    {
-      id: "3",
-      title: "Tips merawat tanaman cabai di musim hujan",
-      content:
-        "Bagaimana cara merawat tanaman cabai agar tidak busuk akar saat musim hujan? Berbagi pengalaman saya selama 3 tahun bertani cabai.",
-      timeAgo: "3 hari yang lalu",
-      type: "general" as PostType,
-      tags: ["cabai", "musim hujan", "perawatan"],
-      imageUrl: ["/images/pepper1.jpg"],
-      comments: ["c6", "c7", "c8", "c9"],
-      upvotes: ["u6", "u7", "u8", "u9", "u10"],
-      downvotes: ["d2"],
-      nullvotes: [],
-      views: 256,
-    },
-    {
-      id: "4",
-      title: "Pertanyaan tentang hidroponik untuk pemula",
-      content:
-        "Saya ingin mencoba hidroponik untuk pertama kalinya. Apa saja yang perlu dipersiapkan dan tanaman apa yang cocok untuk pemula?",
-      timeAgo: "1 minggu yang lalu",
-      type: "general" as PostType,
-      tags: ["hidroponik", "pemula"],
-      comments: ["c10"],
-      upvotes: ["u11"],
-      downvotes: [],
-      nullvotes: [],
-      views: 72,
-    },
-  ];
+  const [forumPosts, setForumPosts] = React.useState<ForumPost[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [searchQuery, setSearchQuery] = React.useState("");
+  const [activeFilter, setActiveFilter] = React.useState("all");
+  const {user, refresh} = useContext(PostContext)
+
+  // Filter dan search logic
+  const filteredPosts = React.useMemo(() => {
+    let filtered = forumPosts;
+
+    // Filter by type
+    if (activeFilter !== "all") {
+      filtered = filtered.filter(post => post.type === activeFilter);
+    }
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(post =>
+        post.title.toLowerCase().includes(query) ||
+        post.content.toLowerCase().includes(query) ||
+        post.tags.some(tag => tag.toLowerCase().includes(query))
+      );
+    }
+
+    return filtered;
+  }, [forumPosts, activeFilter, searchQuery]);
+
+  React.useEffect(() => {
+    (async () => {
+      if (!user) return;
+      const response = await ForumQueryWithID(user.id);
+      if (response) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const finalForm: ForumPost[] = response.map((post: any) =>
+          ForumConverter(post),
+        );
+        setForumPosts(finalForm);
+      }
+      setLoading(false);
+    })();
+  }, [user, refresh]);
+
+  if (loading) {
+    return (
+      <section className="bg-background flex min-h-screen w-full justify-center px-4 pt-20 pb-10">
+        <div className="w-full max-w-7xl">
+          <div className="flex flex-col justify-center gap-6">
+            <Link href="/forum">
+              <Button variant="outline" size="sm">
+                <ChevronLeft className="mr-2 h-4 w-4" />
+                Kembali
+              </Button>
+            </Link>
+
+            {/* Skeleton Header */}
+            <div className="my-4 flex items-center gap-4">
+              <div className="h-10 w-10 rounded-full bg-zinc-300 dark:bg-card animate-pulse" />
+              <div className="flex flex-col gap-2">
+                <div className="h-5 w-32 rounded bg-zinc-300 dark:bg-card animate-pulse" />
+                <div className="h-4 w-20 rounded bg-zinc-300 dark:bg-card animate-pulse" />
+              </div>
+            </div>
+
+            {/* Skeleton Filtering */}
+            <div className="flex flex-col-reverse gap-2 lg:flex-row lg:items-center lg:justify-between">
+              <div className="h-10 w-80 rounded bg-zinc-300 dark:bg-card animate-pulse" />
+              <div className="flex gap-2">
+                <div className="h-10 w-80 rounded bg-zinc-300 dark:bg-card animate-pulse" />
+                <div className="h-10 w-32 rounded bg-zinc-300 dark:bg-card animate-pulse" />
+              </div>
+            </div>
+
+            {/* Skeleton Cards */}
+            <div className="mt-6 grid gap-4">
+              {[...Array(3)].map((_, index) => (
+                <ForumCardSkeleton key={index} />
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <>
@@ -85,7 +114,7 @@ const MyPostPage = () => {
               </Button>
             </Link>
 
-            {mockMyPosts.length > 0 ? (
+            {forumPosts.length > 0 ? (
               <>
                 {/* Tampilan ketika ada postingan */}
                 <div className="my-4 flex items-center gap-4">
@@ -96,7 +125,7 @@ const MyPostPage = () => {
                     <h1 className="text-xl font-semibold">Postingan Saya</h1>
                     <div className="text-muted-foreground text-sm">
                       <p>
-                        <span>{mockMyPosts.length}</span> postingan
+                        <span>{forumPosts.length}</span> postingan • <span>{filteredPosts.length}</span> ditampilkan
                       </p>
                     </div>
                   </div>
@@ -106,7 +135,7 @@ const MyPostPage = () => {
                 <div className="flex w-full flex-col">
                   {/* filtering */}
                   <div className="flex flex-col-reverse gap-2 lg:flex-row lg:items-center lg:justify-between">
-                    <Tabs defaultValue="all">
+                    <Tabs value={activeFilter} onValueChange={setActiveFilter}>
                       <TabsList className="w-full shrink-0 flex-wrap">
                         <TabsTrigger value="all">Semua</TabsTrigger>
                         <TabsTrigger value="general">Umum</TabsTrigger>
@@ -115,10 +144,12 @@ const MyPostPage = () => {
                       </TabsList>
                     </Tabs>
 
-                    <form className="flex w-full items-center justify-end gap-2 lg:w-auto">
+                    <form className="flex w-full items-center justify-end gap-2 lg:w-auto" onSubmit={(e) => e.preventDefault()}>
                       <Input
                         placeholder="Cari postingan, topik atau tag..."
                         className="w-full md:w-96"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
                       />
                       <Link href="/forum/new-post">
                         <Button variant="default" className="gap-2 shadow-lg">
@@ -131,22 +162,51 @@ const MyPostPage = () => {
 
                   {/* my post cards */}
                   <div className="mt-6 grid gap-4">
-                    {mockMyPosts.map((post) => (
-                      <MyPostCard
-                        key={post.id}
-                        id={post.id}
-                        title={post.title}
-                        content={post.content}
-                        timeAgo={post.timeAgo}
-                        type={post.type}
-                        tags={post.tags}
-                        comments={post.comments}
-                        upvotes={post.upvotes}
-                        downvotes={post.downvotes}
-                        nullvotes={post.nullvotes}
-                        views={post.views}
-                      />
-                    ))}
+                    {filteredPosts.length > 0 ? (
+                      filteredPosts.map((post) => (
+                        <MyPostCard
+                          key={post.id}
+                          id={post.id}
+                          title={post.title}
+                          content={post.content}
+                          timeAgo={post.timeAgo}
+                          type={post.type}
+                          tags={post.tags}
+                          comments={post.comments}
+                          upvotes={post.upvotes}
+                          downvotes={post.downvotes}
+                          nullvotes={post.nullvotes}
+                          views={post.views}
+                        />
+                      ))
+                    ) : (
+                      <div className="flex flex-col items-center justify-center gap-6 py-12 text-center">
+                        <img
+                          src="/not-found.svg"
+                          alt="No posts found"
+                          width={200}
+                          height={200}
+                          className="opacity-70"
+                        />
+                        <div className="space-y-2">
+                          <h3 className="text-xl font-semibold">
+                            Tidak Ada Postingan Ditemukan
+                          </h3>
+                          <p className="text-muted-foreground max-w-md">
+                            Tidak ada postingan yang sesuai dengan filter atau pencarian Anda.
+                          </p>
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          onClick={() => {
+                            setSearchQuery("");
+                            setActiveFilter("all");
+                          }}
+                        >
+                          Reset Filter
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </>

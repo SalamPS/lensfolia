@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   IconArrowBigDownLines,
   IconArrowBigUpLines,
@@ -23,6 +23,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "../ui/alert-dialog";
+import { useVote } from "@/hooks/useVote";
+import { PostContext } from "./PostContext";
+import { supabase } from "@/lib/supabase";
 
 interface MyPostCardProps {
   id: string;
@@ -72,21 +75,38 @@ const MyPostCard = ({
   //   nullvotes,
   views,
 }: MyPostCardProps) => {
- const [isDeleting, setIsDeleting] = useState(false); 
+  const [isDeleting, setIsDeleting] = useState(false); 
+  const { user, setRefresh } = useContext(PostContext);
+  const rating = useVote({ user });
 
- const handleDelete = async () => {
-   setIsDeleting(true);
-   try {
-     console.log(`Menghapus postingan dengan ID: ${id}`);
-     // Simulasi proses penghapusan
-     await new Promise((resolve) => setTimeout(resolve, 1000));
-     // Logika penghapusan 
-   } catch (error) {
-     console.error("Gagal menghapus postingan:", error);
-   } finally {
-     setIsDeleting(false);
-   }
- };
+  useEffect(() => {
+    rating.syncVote({
+      id,
+      title,
+      authorId: user?.id || "",
+      initialUpvotes: upvotes,
+      initialDownvotes: downvotes,
+      initialNullvotes: [],
+      reference: "forum"
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, id, title, upvotes, downvotes]);
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      const data = await supabase
+        .from("forums")
+        .delete()
+        .eq("id", id);
+      if (!data) throw "error";
+      setRefresh(prev => prev+1);
+    } catch (error) {
+      console.error("Gagal menghapus postingan:", error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   return (
     <div className="bg-background border-border rounded-2xl border p-4 shadow-sm transition-all hover:shadow-md">
@@ -143,7 +163,7 @@ const MyPostCard = ({
                 <div className="rounded-full p-1.5">
                   <IconArrowBigUpLines size={18} />
                 </div>
-                <span className="text-xs">{upvotes.length || 0}</span>
+                <span className="text-xs">{rating.getUpVoteCount() || 0}</span>
               </div>
 
               {/* Downvote */}
@@ -151,7 +171,7 @@ const MyPostCard = ({
                 <div className="rounded-full p-1.5">
                   <IconArrowBigDownLines size={18} />
                 </div>
-                <span className="text-xs">{downvotes.length || 0}</span>
+                <span className="text-xs">{rating.getDownVoteCount() || 0}</span>
               </div>
             </div>
 
