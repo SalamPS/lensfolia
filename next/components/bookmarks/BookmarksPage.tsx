@@ -59,6 +59,7 @@ export default function BookmarksPage () {
 				}
 				console.log(response);
 			} catch (error) {
+				setIsLoading(false);
 				console.error("Error fetching bookmarks:", error);
 			} finally {
 				setIsLoading(false);
@@ -147,11 +148,17 @@ export default function BookmarksPage () {
 					<div className="flex gap-4">
 						<div className="grow">
 							<div className="bg-primary/40 text-foreground rounded-xl p-3 flex items-center gap-1 w-fit">
-								<IconBookmark size={24} />
-								<span>{filteredBookmarks.length}</span>
-								<span className="hidden md:inline">
-									Bookmark tersedia
-								</span>
+								{isLoading ? <>
+									<div className="animate-spin rounded-full h-6 w-6 border-t-2 mr-2 border-primary"/>
+									<span className="animate-pulse">Memuat Bookmark</span>
+								</> 
+								: <>
+									<IconBookmark size={24} />
+									<span>{filteredBookmarks.length}</span>
+									<span className="hidden md:inline">
+										Bookmark tersedia
+									</span>
+								</>}
 							</div>
 						</div>
 						<div className="flex items-center gap-4">
