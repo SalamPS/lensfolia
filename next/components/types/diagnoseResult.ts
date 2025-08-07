@@ -60,5 +60,6 @@ export type LFD_ = {
 	is_public: boolean;
 	is_bookmarked: boolean;
 	id_anon: string;
+	name?: string;
 	diagnoses_result: LFDResult_[];
 }
