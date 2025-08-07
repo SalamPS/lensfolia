@@ -1,9 +1,8 @@
 'use client'
 
-import { PostgrestSingleResponse } from "@supabase/supabase-js";
+import { PostgrestSingleResponse, User } from "@supabase/supabase-js";
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import { useAuth } from "@/hooks/useAuth";
 
 interface PostMetadata {
 	id: string;
@@ -18,8 +17,7 @@ interface VoteHandlerParams extends PostMetadata {
 	initialNullvotes: string[];
 }
 
-export function useVote() {
-	const { user } = useAuth();
+export function useVote({user}: { user: User | null }) {
 	const [postData, setPostData] = useState<PostMetadata>({id: "", title: "", authorId: "", reference: "" });
 	const [postUpvotes, setPostUpvotes] = useState<string[]>([]);
 	const [postDownvotes, setPostDownvotes] = useState<string[]>([]);
