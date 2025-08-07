@@ -1,10 +1,10 @@
+/* eslint-disable @next/next/no-img-element */
 import {
   IconBolt,
   IconCpu,
   IconPlant,
   IconSparkles,
 } from "@tabler/icons-react";
-import Image from "next/image";
 import React from "react";
 import TitleBadge from "../ui/title-badge";
 
@@ -63,7 +63,7 @@ const Features = () => {
               <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-3 md:gap-6">
                 {/* Header Card */}
                 <div className="relative flex flex-col justify-center gap-6 overflow-hidden rounded-lg bg-linear-to-tr from-teal-900 via-teal-500 to-teal-300 p-4 shadow-md inset-shadow-sm inset-shadow-white/50 md:col-span-2">
-                  <Image
+                  <img
                     src="/LogoIcon.svg"
                     alt="lensfolia-logo"
                     width={24}

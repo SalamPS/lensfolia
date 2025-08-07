@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 'use client'
 
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import Image from "next/image";
 import { useAuth } from "@/hooks/useAuth";
 import { useState } from "react";
 
@@ -64,7 +64,7 @@ export default function SignupModal() {
             className="bg-primary flex size-11 shrink-0 items-center justify-center rounded-full shadow-[0px_0px_24px_rgba(20,184,166,0.7)]"
             aria-hidden="true"
           >
-            <Image
+            <img
               src="/logo-asset-white.svg"
               width={24}
               height={24}
@@ -89,7 +89,7 @@ export default function SignupModal() {
             onClick={() => handleSignIn('google')}
             disabled={isLoading}
           >
-            <Image src="/google.png" width={16} height={16} alt="Google" />
+            <img src="/google.png" width={16} height={16} alt="Google" />
             {isLoading ? 'Loading...' : 'Lanjutkan dengan Google'}
           </Button>
           <Button 
@@ -98,7 +98,7 @@ export default function SignupModal() {
             onClick={() => handleSignIn('github')}
             disabled={isLoading}
           >
-            <Image
+            <img
               src="/github-icon-2.svg"
               width={18}
               height={18}

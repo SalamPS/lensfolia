@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import React from "react";
@@ -16,7 +17,6 @@ import {
 } from "../ui/pagination";
 import ForumCard from "./ForumCard";
 import ForumCardSkeleton from "./ForumCardSkeleton";
-import Image from "next/image";
 import { ForumPost } from "./MockData";
 import { ForumConverter, ForumQuery } from "./ForumQueryUtils";
 import Link from "next/link";
@@ -194,7 +194,7 @@ const ForumPage = () => {
                 ))
               ) : (
                 <div className="col-span-full flex flex-col items-center justify-center gap-4 py-12">
-                  <Image
+                  <img
                     src="/not-found-404.svg"
                     alt="Not found"
                     width={200}

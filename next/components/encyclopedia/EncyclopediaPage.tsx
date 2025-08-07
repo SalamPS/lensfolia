@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import {
@@ -35,7 +36,6 @@ import {
 } from "../ui/dialog";
 import EncyclopediaCardSkeleton from "./EncyclopediaCardSkeleton";
 import EncyclopediaCard from "./EncyclopediaCard";
-import Image from "next/image";
 // import { mockEncyclopediaData } from "./MockData";
 import StaticBG from "../StaticBG";
 import { supabase } from "@/lib/supabase";
@@ -287,7 +287,7 @@ const EncyclopediaPage = () => {
               ))
             ) : (
               <div className="col-span-full flex flex-col items-center justify-center gap-4 py-12">
-                <Image
+                <img
                   src="/not-found-404.svg"
                   alt="Not found"
                   width={200}

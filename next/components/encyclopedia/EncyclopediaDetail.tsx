@@ -1,6 +1,6 @@
+/* eslint-disable @next/next/no-img-element */
 // components/encyclopedia/EncyclopediaDetail.tsx
 import React from "react";
-import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -51,11 +51,10 @@ const EncyclopediaDetail: React.FC<EncyclopediaDetailProps> = ({ data }) => {
 
           {/* Gambar Utama */}
           <div className="relative mx-auto mb-8 aspect-video w-3/4 overflow-hidden rounded-lg">
-            <Image
+            <img
               src={data.imageUrl}
               alt={data.title}
-              fill
-              className="object-cover"
+              className="object-cover w-full h-full"
             />
           </div>
 

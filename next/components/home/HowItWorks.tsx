@@ -1,6 +1,6 @@
+/* eslint-disable @next/next/no-img-element */
 import React from "react";
 import TitleBadge from "../ui/title-badge";
-import Image from "next/image";
 
 const HowItWorks = () => {
   const CARDS = [
@@ -63,7 +63,7 @@ const HowItWorks = () => {
                     key={card.id}
                     className="bg-card border-border group flex gap-2 rounded-2xl border p-2 md:flex-col md:gap-4"
                   >
-                    <Image
+                    <img
                       src={card.image}
                       alt={card.alt}
                       width={300}

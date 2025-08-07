@@ -1,5 +1,5 @@
+/* eslint-disable @next/next/no-img-element */
 import { cn } from "@/lib/utils";
-import Image from "next/image";
 import React from "react";
 
 interface HeroSectionProps {
@@ -13,25 +13,23 @@ const StaticBG: React.FC<HeroSectionProps> = ({ children, overlay }) => {
       {/* Background spotlight */}
       <div className="relative flex justify-between">
         <div className="absolute top-0 -left-40 z-5">
-          <Image
+          <img
             src="/spotlight.svg"
             alt="Spotlight Left"
             height={720}
             width={720}
-            objectFit="cover"
+            style={{ objectFit: "cover" }}
             className="pointer-events-none dark:opacity-35"
-            priority
           />
         </div>
         <div className="absolute top-0 -right-40 z-5 hidden md:block">
-          <Image
+          <img
             src="/spotlight.svg"
             alt="Spotlight Right"
             height={720}
             width={720}
-            objectFit="cover"
+            style={{ objectFit: "cover" }}
             className="transfform pointer-events-none -scale-x-100 dark:opacity-35"
-            priority
           />
         </div>
       </div>

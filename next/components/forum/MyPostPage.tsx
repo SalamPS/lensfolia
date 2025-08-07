@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 import React from "react";
 import { Button } from "../ui/button";
@@ -8,7 +9,6 @@ import { Input } from "../ui/input";
 import { IconPlus } from "@tabler/icons-react";
 import { PostType } from "./ForumCard";
 import MyPostCard from "./MyPostCard";
-import Image from "next/image";
 
 const MyPostPage = () => {
   // Mock data untuk postingan user
@@ -154,7 +154,7 @@ const MyPostPage = () => {
               <>
                 {/* Tampilan ketika tidak ada postingan */}
                 <div className="flex flex-col items-center justify-center gap-6 py-12 text-center">
-                  <Image
+                  <img
                     src="/not-found-404.svg"
                     alt="No posts found"
                     width={300}

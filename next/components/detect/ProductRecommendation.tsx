@@ -1,7 +1,7 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { Button } from "@/components/ui/button";
-import Image from "next/image";
 import Link from "next/link";
 import { LFDProduct_ } from "../types/diagnoseResult";
 import { IconExternalLink } from "@tabler/icons-react";
@@ -23,7 +23,7 @@ export function ProductRecommendation({
             className="border-border dark:bg-border flex h-24 w-full items-center gap-1 rounded-xl border bg-zinc-100 transition-shadow hover:shadow-sm"
           >
             <div className="flex aspect-square h-full min-w-[80px] items-center justify-center overflow-hidden rounded-l-lg bg-gray-100 dark:bg-gray-800">
-              <Image
+              <img
                 src={product.image_url || "/not-found.png"}
                 alt={product.name}
                 width={80}

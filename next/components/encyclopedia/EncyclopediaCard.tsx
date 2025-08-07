@@ -1,7 +1,7 @@
+/* eslint-disable @next/next/no-img-element */
 import React from "react";
 import { EncyclopediaEntry } from "../types/encyclopedia";
 import SpotlightCard from "../SpotlightCard";
-import Image from "next/image";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import ReactMarkdown from "react-markdown";
@@ -18,11 +18,10 @@ const EncyclopediaCard: React.FC<EncyclopediaCardProps> = ({ data }) => {
       spotlightColor="rgba(0, 187, 167, 0.2)"
     >
       <div className="relative aspect-[4/3] w-full">
-        <Image
+        <img
           src={data.imageUrl}
           alt={data.title}
-          fill
-          className="rounded-sm object-cover"
+          className="rounded-sm object-cover w-full h-full"
         />
       </div>
       <div className="px-2 py-4 pb-2">

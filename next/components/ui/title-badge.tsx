@@ -1,7 +1,7 @@
+/* eslint-disable @next/next/no-img-element */
 // components/TitleBadge.tsx
 "use client";
 
-import Image from "next/image";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 
@@ -46,7 +46,7 @@ export default function TitleBadge({
         !isMounted ? "opacity-0" : ""
       }`}
     >
-      <Image
+      <img
         src={iconSrc}
         alt="tag-icon"
         width={16}

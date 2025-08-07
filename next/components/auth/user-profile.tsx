@@ -1,8 +1,8 @@
+/* eslint-disable @next/next/no-img-element */
 'use client'
 
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
-import Image from 'next/image'
 
 export default function UserProfile() {
   const { user, signOut, loading } = useAuth()
@@ -18,7 +18,7 @@ export default function UserProfile() {
   return (
     <div className="flex items-center gap-3 p-4 border rounded-lg">
       {user.user_metadata?.avatar_url && (
-        <Image
+        <img
           src={user.user_metadata.avatar_url}
           alt="Profile"
           width={40}

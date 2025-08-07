@@ -1,7 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import Image from "next/image";
 import { ModeToggle } from "@/components/ui/mode-toggle";
 import { IconArrowUpRight, IconMenu2, IconX, IconBookmark, IconLogout, IconUser, IconMail } from "@tabler/icons-react";
 import Link from "next/link";
@@ -77,17 +76,15 @@ const Navbar = () => {
               className="relative flex h-[28px] w-[28px] shrink-0 items-center gap-2"
               aria-label="Go to top"
             >
-              <Image
+              <img
                 src="/logo-asset-black.svg"
                 alt="App Logo"
-                fill
-                className="dark:hidden"
+                className="dark:hidden w-full h-full"
               />
-              <Image
+              <img
                 src="/logo-asset-white.svg"
                 alt="App Logo"
-                fill
-                className="hidden dark:block"
+                className="hidden dark:block w-full h-full"
               />
               <p className="text-foreground hidden pl-9 font-bold md:flex">
                 Lensfolia
