@@ -105,7 +105,7 @@ export default function BookmarksPage () {
 	}
 
 	if (!user) {
-		return <div className="flex items-center p-8 text-center justify-center min-h-screen">Harap daftar / masuk ke akun anda untuk mengakses bookmark anda</div>
+		return <div className="flex items-center p-8 text-center justify-center min-h-screen">Silahkan daftar / masuk ke akun anda untuk mengakses bookmark anda</div>
 	}
 
 	const handleRename = async (id:string, index:number) => {
