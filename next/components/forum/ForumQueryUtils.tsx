@@ -2,7 +2,6 @@
 
 import { supabase } from "@/lib/supabase";
 import { Comment, ForumPost } from "./MockData";
-import { User } from "@supabase/supabase-js";
 
 const getTimeAgo = (dateString: string): string => {
 	const now = new Date();
@@ -89,9 +88,8 @@ export const ForumDetailQuery = async (id:string) => {
 	return response.data
 }
 
-export const ForumReplyConverter = (comments: any, user: User | null): Comment => {
+export const ForumReplyConverter = (comments: any): Comment => {
 	return {
-		user: user,
 		id: comments.id,
 		author: comments.user_profiles.name,
 		authorId: comments.user_profiles.id,
@@ -104,9 +102,8 @@ export const ForumReplyConverter = (comments: any, user: User | null): Comment =
 	}
 }
 
-export const ForumCommentConverter = (post: any, user: User | null): Comment[] => {
+export const ForumCommentConverter = (post: any): Comment[] => {
 	return post.forums_discussions.map((discussion: any) => ({
-		user: user,
 		id: discussion.id,
 		author: discussion.user_profiles.name,
 		authorId: discussion.user_profiles.id,
@@ -116,7 +113,7 @@ export const ForumCommentConverter = (post: any, user: User | null): Comment[] =
 		upvotes: discussion.rating.filter((rating: any) => rating.is_upvote === true).map((rating: any) => rating?.created_by),
 		downvotes: discussion.rating.filter((rating: any) => rating.is_upvote === false).map((rating: any) => rating?.created_by),
 		nullvotes: discussion.rating.filter((rating: any) => rating.is_upvote === null).map((rating: any) => rating?.created_by),
-		replies: discussion.forums_comments.map((reply: any) => ForumReplyConverter(reply, user)),
+		replies: discussion.forums_comments.map((reply: any) => ForumReplyConverter(reply)),
 	}))
 }
 

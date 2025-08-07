@@ -43,7 +43,7 @@ const PostPage = ({ slug }: { slug: string }) => {
         return;
       }
       const response_post = ForumConverter(response[0]);
-      const response_comments = ForumCommentConverter(response[0], user);
+      const response_comments = ForumCommentConverter(response[0]);
       setPost(response_post);
       setComments(response_comments);
       setIsLoading(false);

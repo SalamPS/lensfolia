@@ -10,10 +10,8 @@ import { supabase } from "@/lib/supabase";
 import { PostContext } from "./PostContext";
 import { cn } from "@/lib/utils";
 import { useVote } from "@/hooks/useVote";
-import { User } from "@supabase/supabase-js";
 
 interface CommentItemProps {
-  user: User | null;
   isReply?: string;
   id: string;
   author: string;
@@ -28,7 +26,6 @@ interface CommentItemProps {
 }
 
 const CommentItem = ({
-  user,
   isReply = "",
   id,
   author,
@@ -43,7 +40,7 @@ const CommentItem = ({
 }: CommentItemProps) => {
   const [showReplyForm, setShowReplyForm] = React.useState(false);
   const [replyContent, setReplyContent] = React.useState("");
-  const { setRefresh } = useContext(PostContext);
+  const { setRefresh, user } = useContext(PostContext);
   const rating = useVote({ user });
 
   useEffect(() => {

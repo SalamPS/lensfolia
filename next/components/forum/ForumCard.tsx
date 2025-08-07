@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useContext, useEffect } from "react";
 import {
   IconArrowBigDownLines,
   IconArrowBigUpLines,
@@ -9,15 +9,12 @@ import { Avatar, AvatarImage } from "../ui/avatar";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { anonUser_ } from "@/hooks/useAuth";
-import { User } from "@supabase/supabase-js";
 import { useVote } from "@/hooks/useVote";
+import { PostContext } from "./PostContext";
 
 export type PostType = "diseases" | "pests" | "general";
 
 interface ForumCardProps {
-  user: User | null;
-  anonUser: anonUser_ | null;
   id: string;
   title: string;
   content: string;
@@ -56,8 +53,6 @@ const typeStyles: Record<
 };
 
 const ForumCard = ({
-  user,
-  anonUser,
   id,
   title,
   content,
@@ -73,6 +68,7 @@ const ForumCard = ({
   nullvotes: initialNullvotes,
   views,
 }: ForumCardProps) => {
+  const { user, anonUser } = useContext(PostContext);
   const router = useRouter();
   const rating = useVote({ user });
 
