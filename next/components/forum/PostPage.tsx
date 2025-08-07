@@ -24,6 +24,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
 
 const PostPage = ({ slug }: { slug: string }) => {
   const [post, setPost] = React.useState<ForumPost | null>(null);
@@ -227,9 +228,19 @@ const PostPage = ({ slug }: { slug: string }) => {
 
         {/* Comments Section */}
         <div>
-          <h3 className="mb-4 text-lg font-semibold">
-            {comments.length} Komentar
-          </h3>
+          <div className="flex w-full justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold">
+              {comments.length} Komentar
+            </h3>
+            <Tabs
+              defaultValue="terbaru"
+            >
+              <TabsList className="w-full shrink-0 flex-wrap">
+                <TabsTrigger value="terbaru">Terbaru</TabsTrigger>
+                <TabsTrigger value="terbaik">Terbaik</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
 
           {comments.length > 0 ? (
             <div className="space-y-4">

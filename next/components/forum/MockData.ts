@@ -48,3 +48,25 @@ export interface Comment {
   nullvotes: string[];
   replies?: Comment[];
 }
+
+export interface Notification {
+  id: string;
+  type: "reply" | "mention"; // 'reply' buat balasan post, 'mention' buat mention di komentar
+  user: {
+    id: string;
+    name: string;
+    avatar: string;
+  };
+  timeAgo: string; //createdAt
+  post: {
+    id: string;
+    title: string;
+  };
+  comment?: {
+    id: string;
+    content: string;
+    isYourComment?: boolean; 
+  };
+  replyContent: string;
+  isRead: boolean;
+}
