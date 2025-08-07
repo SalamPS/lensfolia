@@ -143,6 +143,11 @@ export function useVote() {
 	const getUpVoteCount = ():number => {return postUpvotes.length}
 	const getUserUpVoting = ():boolean => {return postUpvotes.includes(user?.id || "")}
 	const getUserDownVoting = ():boolean => {return postDownvotes.includes(user?.id || "")}
+	const getUserVote = (): "up" | "down" | null => {
+		if (getUserUpVoting()) return "up";
+		if (getUserDownVoting()) return "down";
+		return null;
+	}
 
 	const syncVote = async ({
 		id,
@@ -171,6 +176,7 @@ export function useVote() {
 		getDownVoteCount,
 		getUserUpVoting,
 		getUserDownVoting,
+		getUserVote,
 		activeVote, 
 		setActiveVote, 
 		isVoted, 

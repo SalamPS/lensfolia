@@ -20,6 +20,7 @@ import Image from "next/image";
 import { ForumPost } from "./MockData";
 import { ForumConverter, ForumQuery } from "./ForumQueryUtils";
 import Link from "next/link";
+import { useAuth } from "@/hooks/useAuth";
 
 const ForumPage = () => {
   const [currentPage, setCurrentPage] = React.useState(1);
@@ -29,6 +30,7 @@ const ForumPage = () => {
   >("all");
   const [loading, setLoading] = React.useState(true);
   const [forumPosts, setForumPosts] = React.useState<ForumPost[]>([]);
+  const { user, anonUser } = useAuth();
 
   const postsPerPage = 5;
 
@@ -147,6 +149,8 @@ const ForumPage = () => {
               ) : currentPosts.length > 0 ? (
                 currentPosts.map((post) => (
                   <ForumCard
+                    user={user}
+                    anonUser={anonUser}
                     key={post.id}
                     id={post.id}
                     title={post.title}
