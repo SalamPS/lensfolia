@@ -30,7 +30,7 @@ export function mapEncyclopediaEntryDBToEntry(dbEntry: EncyclopediaEntryDB): Enc
     title: dbEntry.name,
     description: dbEntry.description,
     imageUrl: dbEntry.image_url,
-    type: dbEntry.category == "insects" ? "hama" : "penyakit",
+    type: dbEntry.category == "insects" ? "hama" : dbEntry.category == "diseases" ? "penyakit" : "tanaman",
     date: new Date(dbEntry.created_at).toISOString().split('T')[0],
     symptoms: dbEntry.symptoms,
     prevention: dbEntry.prevention,

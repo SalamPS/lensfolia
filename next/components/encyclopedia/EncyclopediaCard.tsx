@@ -4,6 +4,7 @@ import SpotlightCard from "../SpotlightCard";
 import Image from "next/image";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
+import ReactMarkdown from "react-markdown";
 import Link from "next/link";
 
 interface EncyclopediaCardProps {
@@ -24,10 +25,10 @@ const EncyclopediaCard: React.FC<EncyclopediaCardProps> = ({ data }) => {
           className="rounded-sm object-cover"
         />
       </div>
-      <div className="px-2 py-4">
+      <div className="px-2 py-4 pb-2">
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <Badge variant={data.type === "hama" ? "destructive" : "warning"}>
+            <Badge variant={data.type === "hama" ? "destructive" : data.type === "penyakit" ? "warning" : "default"}>
               {data.type}
             </Badge>
             <span className="text-muted-foreground text-xs">
@@ -43,9 +44,16 @@ const EncyclopediaCard: React.FC<EncyclopediaCardProps> = ({ data }) => {
             {data.title}
           </h3>
         </div>
-        <p className="text-muted-foreground mt-2 line-clamp-2 text-sm">
-          {data.description}
-        </p>
+        <div className="text-muted-foreground mt-2 line-clamp-2 text-sm">
+          <ReactMarkdown>
+            {
+              data?.content?.replace(/\\n/g, "\n")
+                .split("\n")
+                .slice(4)
+                .join("\n")
+            }
+          </ReactMarkdown>
+        </div>
         <div className="mt-4 flex items-center">
           <Link href={`/encyclopedia/${data.id}`}>
             <Button

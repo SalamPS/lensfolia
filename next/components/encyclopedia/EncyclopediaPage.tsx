@@ -49,7 +49,7 @@ const EncyclopediaPage = () => {
   );
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(8);
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
@@ -87,8 +87,7 @@ const EncyclopediaPage = () => {
     if (searchQuery) {
       result = result.filter(
         (entry) =>
-          entry.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          entry.description.toLowerCase().includes(searchQuery.toLowerCase()),
+          entry.title.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 

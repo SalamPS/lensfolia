@@ -32,7 +32,7 @@ const EncyclopediaDetail: React.FC<EncyclopediaDetailProps> = ({ data }) => {
           {/* Header Artikel */}
           <div className="mb-8">
             <div className="mb-4 flex items-center justify-between">
-              <Badge variant={data.type === "hama" ? "destructive" : "warning"}>
+              <Badge variant={data.type === "pests" ? "destructive" : data.type === "diseases" ? "warning" : "default"}>
                 {data.type}
               </Badge>
               <span className="text-muted-foreground text-sm">
