@@ -44,7 +44,7 @@ export function ProductRecommendation({
                   {product.price}
                 </span>
                 <Button asChild size="sm" className="h-7 px-2 text-xs">
-                  <Link href={product.link}>
+                  <Link href={product.link} target="_blank" rel="noopener noreferrer">
                     <IconExternalLink />
                   </Link>
                 </Button>
