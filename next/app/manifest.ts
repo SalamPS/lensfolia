@@ -10,10 +10,11 @@ export default function manifest(): MetadataRoute.Manifest {
     background_color: '#18181b',
     theme_color: '#f0fdfa',
     orientation: 'portrait',
+    id: '/',
     scope: '/',
     icons: [
       {
-        src: '/pwa/LogoRounded_72_Asset 12.svg',
+        src: '/pwa/LogoRounded_72_Asset.svg',
         sizes: '72x72',
         type: 'image/svg+xml',
         purpose: 'any'
@@ -25,35 +26,30 @@ export default function manifest(): MetadataRoute.Manifest {
         purpose: 'any'
       },
       {
+        src: '/pwa/LogoRounded_150_Asset.svg',
+        sizes: '150x150',
+        type: 'image/svg+xml',
+        purpose: 'any'
+      },
+      {
         src: '/pwa/LogoRounded_192_Asset.svg',
         sizes: '192x192',
         type: 'image/svg+xml',
         purpose: 'any'
       },
-      {
-        src: '/pwa/LogoRounded_512_Asset.svg',
-        sizes: '512x512',
-        type: 'image/svg+xml',
-        purpose: 'any'
-      },
-      {
-        src: '/pwa/LogoRounded_192_Asset.ico',
-        sizes: '192x192',
-        type: 'image/svg+xml',
-        purpose: 'maskable'
-      }
     ],
     screenshots: [
       {
         src: '/pwa/screenshot1.svg',
-        sizes: '1080x1920',
+        sizes: '267x150',
         type: 'image/svg+xml',
+        form_factor: 'wide',
       },
       {
         src: '/pwa/screenshot2.svg',
-        sizes: '1920x1080',
+        sizes: '84x150',
         type: 'image/svg+xml',
-      }
+      },
     ],
     categories: ['education', 'utilities', 'productivity'],
     lang: 'id',
