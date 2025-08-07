@@ -172,11 +172,11 @@ export default function DetectionMenu() {
       // Create FormData
       const formData = new FormData();
       formData.append('image', capturedFile);
-      formData.append('auth_user', user?.id || "");
-      formData.append('anon_user', anonUser?.id || "");
+      formData.append('bucket', 'image-plant');
+      formData.append('path', 'uploads');
 
       // Send to API
-      const uploadResponse = await fetch('/api/detect', {
+      const uploadResponse = await fetch('/api/v1/upload', {
         method: 'POST',
         body: formData,
       });
