@@ -125,6 +125,22 @@ export default function BookmarksPage () {
 		}
 	}
 
+	const handleDelete = async (id: string) => {
+		const { error } = await supabase
+			.from("diagnoses")
+			.delete()
+			.eq("id", id);
+		if (!error) {
+			setBookmarks((prev) => prev.filter((b) => b.id !== id));
+			setFilteredBookmarks((prev) => prev.filter((b) => b.id !== id));
+			if (currentBookmarks.length === 1 && currentPage > 1) {
+				setCurrentPage(currentPage - 1);
+			}
+		} else {
+			console.error("Error deleting bookmark:", error);
+		}
+	}
+
 	return (<>
 		<StaticBG>
 			<header className="flex p-4 z-10 mx-auto w-full items-center md:items-end gap-8">
@@ -296,7 +312,9 @@ export default function BookmarksPage () {
 													</DropdownMenuItem>
 													<DropdownMenuItem
 														variant="destructive"
-														onClick={() => console.log("Delete clicked")}
+														onClick={() => {
+															handleDelete(bookmark.id);
+														}}
 													>
 														<IconTrash size={16} className="mr-2" />
 														Delete
