@@ -106,7 +106,7 @@ const CommentItem = ({
         result = await supabase
           .from("rating")
           .insert({
-            ref_comments: id,
+            [REFERENCE]: id,
             content: content.length > 30 ? `${content.slice(0, 30)}...` : content,
             content_creator: authorId,
             is_upvote: true,
