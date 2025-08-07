@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 import { EncyclopediaEntry } from "../types/encyclopedia";
 import Navbar from "../home/Navbar";
-import RenderHTML from "./EncyclopediaHTMLRender";
+import ReactMarkdown from "react-markdown";
 
 interface EncyclopediaDetailProps {
   data: EncyclopediaEntry;
@@ -61,44 +61,18 @@ const EncyclopediaDetail: React.FC<EncyclopediaDetailProps> = ({ data }) => {
 
           {/* Konten Artikel */}
           <div className="prose prose-sm dark:prose-invert max-w-none">
-            {/* Gejala */}
-            <section className="mb-8">
-              <h2 className="mb-4 text-xl font-semibold">Gejala</h2>
-              <ul className="space-y-2">
-                {data.symptoms.map((symptom, index) => (
-                  <li key={index}>{symptom}</li>
-                ))}
-              </ul>
-            </section>
-
-            {/* Pencegahan */}
-            <section className="mb-8">
-              <h2 className="mb-4 text-xl font-semibold">Pencegahan</h2>
-              <ul className="space-y-2">
-                {data.prevention.map((prevention, index) => (
-                  <li key={index}>{prevention}</li>
-                ))}
-              </ul>
-            </section>
-
-            {/* Pengobatan */}
-            <section className="mb-8">
-              <h2 className="mb-4 text-xl font-semibold">Pengobatan</h2>
-              <ul className="space-y-2">
-                {data.treatment.map((treatment, index) => (
-                  <li key={index}>{treatment}</li>
-                ))}
-              </ul>
-            </section>
-
-            {/* Render HTML */}
-            <section className="mb-8">
-              <h2 className="mb-4 text-xl font-semibold">Penjelasan Lengkap</h2>
+            {/* Render MD */}
+            <section className="mb-8 text-justify">
               {data.content ? (
-                <RenderHTML
-                  html={data.content}
-                  className="prose prose-sm dark:prose-invert max-w-none"
-                />
+                <ReactMarkdown>
+                  {
+                    data.content
+                      .replace(/\\n/g, "\n")
+                      .split("\n")
+                      .slice(1)
+                      .join("\n")
+                  }
+                </ReactMarkdown>
               ) : (
                 <p className="text-muted-foreground">
                   Tidak ada konten tambahan tersedia.
