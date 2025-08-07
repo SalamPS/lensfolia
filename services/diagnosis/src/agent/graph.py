@@ -12,16 +12,20 @@ import asyncio
 from typing import Literal
 from datetime import UTC, datetime
 
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.graph import StateGraph, END, START
 from langgraph.prebuilt import create_react_agent
 from langgraph.types import Command
+from langgraph.checkpoint.memory import InMemorySaver
+
+# Initialize checkpoint saver for conversation history
+checkpoint_saver = InMemorySaver()
 
 from dotenv import load_dotenv
 
 # Import all the modular components
 from agent.configuration import Configuration
-from agent.state import InputState, State
+from agent.state import InputState, State, ChatState
 from agent.schemas import ImageAnalysisResult
 from agent.tools import (
     plant_disease_detection,
@@ -36,6 +40,44 @@ from agent import prompts
 
 # Load environment variables
 load_dotenv()
+
+def qa_agent_node(state: ChatState) -> dict:
+    """QA agent node that handles user questions."""
+    configuration = Configuration.from_context()
+    model = load_chat_model(configuration.model)
+    
+    # Create context from available state information
+    context = ""
+    if hasattr(state, 'plant_type') and state.plant_type and state.plant_type != "Unknown":
+        context += f"\nPlant type: {state.plant_type}"
+    if hasattr(state, 'overview') and state.overview:
+        context += f"\nDisease overview: {state.overvie}"
+    if hasattr(state, 'treatment') and state.treatment:
+        context += f"\nTreatment: {state.treatment}"
+    if hasattr(state, 'recommendations') and state.recommendations:
+        context += f"\nRecommendations: {state.recommendations}"
+    
+    prompt = prompts.QA_AGENT_PROMPT
+    if context:
+        prompt += f"\n\nCurrent Diagnosis Context:{context}"
+    
+    system_message = SystemMessage(content=prompt)
+    
+    
+    messages = [system_message] + state.messages
+    tools = [search_plant_info, search_products, web_search]
+    qa_agent = create_react_agent(
+        model,
+        tools,
+    )
+    
+    response = qa_agent.invoke({"messages": messages})
+    
+    return {"messages": response["messages"]}
+
+def route_after_start(state: InputState) -> str:
+    """Route based on task type."""
+    return "qa_agent" if state.task_type == "qa" else "image_analysis"
 
 def image_analysis_node(state: State) -> State:
     """Analyze image and update state with findings."""
@@ -111,9 +153,7 @@ def retriever_agent_node(state: State) -> Command[str]:
             task_type=state.current_retrieval_task,
             query=current_task["query"],
             context=current_task["context"],
-        ),
-        # Allow multiple tool calls for fallback behavior
-        max_iterations=3
+        )
     )
     
     # Run the retriever agent
@@ -121,7 +161,7 @@ def retriever_agent_node(state: State) -> Command[str]:
         "messages": [HumanMessage(content=current_task["query"])]
     })
     
-    # Extract context from agent's response
+    # Extract context from the messages
     retrieval_context = result["messages"][-1].content
     
     return Command(
@@ -266,13 +306,13 @@ Original Query: {state.treatment_query}
     )
 
 def recommendation_query_generation_node(state: State) -> Command[Literal["retriever_agent"]]:
-    """Generate search query for treatment recommendations."""
+    """Generate search query for product recommendations."""
     
-    topic = f"treatment recommendations for {state.plant_type} disease"
+    topic = f"products fungicide pesticide for {state.plant_type} disease treatment"
     
     query = generate_search_query.invoke({
         "topic": topic,
-        "focus_area": "treatment methods, fungicides, pesticides, application"
+        "focus_area": "products, fungicides, pesticides"
     })
     
     return Command(
@@ -288,6 +328,7 @@ def recommendation_generation_node(state: State) -> Command[Literal["create_fina
     
     configuration = Configuration.from_context()
     model = load_chat_model(configuration.model)
+    
     
     prompt = f"""{prompts.RAG_SYSTEM_PROMPTS['recommendation']}
 
@@ -305,7 +346,8 @@ Original Query: {state.recommendation_query}
         update={"recommendations": response.content},
         goto="create_final_response"
     )
-    
+
+
 def create_final_response_node(state: State) -> dict:
     """Create the final structured response and return state values."""
     
@@ -347,8 +389,6 @@ def create_final_response_node(state: State) -> dict:
     final_response = {
         "is_plant_leaf": state.is_plant_leaf,
         "has_disease": state.has_disease,
-        "annotated_image": annotated_image,
-        "cropped_images": cropped_images,
         "overview": overview,
         "treatment": treatment,
         "recommendations": recommendations,
@@ -368,14 +408,12 @@ def create_final_response_node(state: State) -> dict:
     try:
         with open(output_path, 'w', encoding='utf-8') as f:
             json.dump(final_response, f, indent=2, ensure_ascii=False)
-        print(f"📄 Analysis saved to: {output_path}")
     except Exception as e:
-        print(f"❌ Error saving analysis: {e}")
-    
+        pass
     
     # Store the response in Supabase
     try:
-        supabase_result = store_final_response_in_supabase.invoke({
+        store_final_response_in_supabase.invoke({
             "diagnoses_ref": final_response.get("diagnoses_ref"),
             "created_by": final_response.get("created_by"),
             "is_plant_leaf": final_response.get("is_plant_leaf", False),
@@ -386,12 +424,8 @@ def create_final_response_node(state: State) -> dict:
             "treatment": final_response.get("treatment", ""),
             "recommendations": final_response.get("recommendations", "")
         })
-        if supabase_result.get("status") == "success":
-            print("✅ Response successfully stored in Supabase")
-        else:
-            print(f"⚠️  Failed to store response in Supabase: {supabase_result.get('message')}")
     except Exception as e:
-        print(f"❌ Error storing response in Supabase: {e}")
+        pass
     
     # Return the response as state values
     return {
@@ -406,6 +440,10 @@ def route_from_retriever(state: State) -> str:
 # Build the graph
 builder = StateGraph(State, input_schema=InputState, context_schema=Configuration)
 
+# Add QA nodes
+builder.add_node("qa_agent", qa_agent_node)
+builder.add_edge("qa_agent", END)
+
 # Add all nodes
 builder.add_node("image_analysis", image_analysis_node)
 builder.add_node("plant_disease_detection", plant_disease_detection_node)
@@ -418,8 +456,15 @@ builder.add_node("recommendation_query_generation", recommendation_query_generat
 builder.add_node("recommendation_generation", recommendation_generation_node)
 builder.add_node("create_final_response", create_final_response_node)
 
-# Set entry point
-builder.add_edge(START, "image_analysis")
+# Set conditional entry point
+builder.add_conditional_edges(
+    START,
+    route_after_start,
+    {
+        "qa_agent": "qa_agent",
+        "image_analysis": "image_analysis"
+    }
+)
 
 # Route directly from image_analysis
 builder.add_conditional_edges(
@@ -452,22 +497,40 @@ builder.add_conditional_edges(
     }
 )
 
-graph = builder.compile(name="Plant Disease Detection Multi-Agent System")
+graph = builder.compile(
+    name="Plant Disease Detection Multi-Agent System",
+    checkpointer=checkpoint_saver  
+)
 
 async def stream_graph_execution():
     """Stream the graph execution to see every process step-by-step"""
     print("=== Streaming Plant Disease Detection Process ===")
     image_url = "https://plantvillage-production-new.s3.amazonaws.com/image/99416/file/default-eb4701036f717c99bf95001c1a8f7b40.jpg"
-    initial_state = {
+    
+    # Test diagnosis workflow first
+    print("\n" + "="*60)
+    print("🌿 DIAGNOSIS WORKFLOW TEST")
+    print("="*60)
+    
+    diagnosis_config = {
+        "configurable": {
+            "thread_id": "diagnosis_session_002"
+        }
+    }
+    
+    diagnosis_initial_state = {
         "messages": [HumanMessage(content="Analyze this plant leaf for diseases")],
         "image_url": image_url,
         "diagnoses_ref": "32af0ef8-bd5d-4074-8733-99d5f393910d",
-        "created_by": "05e5fc52-e58a-4213-b560-7ead5aa6c2e7"  
+        "created_by": "05e5fc52-e58a-4213-b560-7ead5aa6c2e7",
+        "task_type": "diagnosis"
     }
     
+    # Run diagnosis workflow
     async for chunk in graph.astream(
-        initial_state, 
-        stream_mode="updates"
+        diagnosis_initial_state,
+        diagnosis_config,
+        stream_mode="updates",
     ):
         # chunk is a dictionary where key = node name, value = updates
         for node_name, node_updates in chunk.items():
@@ -481,7 +544,6 @@ async def stream_graph_execution():
                 print(f"   • Plant detected: {node_updates.get('is_plant_leaf', False) if node_updates else False}")
                 print(f"   • Disease detected: {node_updates.get('has_disease', False) if node_updates else False}")
                 print(f"   • Plant type identified: {node_updates.get('plant_type', 'Unknown') if node_updates else 'Unknown'}")
-                print(f"   • Analysis summary: {(node_updates.get('image_analysis', '') if node_updates else '')[0:350]}...")
                 
             elif node_name == "plant_disease_detection":
                 print(f"🔬 Disease Detection Results:")
@@ -498,11 +560,10 @@ async def stream_graph_execution():
             elif node_name == "retriever_agent":
                 print(f"🔍 Retriever Agent Results:")
                 print(f"   • Task: {(node_updates.get('current_retrieval_task', 'Unknown') if node_updates else 'Unknown')}")
-                print(f"   • Context summary: {(node_updates.get('retrieval_context', '') if node_updates else '')}...")
                 
             elif node_name == "overview_generation":
                 print(f"📚 Disease Overview Generated:")
-                print(f"   • Overview summary: {(node_updates.get('overview', '') if node_updates else '')[0:350]}...")
+                print(f"   • Overview length: {len(node_updates.get('overview', '') if node_updates else '')} characters")
                 
             elif node_name == "treatment_query_generation":
                 print(f"📝 Generated Treatment Query:")
@@ -510,7 +571,7 @@ async def stream_graph_execution():
                 
             elif node_name == "treatment_generation":
                 print(f"💊 Treatment Recommendations Generated:")
-                print(f"   • Treatment summary: {(node_updates.get('treatment', '') if node_updates else '')[0:350]}...")
+                print(f"   • Treatment length: {len(node_updates.get('treatment', '') if node_updates else '')} characters")
                 
             elif node_name == "recommendation_query_generation":
                 print(f"📝 Generated Recommendation Query:")
@@ -518,7 +579,7 @@ async def stream_graph_execution():
                 
             elif node_name == "recommendation_generation":
                 print(f"📋 Treatment Recommendations Generated:")
-                print(f"   • Recommendations summary: {(node_updates.get('recommendations', '') if node_updates else '')}...")
+                print(f"   • Recommendations length: {len(node_updates.get('recommendations', '') if node_updates else '')} characters")
                 
             elif node_name == "create_final_response":
                 print(f"✅ Final Response Created")
@@ -526,15 +587,76 @@ async def stream_graph_execution():
                     response = node_updates["final_response"]
                     print(f"   • Is plant leaf: {response.get('is_plant_leaf', False)}")
                     print(f"   • Has disease: {response.get('has_disease', False)}")
-                    print(f"   • Overview length: {len(response.get('overview', ''))} characters")
-                    print(f"   • Treatment length: {len(response.get('treatment', ''))} characters")
-                    print(f"   • Products length: {len(response.get('products', ''))} characters")
                     print(f"   • Number of cropped images: {len(response.get('cropped_images', []))}")
-                    print(f"   • Diagnosis reference: {response.get('diagnoses_ref', 'Not provided')}")
                 
             # Small delay to make the streaming more visible
             await asyncio.sleep(0.3)
+    
+    # Test QA workflow
+    print("\n" + "="*60)
+    print("💬 INTERACTIVE QA WORKFLOW")
+    print("="*60)
+    print("You can now ask questions.")
+    print("Type 'quit' to exit the conversation.\n")
+    
+    qa_config = {
+        "configurable": {
+            "thread_id": "diagnosis_session_002"
+        }
+    }
 
+    # Interactive loop for continuous questioning
+    while True:
+        # Get user input
+        try:
+            user_input = input("\n  Your question (or 'quit' to exit): ").strip()
+            
+            if user_input.lower() in ['quit', 'exit', 'q']:
+                print("\n👋 Exiting interactive QA session. Goodbye!")
+                break
+                
+            if not user_input:
+                continue
+                
+            current_state = {
+                "task_type": "qa",
+            }
+            
+            # Add the new user message to the conversation
+            current_state["messages"] = [HumanMessage(content=user_input)]
+            
+            print(f"\n{'='*60}")
+            print(f"🔄 Processing your question: {user_input}")
+            print(f"{'='*60}")
+            
+            async for chunk in graph.astream(
+                current_state,
+                qa_config,
+                stream_mode="updates",
+            ):
+               
+                for node_name, node_updates in chunk.items():
+                    print(f"\n{'='*60}")
+                    print(f"🔄 EXECUTING NODE: {node_name}")
+                    print(f"{'='*60}")
+                    
+                    if node_name == "qa_agent":
+                        print(f"🤖 QA Agent Response:")
+                        if node_updates and node_updates.get("messages"):
+                            response = node_updates["messages"][-1].content
+                            print(f"   • Response: {response[:200]}...")
+                        else:
+                            print(f"   • No response generated")
+                    
+                  
+                    await asyncio.sleep(0.3)
+                    
+        except KeyboardInterrupt:
+            print("\n\n👋 Exiting interactive QA session. Goodbye!")
+            break
+        except Exception as e:
+            print(f"\n❌ Error processing your question: {e}")
+            continue
+            
 if __name__ == "__main__":
-    import asyncio
     asyncio.run(stream_graph_execution())

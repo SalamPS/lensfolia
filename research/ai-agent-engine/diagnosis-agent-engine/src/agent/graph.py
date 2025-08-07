@@ -16,6 +16,20 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.graph import StateGraph, END, START
 from langgraph.prebuilt import create_react_agent
 from langgraph.types import Command
+import logging
+from contextlib import AsyncExitStack
+from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+
+# Configure logging for debugging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Database URI
+DB_URI = "postgresql://postgres.ucofsfjumfhpuhnptaro:reaksijs.jstspy@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres"
+
+# Global async exit stack for managing checkpointer context
+async_exit_stack = AsyncExitStack()
 
 from dotenv import load_dotenv
 
@@ -38,84 +52,38 @@ from agent import prompts
 load_dotenv()
 
 def qa_agent_node(state: ChatState) -> dict:
-    """QA agent node that handles diagnosis result with memory context."""
+    """QA agent node that handles user questions."""
     configuration = Configuration.from_context()
     model = load_chat_model(configuration.model)
     
-    # Retrieve diagnosis memory if available
-    diagnosis_context = ""
-    if state.diagnosis_memory:
-        diagnosis_context = f"\n\nUser's recent plant diagnosis:\n"
-        diagnosis_context += f"- Plant type: {state.diagnosis_memory.get('plant_type', 'Unknown')}\n"
-        diagnosis_context += f"- Overview: {state.diagnosis_memory.get('overview', 'No overview available')}\n"
-        diagnosis_context += f"- Treatment: {state.diagnosis_memory.get('treatment', 'No treatment available')}"
-        diagnosis_context += f"\n- Recommendations: {state.diagnosis_memory.get('recommendations', 'No recommendations available')}"
+    # Create context from available state information
+    context = ""
+    if hasattr(state, 'plant_type') and state.plant_type and state.plant_type != "Unknown":
+        context += f"\nPlant type: {state.plant_type}"
+    if hasattr(state, 'overview') and state.overview:
+        context += f"\nDisease overview: {state.overview}"
+    if hasattr(state, 'treatment') and state.treatment:
+        context += f"\nTreatment: {state.treatment}"
+    if hasattr(state, 'recommendations') and state.recommendations:
+        context += f"\nRecommendations: {state.recommendations}"
     
-    enhanced_system_message = SystemMessage(
-        content=f"{prompts.QA_AGENT_PROMPT}\n\n{diagnosis_context}"
-    )
+    prompt = prompts.QA_AGENT_PROMPT
+    if context:
+        prompt += f"\n\nCurrent Diagnosis Context:{context}"
     
-    # Add the system message to the beginning of the conversation
-    enhanced_messages = [enhanced_system_message] + state.messages
+    system_message = SystemMessage(content=prompt)
     
+    
+    messages = [system_message] + state.messages
     tools = [search_plant_info, search_products, web_search]
     qa_agent = create_react_agent(
         model,
         tools,
     )
     
-    response = qa_agent.invoke({"messages": enhanced_messages})
+    response = qa_agent.invoke({"messages": messages})
     
     return {"messages": response["messages"]}
-
-
-def save_diagnosis_to_memory(state: State) -> dict:
-    """Save diagnosis result to long-term memory store."""
-    try:
-        configuration = Configuration.from_context()
-    except Exception as e:
-        return {}
-    
-    # Create diagnosis memory entry
-    diagnosis_data = {
-        "plant_type": state.plant_type,
-        "overview": state.overview,
-        "treatment": state.treatment,
-        "recommendations": state.recommendations,
-        "timestamp": datetime.now(tz=UTC).isoformat()
-    }
-    
-    # Store in memory
-    namespace = ("memory", state.user_id)
-    key = "diagnosis_result"
-    
-    try:
-        configuration.memory_store.put(namespace, key, diagnosis_data)
-    except Exception as e:
-        pass
-    
-    return {}
-
-
-def retrieve_diagnosis_from_memory(state: ChatState) -> dict:
-    """Retrieve diagnosis result from long-term memory store."""
-    try:
-        configuration = Configuration.from_context()
-    except Exception as e:
-        return {"diagnosis_memory": {}}
-    
-    # Retrieve from memory
-    namespace = ("memory", state.user_id)
-    key = "diagnosis_result"
-    
-    try:
-        memory = configuration.memory_store.get(namespace, key)
-        if memory:
-            return {"diagnosis_memory": memory.value}
-        else:
-            return {"diagnosis_memory": {}}
-    except Exception as e:
-        return {"diagnosis_memory": {}}
 
 def route_after_start(state: InputState) -> str:
     """Route based on task type."""
@@ -453,21 +421,21 @@ def create_final_response_node(state: State) -> dict:
     except Exception as e:
         pass
     
-    # # Store the response in Supabase
-    # try:
-    #     store_final_response_in_supabase.invoke({
-    #         "diagnoses_ref": final_response.get("diagnoses_ref"),
-    #         "created_by": final_response.get("created_by"),
-    #         "is_plant_leaf": final_response.get("is_plant_leaf", False),
-    #         "has_disease": final_response.get("has_disease", False),
-    #         "annotated_image": final_response.get("annotated_image", ""),
-    #         "cropped_images": final_response.get("cropped_images", []),
-    #         "overview": final_response.get("overview", ""),
-    #         "treatment": final_response.get("treatment", ""),
-    #         "recommendations": final_response.get("recommendations", "")
-    #     })
-    # except Exception as e:
-    #     pass
+    # Store the response in Supabase
+    try:
+        store_final_response_in_supabase.invoke({
+            "diagnoses_ref": final_response.get("diagnoses_ref"),
+            "created_by": final_response.get("created_by"),
+            "is_plant_leaf": final_response.get("is_plant_leaf", False),
+            "has_disease": final_response.get("has_disease", False),
+            "annotated_image": final_response.get("annotated_image", ""),
+            "cropped_images": final_response.get("cropped_images", []),
+            "overview": final_response.get("overview", ""),
+            "treatment": final_response.get("treatment", ""),
+            "recommendations": final_response.get("recommendations", "")
+        })
+    except Exception as e:
+        pass
     
     # Return the response as state values
     return {
@@ -482,10 +450,8 @@ def route_from_retriever(state: State) -> str:
 # Build the graph
 builder = StateGraph(State, input_schema=InputState, context_schema=Configuration)
 
-# Add QA nodes with memory
-builder.add_node("retrieve_diagnosis", retrieve_diagnosis_from_memory)
+# Add QA nodes
 builder.add_node("qa_agent", qa_agent_node)
-builder.add_edge("retrieve_diagnosis", "qa_agent")
 builder.add_edge("qa_agent", END)
 
 # Add all nodes
@@ -499,14 +465,13 @@ builder.add_node("treatment_generation", treatment_generation_node)
 builder.add_node("recommendation_query_generation", recommendation_query_generation_node)
 builder.add_node("recommendation_generation", recommendation_generation_node)
 builder.add_node("create_final_response", create_final_response_node)
-builder.add_node("save_diagnosis", save_diagnosis_to_memory)
 
 # Set conditional entry point
 builder.add_conditional_edges(
     START,
     route_after_start,
     {
-        "qa_agent": "retrieve_diagnosis",  # Route to memory retrieval first
+        "qa_agent": "qa_agent",
         "image_analysis": "image_analysis"
     }
 )
@@ -529,8 +494,7 @@ builder.add_edge("treatment_query_generation", "retriever_agent")
 builder.add_edge("treatment_generation", "recommendation_query_generation")
 builder.add_edge("recommendation_query_generation", "retriever_agent")
 builder.add_edge("recommendation_generation", "create_final_response")
-builder.add_edge("create_final_response", "save_diagnosis")
-builder.add_edge("save_diagnosis", END)
+builder.add_edge("create_final_response", END)
 
 # Conditional routing from retriever_agent based on current task
 builder.add_conditional_edges(
@@ -543,12 +507,77 @@ builder.add_conditional_edges(
     }
 )
 
-graph = builder.compile(name="Plant Disease Detection Multi-Agent System")
+# Initialize checkpointer (will be set in async context)
+checkpointer = None
+
+def get_graph():
+    """Get the graph with current checkpointer (sync version for module-level import)"""
+    global checkpointer
+    
+    if checkpointer is None:
+        # Fallback to InMemorySaver for sync access
+        checkpointer = InMemorySaver()
+    
+    return builder.compile(
+        name="Plant Disease Detection Multi-Agent System",
+        checkpointer=checkpointer
+    )
+
+async def get_graph_with_checkpointer():
+    """Get the graph with proper checkpointer context management"""
+    global checkpointer
+    
+    try:
+        # Try to use database-backed checkpointer
+        async with AsyncPostgresSaver.from_conn_string(DB_URI) as db_checkpointer:
+            await db_checkpointer.setup()
+            logger.info("✅ Using database-backed checkpointer")
+            checkpointer = db_checkpointer
+            
+            # Compile graph with database checkpointer
+            graph = builder.compile(
+                name="Plant Disease Detection Multi-Agent System",
+                checkpointer=checkpointer
+            )
+            return graph, db_checkpointer
+            
+    except Exception as e:
+        logger.error(f"❌ Failed to initialize database checkpointer: {e}")
+        logger.info("Falling back to InMemorySaver")
+        
+        # Fallback to InMemorySaver
+        checkpointer = InMemorySaver()
+        graph = builder.compile(
+            name="Plant Disease Detection Multi-Agent System",
+            checkpointer=checkpointer
+        )
+        return graph, None
+
+# Create module-level graph for backward compatibility
+graph = get_graph()
 
 async def stream_graph_execution():
     """Stream the graph execution to see every process step-by-step"""
     print("=== Streaming Plant Disease Detection Process ===")
-    image_url = "https://plantvillage-production-new.s3.amazonaws.com/image/99416/file/default-eb4701036f717c99bf95001c1a8f7b40.jpg"
+    
+    # Use the async context manager approach as shown in the documentation
+    async with AsyncPostgresSaver.from_conn_string(DB_URI) as checkpointer:
+        await checkpointer.setup()
+        logger.info("✅ Using database-backed checkpointer")
+        
+        # Compile graph with database checkpointer
+        graph = builder.compile(
+            name="Plant Disease Detection Multi-Agent System",
+            checkpointer=checkpointer
+        )
+        
+        image_url = "https://plantvillage-production-new.s3.amazonaws.com/image/99416/file/default-eb4701036f717c99bf95001c1a8f7b40.jpg"
+        
+        # Now run the graph execution
+        await _run_graph_execution(graph, image_url)
+
+async def _run_graph_execution(graph, image_url):
+    """Helper function to run the graph execution"""
     
     # Test diagnosis workflow first
     print("\n" + "="*60)
@@ -557,8 +586,7 @@ async def stream_graph_execution():
     
     diagnosis_config = {
         "configurable": {
-            "user_id": "test_user_001",
-            "thread_id": "diagnosis_session_001"
+            "thread_id": "diagnosis_session_002"
         }
     }
     
@@ -567,8 +595,6 @@ async def stream_graph_execution():
         "image_url": image_url,
         "diagnoses_ref": "32af0ef8-bd5d-4074-8733-99d5f393910d",
         "created_by": "05e5fc52-e58a-4213-b560-7ead5aa6c2e7",
-        "user_id": "test_user_001",
-        "thread_id": "diagnosis_session_001",
         "task_type": "diagnosis"
     }
     
@@ -638,76 +664,71 @@ async def stream_graph_execution():
             # Small delay to make the streaming more visible
             await asyncio.sleep(0.3)
     
-    # Test QA workflow with memory - interactive mode
+    # Test QA workflow
     print("\n" + "="*60)
-    print("💬 QA WORKFLOW WITH MEMORY TEST - Interactive Mode")
+    print("💬 INTERACTIVE QA WORKFLOW")
     print("="*60)
-    print("You can now ask questions about your plant's diagnosis.")
+    print("You can now ask questions.")
     print("Type 'quit' to exit the conversation.\n")
     
     qa_config = {
         "configurable": {
-            "user_id": "test_user_001",  # Same user ID to access stored diagnosis
-            "thread_id": "qa_session_001"
+            "thread_id": "diagnosis_session_002"
         }
     }
-    
-    # Start with initial question
-    qa_initial_state = {
-        "messages": [HumanMessage(content="What was my plant's diagnosis and what treatment do you recommend?")],
-        "user_id": "test_user_001",  # Same user ID
-        "thread_id": "qa_session_001",
-        "task_type": "qa"
-    }
-    
+
+    # Interactive loop for continuous questioning
     while True:
-        # Run QA workflow
-        async for chunk in graph.astream(
-            qa_initial_state,
-            qa_config,
-            stream_mode="updates",
-        ):
-            # chunk is a dictionary where key = node name, value = updates
-            for node_name, node_updates in chunk.items():
-                print(f"\n{'='*60}")
-                print(f"🔄 EXECUTING NODE: {node_name}")
-                print(f"{'='*60}")
+        # Get user input
+        try:
+            user_input = input("\n  Your question (or 'quit' to exit): ").strip()
+            
+            if user_input.lower() in ['quit', 'exit', 'q']:
+                print("\n👋 Exiting interactive QA session. Goodbye!")
+                break
                 
-                # Format and display the updates from this node
-                if node_name == "retrieve_diagnosis":
-                    print(f"🧠 Memory Retrieval:")
-                    if node_updates and node_updates.get("diagnosis_memory"):
-                        memory = node_updates["diagnosis_memory"]
-                        print(f"   • Plant type: {memory.get('plant_type', 'Unknown')}")
-                        print(f"   • Disease: {memory.get('disease', 'None detected')}")
-                    else:
-                        print(f"   • No diagnosis memory found")
-                        
-                elif node_name == "qa_agent":
-                    print(f"🤖 QA Agent Response:")
-                    if node_updates and node_updates.get("messages"):
-                        response = node_updates["messages"][-1].content
-                        print(f"   • Response: {response}")
-                    else:
-                        print(f"   • No response generated")
+            if not user_input:
+                continue
                 
-                # Small delay to make the streaming more visible
-                await asyncio.sleep(0.3)
-        
-        # Get next user input
-        user_input = input("\nYour question (or 'quit' to exit): ").strip()
-        
-        if user_input.lower() == 'quit':
-            print("\n👋 Exiting QA session. Goodbye!")
+            current_state = {
+                "task_type": "qa",
+            }
+            
+            # Add the new user message to the conversation
+            current_state["messages"] = [HumanMessage(content=user_input)]
+            
+            print(f"\n{'='*60}")
+            print(f"🔄 Processing your question: {user_input}")
+            print(f"{'='*60}")
+            
+            async for chunk in graph.astream(
+                current_state,
+                qa_config,
+                stream_mode="updates",
+            ):
+               
+                for node_name, node_updates in chunk.items():
+                    print(f"\n{'='*60}")
+                    print(f"🔄 EXECUTING NODE: {node_name}")
+                    print(f"{'='*60}")
+                    
+                    if node_name == "qa_agent":
+                        print(f"🤖 QA Agent Response:")
+                        if node_updates and node_updates.get("messages"):
+                            response = node_updates["messages"][-1].content
+                            print(f"   • Response: {response[:200]}...")
+                        else:
+                            print(f"   • No response generated")
+                    
+                  
+                    await asyncio.sleep(0.3)
+                    
+        except KeyboardInterrupt:
+            print("\n\n👋 Exiting interactive QA session. Goodbye!")
             break
-        
-        # Create new state with user input
-        qa_initial_state = {
-            "messages": [HumanMessage(content=user_input)],
-            "user_id": "test_user_001",
-            "thread_id": "qa_session_001",
-            "task_type": "qa"
-        }
+        except Exception as e:
+            print(f"\n❌ Error processing your question: {e}")
+            continue
             
 if __name__ == "__main__":
     asyncio.run(stream_graph_execution())

@@ -9,8 +9,6 @@ from typing import Annotated, ClassVar
 from dotenv import load_dotenv
 from langchain_core.runnables import ensure_config
 from langgraph.config import get_config
-from langgraph.store.memory import InMemoryStore
-from langgraph.store.base import BaseStore
 
 
 # Load environment variables from .env file
@@ -20,9 +18,6 @@ load_dotenv()
 @dataclass(kw_only=True)
 class Configuration:
     """The configuration for the agent."""
-    
-    # Class variable to hold the singleton memory store instance
-    _memory_store_instance: ClassVar[BaseStore] = None
     
     model: Annotated[str, {"__template_metadata__": {"kind": "llm"}}] = field(
         default="google_genai/gemini-2.5-flash",
@@ -60,19 +55,6 @@ class Configuration:
         default="models/gemini-embedding-001",
         metadata={"description": "Embedding model identifier"}
     )
-    
-    # Memory store for long-term persistence - use singleton instance
-    memory_store: Annotated[BaseStore, {"default": InMemoryStore()}] = field(
-        default_factory=lambda: Configuration._get_memory_store_instance(),
-        metadata={"description": "Memory store for user data persistence"}
-    )
-    
-    @classmethod
-    def _get_memory_store_instance(cls) -> BaseStore:
-        """Get or create the singleton memory store instance."""
-        if cls._memory_store_instance is None:
-            cls._memory_store_instance = InMemoryStore()
-        return cls._memory_store_instance
 
     @classmethod
     def from_context(cls) -> Configuration:

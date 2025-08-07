@@ -126,7 +126,7 @@ def store_final_response_in_supabase(
     cropped_images: list,
     overview: str,
     treatment: str,
-    recommendations: str
+    recommendations: str,
 ) -> dict:
     """Store final response data in Supabase database."""
     try:
@@ -174,5 +174,3 @@ TOOLS = [
     generate_search_query,
     store_final_response_in_supabase,
 ]
-
-

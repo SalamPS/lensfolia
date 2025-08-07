@@ -46,15 +46,6 @@ class InputState:
     task_type: str = field(default="diagnosis")
     """Type of task: 'diagnosis' or 'qa'."""
     
-    user_id: str = field(default="")
-    """User ID for memory management."""
-    
-    thread_id: str = field(default="")
-    """Thread ID for session management."""
-    
-    diagnosis_memory: dict = field(default_factory=dict)
-    """Cached diagnosis result from memory store."""
-
 @dataclass
 class ChatState(InputState):
     """State for QA conversations, inheriting core fields from InputState."""
@@ -67,6 +58,7 @@ class ChatState(InputState):
     overview: str = field(default="")
     treatment: str = field(default="")
     recommendations: str = field(default="")
+    plant_type: str = field(default="Unknown")
 
 @dataclass
 class State(ChatState):
