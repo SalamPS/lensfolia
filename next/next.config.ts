@@ -22,6 +22,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "tse2.mm.bing.net",
       },
+      {
+        protocol: "https",
+        hostname: "ucofsfjumfhpuhnptaro.supabase.co",
+      },
     ],
   },
 };

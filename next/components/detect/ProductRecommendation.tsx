@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
 import { LFDProduct_ } from "../types/diagnoseResult";
+import { IconExternalLink } from "@tabler/icons-react";
 
 export function ProductRecommendation({
   products,
@@ -35,19 +36,17 @@ export function ProductRecommendation({
               <h4 className="text-foreground line-clamp-1 text-sm font-medium">
                 {product.name}
               </h4>
-              <p className="text-muted-foreground mb-1 line-clamp-2 text-xs">
+              <p className="text-muted-foreground mb-1 line-clamp-1 text-xs">
                 {product.description}
               </p>
               <div className="flex items-center justify-between gap-2">
                 <span className="text-foreground text-xs font-bold whitespace-nowrap">
-                  {new Intl.NumberFormat("id-ID", {
-                    style: "currency",
-                    currency: "IDR",
-                    minimumFractionDigits: 0,
-                  }).format(product.price)}
+                  {product.price}
                 </span>
                 <Button asChild size="sm" className="h-7 px-2 text-xs">
-                  <Link href={product.link}>Beli</Link>
+                  <Link href={product.link}>
+                    <IconExternalLink />
+                  </Link>
                 </Button>
               </div>
             </div>

@@ -26,9 +26,10 @@ import type { CarouselApi } from "@/components/ui/carousel";
 import { ProductRecommendation } from "./ProductRecommendation";
 import { AskAI } from "./AskAI";
 import { supabase } from "@/lib/supabase";
-import { LFD_, LFDProduct_, LFDResult_, } from "../types/diagnoseResult";
+import { LFD_, LFDProduct_ } from "../types/diagnoseResult";
 import { useAuth } from "@/hooks/useAuth";
 import ReactMarkdown from "react-markdown";
+import { ProductList } from "@/lib/products";
 
 export default function LFDResultPage({detId}: {detId?: string}) {
   const [result, setResult] = React.useState<LFD_ | null>(null);
@@ -61,22 +62,31 @@ export default function LFDResultPage({detId}: {detId?: string}) {
         const res_clone:LFD_ = res.data;
         const parsedDiseases = JSON.parse(res.data.diagnoses_result[0].cropped_images);
         res_clone.diagnoses_result[0].list_of_diseases = parsedDiseases;
+
+        const recoms = res_clone.diagnoses_result[0].recommendations;
+        const productList = ProductList.filter((product) => recoms.includes(product));
+        console.log("Filtered product list:", productList);
+
+        const fetchedProducts = await supabase
+          .from("products")
+          .select("*")
+          .in("name", productList);
+
+        if (fetchedProducts.error) {
+          console.error("Error fetching products:", fetchedProducts.error);
+        } else {
+          const products: LFDProduct_[] = fetchedProducts.data.map((product) => ({
+            id: product.id,
+            name: product.name,
+            description: product.description,
+            price: product.price,
+            image_url: product.image_url,
+            link: product.link,
+            category: product.category,
+          }));
+          res_clone.diagnoses_result[0].product_list = products;
+        }
         
-        // Gunakan Promise.all untuk menunggu semua query produk selesai
-        await Promise.all(
-          res.data.diagnoses_result.map(async (result: LFDResult_, index: number) => {
-            if (result.products && result.products.length > 0) {
-              const productRes = await supabase
-                .from("products")
-                .select("*")
-                .in("id", result.products);
-              res_clone.diagnoses_result[index].product_list = productRes.data as LFDProduct_[];
-            }
-            else {
-              res_clone.diagnoses_result[index].product_list = [];
-            }
-          })
-        );
         setResult(res_clone);
       }
     })();
