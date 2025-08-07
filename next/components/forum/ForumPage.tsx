@@ -20,6 +20,7 @@ import Image from "next/image";
 import { ForumPost } from "./MockData";
 import { ForumConverter, ForumQuery } from "./ForumQueryUtils";
 import Link from "next/link";
+import { Badge } from "../ui/badge";
 
 const ForumPage = () => {
   const [currentPage, setCurrentPage] = React.useState(1);
@@ -29,6 +30,7 @@ const ForumPage = () => {
   >("all");
   const [loading, setLoading] = React.useState(true);
   const [forumPosts, setForumPosts] = React.useState<ForumPost[]>([]);
+  const [unreadCount, setUnreadCount] = React.useState(0);
 
   const postsPerPage = 5;
 
@@ -38,7 +40,9 @@ const ForumPage = () => {
       const response = await ForumQuery();
       if (response) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const finalForm: ForumPost[] = response.map((post: any) => ForumConverter(post));
+        const finalForm: ForumPost[] = response.map((post: any) =>
+          ForumConverter(post),
+        );
         setForumPosts(finalForm);
       }
       setLoading(false);
@@ -68,6 +72,17 @@ const ForumPage = () => {
     setCurrentPage(1);
   }, [searchQuery, activeTab]);
 
+  React.useEffect(() => {
+    // Mock data - ganti dengan API call sebenarnya
+    const mockUnreadNotifications = [
+      { id: "1", isRead: false },
+      { id: "2", isRead: true },
+    ];
+
+    const count = mockUnreadNotifications.filter((n) => !n.isRead).length;
+    setUnreadCount(count);
+  }, []);
+
   return (
     <>
       <StaticBG>
@@ -85,14 +100,27 @@ const ForumPage = () => {
             </div>
             <div className="flex w-full items-center justify-start gap-2 md:justify-end">
               <div className="flex flex-col items-start gap-2 md:flex-row md:justify-end">
-                <Button variant="outline">
-                  <IconMessage2Share />
-                  Postingan Saya
-                </Button>
-                <Button variant="outline">
-                  <IconBell />
-                  Notifikasi Balasan
-                </Button>
+                <Link href="/forum/my-post">
+                  <Button variant="outline">
+                    <IconMessage2Share />
+                    Postingan Saya
+                  </Button>
+                </Link>
+
+                <Link href="/forum/notifications">
+                  <Button variant="outline" className="relative">
+                    <IconBell />
+                    <span className="ml-2">Notifikasi Balasan</span>
+                    {unreadCount > 0 && (
+                      <Badge
+                        variant="destructive"
+                        className="absolute -top-2 -right-2 h-5 w-5 justify-center p-0"
+                      >
+                        {unreadCount}
+                      </Badge>
+                    )}
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>
