@@ -24,6 +24,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
+import { useVote } from "../../hooks/useVote";
 
 const PostPage = ({ slug }: { slug: string }) => {
   const [post, setPost] = React.useState<ForumPost | null>(null);
@@ -32,6 +33,7 @@ const PostPage = ({ slug }: { slug: string }) => {
   const [isLoading, setIsLoading] = React.useState(true);
   const { refresh, setRefresh } = useContext(PostContext);
   const { user } = useAuth();
+  const rating = useVote()
 
   useEffect(() => {
     (async () => {
@@ -45,7 +47,17 @@ const PostPage = ({ slug }: { slug: string }) => {
       setPost(response_post);
       setComments(response_comments);
       setIsLoading(false);
+      rating.syncVote({
+        initialUpvotes: response_post.upvotes as string[],
+        initialDownvotes: response_post.downvotes as string[],
+        initialNullvotes: response_post.nullvotes as string[],
+        id: response_post.id,
+        title: response_post.title,
+        authorId: response_post.authorId,
+        reference: "forum",
+      });
     })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refresh, slug]);
 
   const handleCommentSubmit = async () => {
@@ -117,24 +129,26 @@ const PostPage = ({ slug }: { slug: string }) => {
             <div className="dark:bg-card bg-input flex items-center justify-between gap-2 rounded-full p-1 pr-4">
               {/* up */}
               <div className="flex items-center gap-1">
-                <div className="group rounded-full p-2 transition-colors hover:bg-green-500/10">
+                <div className="group rounded-full p-2 transition-colors hover:bg-green-500/10"
+                  onClick={() => rating.upVote()}>
                   <IconArrowBigUpLines
                     size={18}
                     className="group-hover:text-green-500"
                   />
                 </div>
-                <span className="text-sm">{post?.upvotes.length}</span>
+                <span className="text-sm">{rating.getUpVoteCount()}</span>
               </div>
 
               {/* down */}
               <div className="flex items-center gap-1">
-                <div className="group rounded-full p-2 transition-colors hover:bg-red-500/10">
+                <div className="group rounded-full p-2 transition-colors hover:bg-red-500/10"
+                  onClick={() => rating.downVote()}>
                   <IconArrowBigDownLines
                     size={18}
                     className="group-hover:text-red-500"
                   />
                 </div>
-                <span className="text-sm">{post?.upvotes.length}</span>
+                <span className="text-sm">{rating.getDownVoteCount()}</span>
               </div>
             </div>
 
