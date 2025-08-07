@@ -150,7 +150,7 @@ export default function LFDResultPage({detId}: {detId?: string}) {
     setBookmarked(!bookmarked);
   };
 
-  if (loading) {
+  if (loading || !result) {
     return <ResultSkeleton progress={loadingProgress} />;
   }
 
@@ -338,7 +338,7 @@ export default function LFDResultPage({detId}: {detId?: string}) {
             lebih lanjut, konsultasikan dengan ahli pertanian atau dokter
             tanaman.
           </p>
-          <AskAI disease={result?.diagnoses_result[0]} />
+          <AskAI thread_id={result?.thread_id} disease={result?.diagnoses_result[0]} />
         </div>
       </section>
     </LFDWrapper>

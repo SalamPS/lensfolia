@@ -63,4 +63,5 @@ export type LFD_ = {
 	id_anon: string;
 	name?: string;
 	diagnoses_result: LFDResult_[];
+	thread_id: string;
 }
