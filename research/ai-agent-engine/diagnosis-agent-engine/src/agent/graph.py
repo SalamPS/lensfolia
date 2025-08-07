@@ -1,28 +1,125 @@
-"""Plant Disease Detection Multi-Agent System Graph."""
+"""Define a custom Plant Disease Detection Multi-Agent System.
+
+This module implements a multi-step agent system for plant disease detection,
+analysis, and treatment recommendations using LangGraph.
+"""
 
 from __future__ import annotations
 
 import json
 import os
-from typing import Dict, Literal, cast
+import asyncio
+from typing import Literal
 from datetime import UTC, datetime
 
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.graph import StateGraph, END, START
+from langgraph.prebuilt import create_react_agent
 from langgraph.types import Command
+
 from dotenv import load_dotenv
 
+# Import all the modular components
 from agent.configuration import Configuration
-from agent.state import InputState, State
-from agent.schemas import ImageAnalysisResult, PlantDiseaseResponse
+from agent.state import InputState, State, ChatState
+from agent.schemas import ImageAnalysisResult
 from agent.tools import (
-    plant_disease_detection, 
-    generate_search_query, 
-    create_structured_response
+    plant_disease_detection,
+    search_plant_info,
+    search_products,
+    web_search,
+    generate_search_query,
+    store_final_response_in_supabase
 )
-from agent.utils import load_chat_model, create_retriever_agent
+from agent.utils import load_chat_model
+from agent import prompts
 
+# Load environment variables
 load_dotenv()
+
+def qa_agent_node(state: ChatState) -> dict:
+    """QA agent node that handles diagnosis result with memory context."""
+    configuration = Configuration.from_context()
+    model = load_chat_model(configuration.model)
+    
+    # Retrieve diagnosis memory if available
+    diagnosis_context = ""
+    if state.diagnosis_memory:
+        diagnosis_context = f"\n\nUser's recent plant diagnosis:\n"
+        diagnosis_context += f"- Plant type: {state.diagnosis_memory.get('plant_type', 'Unknown')}\n"
+        diagnosis_context += f"- Overview: {state.diagnosis_memory.get('overview', 'No overview available')}\n"
+        diagnosis_context += f"- Treatment: {state.diagnosis_memory.get('treatment', 'No treatment available')}"
+        diagnosis_context += f"\n- Recommendations: {state.diagnosis_memory.get('recommendations', 'No recommendations available')}"
+    
+    enhanced_system_message = SystemMessage(
+        content=f"{prompts.QA_AGENT_PROMPT}\n\n{diagnosis_context}"
+    )
+    
+    # Add the system message to the beginning of the conversation
+    enhanced_messages = [enhanced_system_message] + state.messages
+    
+    tools = [search_plant_info, search_products, web_search]
+    qa_agent = create_react_agent(
+        model,
+        tools,
+    )
+    
+    response = qa_agent.invoke({"messages": enhanced_messages})
+    
+    return {"messages": response["messages"]}
+
+
+def save_diagnosis_to_memory(state: State) -> dict:
+    """Save diagnosis result to long-term memory store."""
+    try:
+        configuration = Configuration.from_context()
+    except Exception as e:
+        return {}
+    
+    # Create diagnosis memory entry
+    diagnosis_data = {
+        "plant_type": state.plant_type,
+        "overview": state.overview,
+        "treatment": state.treatment,
+        "recommendations": state.recommendations,
+        "timestamp": datetime.now(tz=UTC).isoformat()
+    }
+    
+    # Store in memory
+    namespace = ("memory", state.user_id)
+    key = "diagnosis_result"
+    
+    try:
+        configuration.memory_store.put(namespace, key, diagnosis_data)
+    except Exception as e:
+        pass
+    
+    return {}
+
+
+def retrieve_diagnosis_from_memory(state: ChatState) -> dict:
+    """Retrieve diagnosis result from long-term memory store."""
+    try:
+        configuration = Configuration.from_context()
+    except Exception as e:
+        return {"diagnosis_memory": {}}
+    
+    # Retrieve from memory
+    namespace = ("memory", state.user_id)
+    key = "diagnosis_result"
+    
+    try:
+        memory = configuration.memory_store.get(namespace, key)
+        if memory:
+            return {"diagnosis_memory": memory.value}
+        else:
+            return {"diagnosis_memory": {}}
+    except Exception as e:
+        return {"diagnosis_memory": {}}
+
+def route_after_start(state: InputState) -> str:
+    """Route based on task type."""
+    return "qa_agent" if state.task_type == "qa" else "image_analysis"
 
 def image_analysis_node(state: State) -> State:
     """Analyze image and update state with findings."""
@@ -31,7 +128,7 @@ def image_analysis_node(state: State) -> State:
     
     structured_llm = model.with_structured_output(ImageAnalysisResult)
     
-    analysis_prompt = configuration.image_analysis_prompt.format(
+    analysis_prompt = prompts.IMAGE_ANALYSIS_PROMPT.format(
         system_time=datetime.now(tz=UTC).isoformat()
     )
     
@@ -53,12 +150,69 @@ def image_analysis_node(state: State) -> State:
         "confidence_score": result.confidence
     }
 
+
 def route_after_analysis(state: State) -> str:
     """Route based on image analysis results."""
     if state.is_plant_leaf and state.has_disease:
         return "continue_detection"
     else:
         return "skip_detection"
+
+
+def retriever_agent_node(state: State) -> Command[str]:
+    """Retriever agent node that intelligently gathers information."""
+    
+    configuration = Configuration.from_context()
+    model = load_chat_model(configuration.model)
+    
+    # Determine task and query based on current retrieval task
+    task_mapping = {
+        "overview": {
+            "query": state.overview_query,
+            "context": f"Plant: {state.plant_type}, Predictions: {state.top_predictions}",
+            "next_node": "overview_generation"
+        },
+        "treatment": {
+            "query": state.treatment_query,
+            "context": f"Plant: {state.plant_type}, Overview: {state.overview[:200]}...",
+            "next_node": "treatment_generation"
+        },
+        "recommendation": {
+            "query": state.recommendation_query,
+            "context": f"Plant: {state.plant_type}, Treatment: {state.treatment[:200]}...",
+            "next_node": "recommendation_generation"
+        }
+    }
+    
+    current_task = task_mapping[state.current_retrieval_task]
+    
+    # Create react agent with retrieval tools
+    tools = [search_plant_info, search_products, web_search]
+    retriever_agent = create_react_agent(
+        model,
+        tools,
+        state_modifier=prompts.RETRIEVER_AGENT_PROMPT.format(
+            task_type=state.current_retrieval_task,
+            query=current_task["query"],
+            context=current_task["context"],
+        )
+    )
+    
+    # Run the retriever agent
+    result = retriever_agent.invoke({
+        "messages": [HumanMessage(content=current_task["query"])]
+    })
+    
+    # Extract context from the messages
+    retrieval_context = result["messages"][-1].content
+    
+    return Command(
+        update={
+            "retrieval_context": retrieval_context,
+            "current_retrieval_task": state.current_retrieval_task
+        },
+        goto=current_task["next_node"]
+    )
 
 def plant_disease_detection_node(state: State) -> Command[Literal["overview_query_generation"]]:
     """Run plant disease detection on the image."""
@@ -105,9 +259,8 @@ def plant_disease_detection_node(state: State) -> Command[Literal["overview_quer
             },
             goto="create_final_response"
         )
-        
 
-def overview_query_generation_node(state: State) -> Command[Literal["overview_rag"]]:
+def overview_query_generation_node(state: State) -> Command[Literal["retriever_agent"]]:
     """Generate search query for disease overview information."""
     
     # Create topic from predictions
@@ -116,7 +269,7 @@ def overview_query_generation_node(state: State) -> Command[Literal["overview_ra
         if pred_group["predictions"]:
             top_pred = pred_group["predictions"][0]["label"]
             topic_parts.append(top_pred)
-    
+
     topic = f"{state.plant_type} " + " ".join(topic_parts) if topic_parts else f"{state.plant_type} disease"
     
     query = generate_search_query.invoke({
@@ -125,53 +278,35 @@ def overview_query_generation_node(state: State) -> Command[Literal["overview_ra
     })
     
     return Command(
-        update={"overview_query": query},
-        goto="overview_rag"
+        update={
+            "overview_query": query,
+            "current_retrieval_task": "overview"
+        },
+        goto="retriever_agent"
     )
 
-def overview_rag_node(state: State) -> Command[Literal["treatment_query_generation"]]:
-    """Perform RAG for disease overview information using retriever agent."""
+def overview_generation_node(state: State) -> Command[Literal["treatment_query_generation"]]:
+    """Generate overview using retrieved context."""
     
-    retriever_agent = create_retriever_agent()
-    
-    # Let the agent decide how to retrieve information
-    retrieval_query = f"""Find comprehensive information about: {state.overview_query}
-    
-    Focus on: disease identification, symptoms, causes, affected plant parts, and disease progression.
-    
-    Plant type: {state.plant_type}
-    Detected predictions: {[pred['predictions'][0]['label'] for pred in state.top_predictions if pred['predictions']]}
-    """
-    
-    # Run the retriever agent
-    result = retriever_agent.invoke({
-        "messages": [HumanMessage(content=retrieval_query)]
-    })
-    
-    # Extract the context from agent's response
-    context = result["messages"][-1].content
-    
-    # Generate overview using the retrieved context
     configuration = Configuration.from_context()
     model = load_chat_model(configuration.model)
     
-    prompt = f"""{configuration.rag_system_prompts['overview']}
+    prompt = f"""{prompts.RAG_SYSTEM_PROMPTS['overview']}
 
 Retrieved Information:
-{context}
+{state.retrieval_context}
 
 Original Query: {state.overview_query}
-
-Provide a comprehensive overview:"""
+"""
     
     response = model.invoke([HumanMessage(content=prompt)])
     
     return Command(
         update={"overview": response.content},
-        goto="treatment_query_generation"
+        goto="treatment_query_generation"    
     )
 
-def treatment_query_generation_node(state: State) -> Command[Literal["treatment_rag"]]:
+def treatment_query_generation_node(state: State) -> Command[Literal["retriever_agent"]]:
     """Generate search query for treatment information."""
     
     topic = f"{state.plant_type} disease treatment " + state.overview_query
@@ -182,152 +317,126 @@ def treatment_query_generation_node(state: State) -> Command[Literal["treatment_
     })
     
     return Command(
-        update={"treatment_query": query},
-        goto="treatment_rag"
+        update={
+            "treatment_query": query,
+            "current_retrieval_task": "treatment"
+        },
+        goto="retriever_agent"
     )
 
-def treatment_rag_node(state: State) -> Command[Literal["product_query_generation"]]:
-    """Perform RAG for treatment recommendations using retriever agent."""
-    
-    retriever_agent = create_retriever_agent()
-    
-    retrieval_query = f"""Find detailed treatment information for: {state.treatment_query}
-    
-    Focus on: treatment methods, remedies, control measures, application timing, and preventive practices.
-    
-    Plant type: {state.plant_type}
-    Disease context: {state.overview[:200]}...
-    """
-    
-    result = retriever_agent.invoke({
-        "messages": [HumanMessage(content=retrieval_query)]
-    })
-    
-    context = result["messages"][-1].content
+def treatment_generation_node(state: State) -> Command[Literal["recommendation_query_generation"]]:
+    """Generate treatment recommendations using retrieved context."""
     
     configuration = Configuration.from_context()
     model = load_chat_model(configuration.model)
     
-    prompt = f"""{configuration.rag_system_prompts['treatment']}
+    prompt = f"""{prompts.RAG_SYSTEM_PROMPTS['treatment']}
 
 Retrieved Information:
-{context}
+{state.retrieval_context}
 
 Disease Overview: {state.overview}
-Original Query: {state.treatment_query}
 
-Provide detailed treatment recommendations:"""
+Original Query: {state.treatment_query}
+"""
     
     response = model.invoke([HumanMessage(content=prompt)])
     
     return Command(
         update={"treatment": response.content},
-        goto="product_query_generation"
+        goto="recommendation_query_generation"
     )
 
-def product_query_generation_node(state: State) -> Command[Literal["product_rag"]]:
+def recommendation_query_generation_node(state: State) -> Command[Literal["retriever_agent"]]:
     """Generate search query for product recommendations."""
     
     topic = f"products fungicide pesticide for {state.plant_type} disease treatment"
     
     query = generate_search_query.invoke({
         "topic": topic,
-        "focus_area": "products, fungicides, pesticides, brands"
+        "focus_area": "products, fungicides, pesticides"
     })
     
     return Command(
-        update={"product_query": query},
-        goto="product_rag"
+        update={
+            "recommendation_query": query,
+            "current_retrieval_task": "recommendation"
+        },
+        goto="retriever_agent"
     )
 
-def product_rag_node(state: State) -> Command[Literal["create_final_response"]]:
-    """Perform RAG for product recommendations using retriever agent."""
-    
-    retriever_agent = create_retriever_agent()
-    
-    retrieval_query = f"""Find specific product recommendations for: {state.product_query}
-    
-    Focus on: product names, active ingredients, application instructions, dosage, and availability.
-    IMPORTANT: Include product image links when available.
-    
-    Plant type: {state.plant_type}
-    Treatment context: {state.treatment[:200]}...
-    """
-    
-    result = retriever_agent.invoke({
-        "messages": [HumanMessage(content=retrieval_query)]
-    })
-    
-    context = result["messages"][-1].content
+def recommendation_generation_node(state: State) -> Command[Literal["create_final_response"]]:
+    """Generate treatment recommendations using retrieved context."""
     
     configuration = Configuration.from_context()
     model = load_chat_model(configuration.model)
     
-    prompt = f"""{configuration.rag_system_prompts['product']}
+    
+    prompt = f"""{prompts.RAG_SYSTEM_PROMPTS['recommendation']}
 
 Retrieved Information:
-{context}
+{state.retrieval_context}
 
 Treatment Plan: {state.treatment}
-Original Query: {state.product_query}
 
-Provide specific product recommendations with image links:"""
+Original Query: {state.recommendation_query}
+"""
     
     response = model.invoke([HumanMessage(content=prompt)])
     
     return Command(
-        update={"products": response.content},
+        update={"recommendations": response.content},
         goto="create_final_response"
     )
-    
-def create_final_response_node(state: State) -> Command[Literal["__end__"]]:
-    """Create the final structured response."""
+
+
+def create_final_response_node(state: State) -> dict:
+    """Create the final structured response and return state values."""
     
     # Handle cases where no disease was detected
     if not state.has_disease or not state.is_plant_leaf:
         overview = "No plant disease detected in the image." if not state.has_disease else "No plant leaf detected in the image."
         treatment = "No treatment needed."
-        products = "No products recommended."
+        recommendations = "No treatment recommendations available."
     else:
         overview = state.overview or "Disease analysis could not be completed."
         treatment = state.treatment or "Treatment recommendations not available."
-        products = state.products or "Product recommendations not available."
+        recommendations = state.recommendations or "Treatment recommendations not available."
     
     # Extract annotated image from detection results
     annotated_image = ""
     if state.detection_results and "detection_result" in state.detection_results:
         annotated_image = state.detection_results["detection_result"]
     
-    # Extract cropped images with base64 data
+    # Extract cropped images with base64 data and reformat
     cropped_images = []
     if state.detection_results and "cropped_images" in state.detection_results:
-        cropped_images = state.detection_results["cropped_images"]
+        for crop in state.detection_results["cropped_images"]:
+            # Get the top classification if available
+            label = ""
+            confidence = 0.0
+            if crop.get("classification"):
+                # Get the first classification result
+                top_pred = crop["classification"][0]
+                label = top_pred["label"]
+                confidence = top_pred["confidence"]
+                
+            cropped_images.append({
+                "base64_image": crop["base64_image"],
+                "label": label,
+                "confidence": confidence
+            })
     
-    # Determine disease name from top predictions
-    disease_name = "None detected"
-    if state.top_predictions and state.top_predictions[0]["predictions"]:
-        disease_name = state.top_predictions[0]["predictions"][0]["label"]
-    
-    # Create structured response
-    response_data = PlantDiseaseResponse(
-        is_plant_leaf=state.is_plant_leaf,
-        has_disease=state.has_disease,
-        plant_type=state.plant_type,
-        disease_name=disease_name,
-        confidence_score=state.confidence_score,
-        total_detections=len(state.top_predictions),
-        top_predictions=state.top_predictions,
-        cropped_images=cropped_images,
-        image_analysis=state.image_analysis,
-        overview=overview,
-        treatment=treatment,
-        products=products,
-        processed_at=datetime.now(tz=UTC).isoformat(),
-        annotated_image=annotated_image
-    )
-    
-    # Use the structured output tool
-    result = create_structured_response.invoke(response_data.model_dump())
+    # Format the response to match the desired structure
+    final_response = {
+        "is_plant_leaf": state.is_plant_leaf,
+        "has_disease": state.has_disease,
+        "overview": overview,
+        "treatment": treatment,
+        "recommendations": recommendations,
+        "diagnoses_ref": state.diagnoses_ref,
+        "created_by": state.created_by
+    }
     
     # Save the structured response to JSON file
     timestamp = datetime.now(tz=UTC).strftime("%Y%m%d_%H%M%S")
@@ -340,46 +449,67 @@ def create_final_response_node(state: State) -> Command[Literal["__end__"]]:
     # Save the complete structured response
     try:
         with open(output_path, 'w', encoding='utf-8') as f:
-            json.dump(response_data.model_dump(), f, indent=2, ensure_ascii=False)
-        print(f"📄 Analysis saved to: {output_path}")
+            json.dump(final_response, f, indent=2, ensure_ascii=False)
     except Exception as e:
-        print(f"❌ Error saving analysis: {e}")
+        pass
     
-    # Extract the actual tool response content
-    final_message = ""
-    if isinstance(result, tuple) and len(result) == 2:
-        # Tool returns (content, artifact)
-        final_message = result[0]
-        artifact_data = result[1]
-    else:
-        final_message = str(result)
-        artifact_data = response_data.model_dump()
+    # # Store the response in Supabase
+    # try:
+    #     store_final_response_in_supabase.invoke({
+    #         "diagnoses_ref": final_response.get("diagnoses_ref"),
+    #         "created_by": final_response.get("created_by"),
+    #         "is_plant_leaf": final_response.get("is_plant_leaf", False),
+    #         "has_disease": final_response.get("has_disease", False),
+    #         "annotated_image": final_response.get("annotated_image", ""),
+    #         "cropped_images": final_response.get("cropped_images", []),
+    #         "overview": final_response.get("overview", ""),
+    #         "treatment": final_response.get("treatment", ""),
+    #         "recommendations": final_response.get("recommendations", "")
+    #     })
+    # except Exception as e:
+    #     pass
     
-    return Command(
-        update={
-            "messages": [AIMessage(content=final_message)],
-            "disease_name": disease_name,
-            "confidence_score": state.confidence_score
-        },
-        goto="__end__"
-    )
+    # Return the response as state values
+    return {
+        "final_response": final_response
+    }
+
+# Conditional routing from retriever_agent based on current task
+def route_from_retriever(state: State) -> str:
+    """Route from retriever agent to appropriate generation node."""
+    return f"{state.current_retrieval_task}_generation"
 
 # Build the graph
 builder = StateGraph(State, input_schema=InputState, context_schema=Configuration)
 
-# Add nodes
+# Add QA nodes with memory
+builder.add_node("retrieve_diagnosis", retrieve_diagnosis_from_memory)
+builder.add_node("qa_agent", qa_agent_node)
+builder.add_edge("retrieve_diagnosis", "qa_agent")
+builder.add_edge("qa_agent", END)
+
+# Add all nodes
 builder.add_node("image_analysis", image_analysis_node)
 builder.add_node("plant_disease_detection", plant_disease_detection_node)
+builder.add_node("retriever_agent", retriever_agent_node) 
 builder.add_node("overview_query_generation", overview_query_generation_node)
-builder.add_node("overview_rag", overview_rag_node)
+builder.add_node("overview_generation", overview_generation_node)
 builder.add_node("treatment_query_generation", treatment_query_generation_node)
-builder.add_node("treatment_rag", treatment_rag_node)
-builder.add_node("product_query_generation", product_query_generation_node)
-builder.add_node("product_rag", product_rag_node)
+builder.add_node("treatment_generation", treatment_generation_node)  
+builder.add_node("recommendation_query_generation", recommendation_query_generation_node)
+builder.add_node("recommendation_generation", recommendation_generation_node)
 builder.add_node("create_final_response", create_final_response_node)
+builder.add_node("save_diagnosis", save_diagnosis_to_memory)
 
-# Set entry point
-builder.add_edge(START, "image_analysis")
+# Set conditional entry point
+builder.add_conditional_edges(
+    START,
+    route_after_start,
+    {
+        "qa_agent": "retrieve_diagnosis",  # Route to memory retrieval first
+        "image_analysis": "image_analysis"
+    }
+)
 
 # Route directly from image_analysis
 builder.add_conditional_edges(
@@ -391,32 +521,62 @@ builder.add_conditional_edges(
     }
 )
 
-# Add edges for the main flow
+# Linear flow with retriever agent
 builder.add_edge("plant_disease_detection", "overview_query_generation")
-builder.add_edge("overview_query_generation", "overview_rag")
-builder.add_edge("overview_rag", "treatment_query_generation")
-builder.add_edge("treatment_query_generation", "treatment_rag")
-builder.add_edge("treatment_rag", "product_query_generation")
-builder.add_edge("product_query_generation", "product_rag")
-builder.add_edge("product_rag", "create_final_response")
-builder.add_edge("create_final_response", END)
+builder.add_edge("overview_query_generation", "retriever_agent")
+builder.add_edge("overview_generation", "treatment_query_generation")
+builder.add_edge("treatment_query_generation", "retriever_agent")
+builder.add_edge("treatment_generation", "recommendation_query_generation")
+builder.add_edge("recommendation_query_generation", "retriever_agent")
+builder.add_edge("recommendation_generation", "create_final_response")
+builder.add_edge("create_final_response", "save_diagnosis")
+builder.add_edge("save_diagnosis", END)
 
-# Compile the graph
+# Conditional routing from retriever_agent based on current task
+builder.add_conditional_edges(
+    "retriever_agent",
+    route_from_retriever,
+    {
+        "overview_generation": "overview_generation",
+        "treatment_generation": "treatment_generation", 
+        "recommendation_generation": "recommendation_generation"
+    }
+)
+
 graph = builder.compile(name="Plant Disease Detection Multi-Agent System")
 
 async def stream_graph_execution():
     """Stream the graph execution to see every process step-by-step"""
     print("=== Streaming Plant Disease Detection Process ===")
     image_url = "https://plantvillage-production-new.s3.amazonaws.com/image/99416/file/default-eb4701036f717c99bf95001c1a8f7b40.jpg"
-    initial_state = {
-        "messages": [HumanMessage(content="Analyze this plant leaf for diseases")],
-        "image_url": image_url
+    
+    # Test diagnosis workflow first
+    print("\n" + "="*60)
+    print("🌿 DIAGNOSIS WORKFLOW TEST")
+    print("="*60)
+    
+    diagnosis_config = {
+        "configurable": {
+            "user_id": "test_user_001",
+            "thread_id": "diagnosis_session_001"
+        }
     }
     
-    # Use stream_mode="updates" to see only what each node changes
+    diagnosis_initial_state = {
+        "messages": [HumanMessage(content="Analyze this plant leaf for diseases")],
+        "image_url": image_url,
+        "diagnoses_ref": "32af0ef8-bd5d-4074-8733-99d5f393910d",
+        "created_by": "05e5fc52-e58a-4213-b560-7ead5aa6c2e7",
+        "user_id": "test_user_001",
+        "thread_id": "diagnosis_session_001",
+        "task_type": "diagnosis"
+    }
+    
+    # Run diagnosis workflow
     async for chunk in graph.astream(
-        initial_state, 
-        stream_mode="updates"
+        diagnosis_initial_state,
+        diagnosis_config,
+        stream_mode="updates",
     ):
         # chunk is a dictionary where key = node name, value = updates
         for node_name, node_updates in chunk.items():
@@ -427,52 +587,127 @@ async def stream_graph_execution():
             # Format and display the updates from this node
             if node_name == "image_analysis":
                 print(f"🔍 Image Analysis Results:")
-                print(f"   • Plant detected: {node_updates.get('is_plant_leaf', False)}")
-                print(f"   • Disease detected: {node_updates.get('has_disease', False)}")
-                print(f"   • Plant type identified: {node_updates.get('plant_type', 'Unknown')}")
-                print(f"   • Analysis summary: {node_updates.get('image_analysis', '')[0:350]}...")
+                print(f"   • Plant detected: {node_updates.get('is_plant_leaf', False) if node_updates else False}")
+                print(f"   • Disease detected: {node_updates.get('has_disease', False) if node_updates else False}")
+                print(f"   • Plant type identified: {node_updates.get('plant_type', 'Unknown') if node_updates else 'Unknown'}")
                 
             elif node_name == "plant_disease_detection":
                 print(f"🔬 Disease Detection Results:")
-                print(f"   • Total detections: {len(node_updates.get('top_predictions', []))}")
-                if node_updates.get('top_predictions'):
+                print(f"   • Total detections: {len(node_updates.get('top_predictions', []) if node_updates else [])}")
+                if node_updates and node_updates.get('top_predictions'):
                     top_pred = node_updates['top_predictions'][0]['predictions'][0]
                     print(f"   • Top prediction: {top_pred['label']} ({top_pred['confidence']:.2f})")
-                print(f"   • Confidence score: {node_updates.get('confidence_score', 0):.2f}")
+                print(f"   • Confidence score: {node_updates.get('confidence_score', 0) if node_updates else 0:.2f}")
                 
             elif node_name == "overview_query_generation":
                 print(f"📝 Generated Overview Query:")
-                print(f"   • {node_updates.get('overview_query', '')}")
+                print(f"   • {(node_updates.get('overview_query', '') if node_updates else '')}")
                 
-            elif node_name == "overview_rag":
-                print(f"📚 Disease Overview Results:")
-                print(f"   • Overview summary: {node_updates.get('overview', '')[0:350]}...")
+            elif node_name == "retriever_agent":
+                print(f"🔍 Retriever Agent Results:")
+                print(f"   • Task: {(node_updates.get('current_retrieval_task', 'Unknown') if node_updates else 'Unknown')}")
+                
+            elif node_name == "overview_generation":
+                print(f"📚 Disease Overview Generated:")
+                print(f"   • Overview length: {len(node_updates.get('overview', '') if node_updates else '')} characters")
                 
             elif node_name == "treatment_query_generation":
                 print(f"📝 Generated Treatment Query:")
-                print(f"   • {node_updates.get('treatment_query', '')}")
+                print(f"   • {(node_updates.get('treatment_query', '') if node_updates else '')}")
                 
-            elif node_name == "treatment_rag":
-                print(f"💊 Treatment Recommendations:")
-                print(f"   • Treatment summary: {node_updates.get('treatment', '')[0:350]}...")
+            elif node_name == "treatment_generation":
+                print(f"💊 Treatment Recommendations Generated:")
+                print(f"   • Treatment length: {len(node_updates.get('treatment', '') if node_updates else '')} characters")
                 
-            elif node_name == "product_query_generation":
-                print(f"📝 Generated Product Query:")
-                print(f"   • {node_updates.get('product_query', '')}")
+            elif node_name == "recommendation_query_generation":
+                print(f"📝 Generated Recommendation Query:")
+                print(f"   • {(node_updates.get('recommendation_query', '') if node_updates else '')}")
                 
-            elif node_name == "product_rag":
-                print(f"🛒 Product Recommendations:")
-                print(f"   • Products summary: {node_updates.get('products', '')[0:350]}...")
+            elif node_name == "recommendation_generation":
+                print(f"📋 Treatment Recommendations Generated:")
+                print(f"   • Recommendations length: {len(node_updates.get('recommendations', '') if node_updates else '')} characters")
                 
             elif node_name == "create_final_response":
                 print(f"✅ Final Response Created")
-                print(f"   • Disease name: {node_updates.get('disease_name', 'N/A')}")
-                print(f"   • Confidence: {node_updates.get('confidence_score', 0):.2f}")
+                if node_updates and "final_response" in node_updates:
+                    response = node_updates["final_response"]
+                    print(f"   • Is plant leaf: {response.get('is_plant_leaf', False)}")
+                    print(f"   • Has disease: {response.get('has_disease', False)}")
+                    print(f"   • Number of cropped images: {len(response.get('cropped_images', []))}")
                 
             # Small delay to make the streaming more visible
-            import asyncio
             await asyncio.sleep(0.3)
-
+    
+    # Test QA workflow with memory - interactive mode
+    print("\n" + "="*60)
+    print("💬 QA WORKFLOW WITH MEMORY TEST - Interactive Mode")
+    print("="*60)
+    print("You can now ask questions about your plant's diagnosis.")
+    print("Type 'quit' to exit the conversation.\n")
+    
+    qa_config = {
+        "configurable": {
+            "user_id": "test_user_001",  # Same user ID to access stored diagnosis
+            "thread_id": "qa_session_001"
+        }
+    }
+    
+    # Start with initial question
+    qa_initial_state = {
+        "messages": [HumanMessage(content="What was my plant's diagnosis and what treatment do you recommend?")],
+        "user_id": "test_user_001",  # Same user ID
+        "thread_id": "qa_session_001",
+        "task_type": "qa"
+    }
+    
+    while True:
+        # Run QA workflow
+        async for chunk in graph.astream(
+            qa_initial_state,
+            qa_config,
+            stream_mode="updates",
+        ):
+            # chunk is a dictionary where key = node name, value = updates
+            for node_name, node_updates in chunk.items():
+                print(f"\n{'='*60}")
+                print(f"🔄 EXECUTING NODE: {node_name}")
+                print(f"{'='*60}")
+                
+                # Format and display the updates from this node
+                if node_name == "retrieve_diagnosis":
+                    print(f"🧠 Memory Retrieval:")
+                    if node_updates and node_updates.get("diagnosis_memory"):
+                        memory = node_updates["diagnosis_memory"]
+                        print(f"   • Plant type: {memory.get('plant_type', 'Unknown')}")
+                        print(f"   • Disease: {memory.get('disease', 'None detected')}")
+                    else:
+                        print(f"   • No diagnosis memory found")
+                        
+                elif node_name == "qa_agent":
+                    print(f"🤖 QA Agent Response:")
+                    if node_updates and node_updates.get("messages"):
+                        response = node_updates["messages"][-1].content
+                        print(f"   • Response: {response}")
+                    else:
+                        print(f"   • No response generated")
+                
+                # Small delay to make the streaming more visible
+                await asyncio.sleep(0.3)
+        
+        # Get next user input
+        user_input = input("\nYour question (or 'quit' to exit): ").strip()
+        
+        if user_input.lower() == 'quit':
+            print("\n👋 Exiting QA session. Goodbye!")
+            break
+        
+        # Create new state with user input
+        qa_initial_state = {
+            "messages": [HumanMessage(content=user_input)],
+            "user_id": "test_user_001",
+            "thread_id": "qa_session_001",
+            "task_type": "qa"
+        }
+            
 if __name__ == "__main__":
-    import asyncio
     asyncio.run(stream_graph_execution())

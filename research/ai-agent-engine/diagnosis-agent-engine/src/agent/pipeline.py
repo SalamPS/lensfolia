@@ -1,11 +1,9 @@
-import os
 import cv2
-import numpy as np
 import base64
 import time
 from PIL import Image
-from detection import DetectionService
-from classifier import PlantDiseaseClassifier
+from .detection import DetectionService
+from .classifier import PlantDiseaseClassifier
 
 ENLARGE_SCALE = 1.75
 
@@ -90,7 +88,6 @@ class DetectionPipeline:
             _, buffer = cv2.imencode('.jpg', crop, [cv2.IMWRITE_JPEG_QUALITY, 95])
             base64_crop = "data:image/jpeg;base64," + base64.b64encode(buffer).decode('utf-8')
             
-            print(f"Crop {i} encoded as base64 (length: {len(base64_crop)} chars)")
             
             # Convert to PIL Image for classification
             crop_rgb = cv2.cvtColor(crop, cv2.COLOR_BGR2RGB)

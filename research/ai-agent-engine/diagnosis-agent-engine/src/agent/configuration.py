@@ -4,82 +4,95 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass, field, fields
-from typing import Annotated
+from typing import Annotated, ClassVar
 
+from dotenv import load_dotenv
 from langchain_core.runnables import ensure_config
 from langgraph.config import get_config
+from langgraph.store.memory import InMemoryStore
+from langgraph.store.base import BaseStore
 
-from . import prompts
+
+# Load environment variables from .env file
+load_dotenv()
+
 
 @dataclass(kw_only=True)
 class Configuration:
     """The configuration for the agent."""
-
-    # System prompts stored as class fields
-    system_prompt: str = field(
-        default=prompts.SYSTEM_PROMPT,
-        metadata={
-            "description": "The system prompt to use for the agent's interactions."
-        },
-    )
     
-    image_analysis_prompt: str = field(
-        default=prompts.IMAGE_ANALYSIS_PROMPT,
-        metadata={
-            "description": "The prompt for image analysis and disease detection."
-        },
-    )
+    # Class variable to hold the singleton memory store instance
+    _memory_store_instance: ClassVar[BaseStore] = None
     
-    query_generation_prompt: str = field(
-        default=prompts.QUERY_GENERATION_PROMPT,
-        metadata={
-            "description": "The prompt for generating search queries."
-        },
-    )
-    
-    rag_system_prompts: dict = field(
-        default_factory=lambda: prompts.RAG_SYSTEM_PROMPTS,
-        metadata={
-            "description": "System prompts for different RAG operations."
-        },
-    )
-    
-    retriever_agent_prompt: str = field(
-        default=prompts.RETRIEVER_AGENT_PROMPT,
-        metadata={
-            "description": "The prompt for the retriever agent."
-        },
-    )
-
-    # Model configuration
     model: Annotated[str, {"__template_metadata__": {"kind": "llm"}}] = field(
         default="google_genai/gemini-2.5-flash",
-        metadata={
-            "description": "The name of the language model to use for the agent's main interactions. "
-            "Should be in the form: provider/model-name."
-        },
+        metadata={"description": "The name of the language model to use."},
     )
+    
+    # API Keys and URLs from environment variables
+    google_api_key: str = field(
+        default_factory=lambda: os.getenv("GOOGLE_API_KEY", ""),
+        metadata={"description": "Google Generative AI API key"}
+    )
+    
+    supabase_url: str = field(
+        default_factory=lambda: os.getenv("SUPABASE_URL", ""),
+        metadata={"description": "Supabase project URL"}
+    )
+    
+    supabase_anon_key: str = field(
+        default_factory=lambda: os.getenv("SUPABASE_ANON_KEY", ""),
+        metadata={"description": "Supabase anonymous key"}
+    )
+    
+    tavily_api_key: str = field(
+        default_factory=lambda: os.getenv("TAVILY_API_KEY", ""),
+        metadata={"description": "Tavily search API key"}
+    )
+    
+    # Static configuration
+    product_collection_name: str = field(
+        default="lensfolia_collection",
+        metadata={"description": "Name of the product collection"}
+    )
+    
+    embedding_model: str = field(
+        default="models/gemini-embedding-001",
+        metadata={"description": "Embedding model identifier"}
+    )
+    
+    # Memory store for long-term persistence - use singleton instance
+    memory_store: Annotated[BaseStore, {"default": InMemoryStore()}] = field(
+        default_factory=lambda: Configuration._get_memory_store_instance(),
+        metadata={"description": "Memory store for user data persistence"}
+    )
+    
+    @classmethod
+    def _get_memory_store_instance(cls) -> BaseStore:
+        """Get or create the singleton memory store instance."""
+        if cls._memory_store_instance is None:
+            cls._memory_store_instance = InMemoryStore()
+        return cls._memory_store_instance
 
     @classmethod
     def from_context(cls) -> Configuration:
         """Create a Configuration instance from a RunnableConfig object."""
         try:
             config = get_config()
-        except RuntimeError:
+        except RuntimeError as e:
             config = None
-        config = ensure_config(config)
+        
+        try:
+            config = ensure_config(config)
+        except Exception as e:
+            raise
+        
         configurable = config.get("configurable") or {}
+        
         _fields = {f.name for f in fields(cls) if f.init}
-        return cls(**{k: v for k, v in configurable.items() if k in _fields})
-
-
-# Environment configuration constants
-class Config:
-    """Environment configuration constants."""
-    
-    GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY") 
-    SUPABASE_URL = os.getenv("SUPABASE_URL")
-    SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
-    TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
-    PRODUCT_COLLECTION_NAME = "lensfolia_collection"
-    EMBEDDING_MODEL = "models/gemini-embedding-001"
+        
+        try:
+            result = cls(**{k: v for k, v in configurable.items() if k in _fields})
+            return result
+        except Exception as e:
+            raise

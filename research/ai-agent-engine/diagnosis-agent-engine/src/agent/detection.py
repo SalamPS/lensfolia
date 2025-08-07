@@ -2,7 +2,6 @@ import cv2
 import numpy as np
 from PIL import Image
 import httpx
-from io import BytesIO
 import onnxruntime as ort
 
 DETECT_CONFIDENCE = 0.30
@@ -154,7 +153,6 @@ class DetectionService:
                 raise ValueError(f"Could not load image from {image_path}")
             
         original_h, original_w = img.shape[:2]
-        print(f"Original image size: {original_w}x{original_h}")
 
         # Preprocess image
         input_tensor, scale, pad_x, pad_y = self._preprocess_image(img)
@@ -165,7 +163,6 @@ class DetectionService:
         # Post-process results
         boxes = self._postprocess_detections(outputs, original_w, original_h, scale, pad_x, pad_y)
 
-        print(f"Found {len(boxes)} detections")
         return boxes, img
 
 

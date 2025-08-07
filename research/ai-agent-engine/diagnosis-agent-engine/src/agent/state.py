@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Any, Sequence
+from typing import Dict, List, Any, Sequence, Annotated
 
 from langchain_core.messages import AnyMessage
 from langgraph.graph import add_messages
 from langgraph.managed import IsLastStep
-from typing_extensions import Annotated
+
 
 @dataclass
 class InputState:
@@ -16,7 +16,7 @@ class InputState:
 
     This class is used to define the initial state and structure of incoming data.
     """
-
+    
     messages: Annotated[Sequence[AnyMessage], add_messages] = field(default_factory=list)
     """
     Messages tracking the primary execution state of the agent.
@@ -37,67 +37,66 @@ class InputState:
     image_url: str = field(default="")
     """URL of the image to be analyzed for plant diseases."""
 
-@dataclass  
-class State(InputState):
+    diagnoses_ref: str = field(default="")
+    """Reference ID for the diagnosis request."""
+    
+    created_by: str = field(default="")
+    """ID of the user who created the diagnosis request."""
+    
+    task_type: str = field(default="diagnosis")
+    """Type of task: 'diagnosis' or 'qa'."""
+    
+    user_id: str = field(default="")
+    """User ID for memory management."""
+    
+    thread_id: str = field(default="")
+    """Thread ID for session management."""
+    
+    diagnosis_memory: dict = field(default_factory=dict)
+    """Cached diagnosis result from memory store."""
+
+@dataclass
+class ChatState(InputState):
+    """State for QA conversations, inheriting core fields from InputState."""
+    is_last_step: IsLastStep = field(default=False)
+    is_plant_leaf: bool = field(default=False)
+    has_disease: bool = field(default=False)
+    image_analysis: str = field(default="")
+    top_predictions: List[Dict] = field(default_factory=list)
+    confidence_score: float = field(default=0.0)
+    overview: str = field(default="")
+    treatment: str = field(default="")
+    recommendations: str = field(default="")
+
+@dataclass
+class State(ChatState):
     """Represents the complete state of the agent, extending InputState with additional attributes.
 
     This class can be used to store any information needed throughout the agent's lifecycle.
     """
-
-    is_last_step: IsLastStep = field(default=False)
-    """
-    Indicates whether the current step is the last one before the graph raises an error.
-
-    This is a 'managed' variable, controlled by the state machine rather than user code.
-    It is set to 'True' when the step count reaches recursion_limit - 1.
-    """
-    
-    # Analysis results
-    is_plant_leaf: bool = field(default=False)
-    """Whether the analyzed image contains a plant leaf."""
-    
-    has_disease: bool = field(default=False)
-    """Whether disease signs were detected on the leaf."""
     
     plant_type: str = field(default="Unknown")
-    """Identified plant type from the image analysis."""
+    """Identified plant type or 'Unknown' if not determined."""
     
-    image_analysis: str = field(default="")
-    """Detailed analysis results from the image analysis step."""
-    
-    # Detection results
     detection_results: Dict[str, Any] = field(default_factory=dict)
     """Results from the plant disease detection pipeline."""
     
-    top_predictions: List[Dict] = field(default_factory=list)
-    """Top predictions for each detected object in the image."""
-    
-    confidence_score: float = field(default=0.0)
-    """Overall confidence score for the diagnosis."""
-    
-    # Retrieval results
-    overview: str = field(default="")
-    """Comprehensive overview of the detected disease."""
-    
-    treatment: str = field(default="")
-    """Treatment recommendations for the detected disease."""
-    
-    products: str = field(default="")
-    """Product recommendations for treating the disease."""
-    
-    # Search queries
     overview_query: str = field(default="")
     """Generated search query for disease overview information."""
     
     treatment_query: str = field(default="")
     """Generated search query for treatment information."""
     
-    product_query: str = field(default="")
-    """Generated search query for product recommendations."""
+    recommendation_query: str = field(default="")
+    """Generated search query for treatment recommendations."""
     
-    # Final response
+    current_retrieval_task: str = field(default="")
+    """Current retrieval task: 'overview', 'treatment', or 'product'."""
+    
+    retrieval_context: str = field(default="")
+    """Context retrieved by the retriever agent for the current task."""
+    
     disease_name: str = field(default="None detected")
-    """Final identified disease name."""
+    """Identified disease name or 'None detected'."""
     
     final_response_saved: bool = field(default=False)
-    """Whether the final response has been saved to file."""

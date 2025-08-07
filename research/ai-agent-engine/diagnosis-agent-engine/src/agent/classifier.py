@@ -30,7 +30,6 @@ class PlantDiseaseClassifier:
             List of dictionaries with keys 'label' and 'confidence'
         """
         try:
-            print(f"\n[DEBUG] Processing image source")
             # Handle PIL Image directly
             if isinstance(image_source, Image.Image):
                 image = image_source
