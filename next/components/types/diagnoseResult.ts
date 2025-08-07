@@ -5,6 +5,7 @@ export type LFDProduct_ = {
 	price: number;
 	image_url: string;
 	link: string;
+	category: string;
 }
 
 export type LFDResultChat_ = {

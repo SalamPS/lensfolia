@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import {
@@ -18,6 +17,7 @@ import { useStream } from "@langchain/langgraph-sdk/react";
 import type { Message } from "@langchain/langgraph-sdk";
 import { IconBook2, IconCheck, IconDatabase, IconImageInPicture, IconLeaf, IconSearch, IconSparkles, IconStethoscope, IconX } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/lib/supabase";
 
 function StatusIcon({ status }: { status: string }) {
   if (status === "error") {
@@ -83,8 +83,13 @@ export function LangGraphVisual({
     assistantId: "agent",
     messagesKey: "messages",
     threadId: threadId,
-    onThreadId: (id) => {
+    onThreadId: async (id) => {
       setThreadId(id);
+      const updateThread = await supabase
+        .from("diagnoses")
+        .update({ thread_id: id })
+        .eq("id", diagnose_data?.id);
+      console.log("Thread updated:", updateThread);
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onUpdateEvent(event: any) {
@@ -323,6 +328,7 @@ useEffect(() => {
         setProcessedSteps((prev) => [...prev, LGStart]);
 
         await delay(3000);
+        console.log(thread)
         // const dataSubmit = {
         // 	image_url: diagnose_data?.image_url || "",
         // 	diagnoses_ref: diagnose_data?.id || "",

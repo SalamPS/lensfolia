@@ -3,6 +3,8 @@
 import { IconSend, IconSparkles } from "@tabler/icons-react";
 import { useState, useRef, useEffect } from "react";
 import { LFDResult_ } from "../types/diagnoseResult";
+import { useStream } from "@langchain/langgraph-sdk/react";
+import { Message } from "@langchain/langgraph-sdk";
 
 // Define our own message type
 interface ChatMessage {
@@ -36,13 +38,28 @@ const ChatMessageComponent = ({ message }: { message: ChatMessage }) => {
 	);
 };
 
-export function AskAI ({disease}: {disease: LFDResult_ | undefined}) {
+export function AskAI ({disease, thread_id}: {disease: LFDResult_ | undefined, thread_id: string}) {
 	const [inputValue, setInputValue] = useState("");
 	const [error, setError] = useState<string | null>(null);
 	const [messages, setMessages] = useState<ChatMessage[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
-	const threadId = useRef(`thread-${Date.now()}`);
+
+	const thread = useStream<{
+		messages: Message[];
+		image_url: string;
+		diagnoses_ref: string;
+		task_type: "diagnosis" | "qa";
+	}>({
+		apiUrl: "https://jay-fit-safely.ngrok-free.app/",
+		assistantId: "agent",
+		messagesKey: "messages",
+		threadId: thread_id,
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		onUpdateEvent(event: any) {
+			console.log("Event received:", event);
+		},
+	});
 
 	// Auto scroll to bottom when new messages arrive
 	useEffect(() => {
@@ -60,94 +77,30 @@ export function AskAI ({disease}: {disease: LFDResult_ | undefined}) {
 			content: message
 		};
 		setMessages(prev => [...prev, userMessage]);
-
-		// Create AI message placeholder for streaming
-		const aiMessageId = `ai-${Date.now()}`;
-		const initialAiMessage: ChatMessage = {
-			id: aiMessageId,
-			type: "ai",
-			content: ""
-		};
-		setMessages(prev => [...prev, initialAiMessage]);
-
 		try {
-			// Add context about the disease to the message if available
-			const contextualMessage = disease 
-				? `Konteks: Deteksi menunjukkan ${disease.encyclopedia?.name || 'hasil deteksi'}. Skor: ${disease.score}. Pertanyaan: ${message}`
-				: message;
-
-			const response = await fetch(`${"http://0.0.0.0:3001"}/chat/stream`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({
-					message: contextualMessage,
-					thread_id: threadId.current
-				})
-			});
-
-			if (!response.ok) {
-				throw new Error(`HTTP error! status: ${response.status}`);
-			}
-
-			if (!response.body) {
-				throw new Error('Response body is null');
-			}
-
-			const reader = response.body.getReader();
-			const decoder = new TextDecoder();
-			let buffer = '';
-
-			try {
-				while (true) {
-					const { done, value } = await reader.read();
-					
-					if (done) break;
-					
-					buffer += decoder.decode(value, { stream: true });
-					const lines = buffer.split('\n');
-					buffer = lines.pop() || '';
-
-					for (const line of lines) {
-						if (line.trim() === '') continue;
-						
-						if (line.startsWith('data: ')) {
-							try {
-								const data = JSON.parse(line.slice(6));
-								
-								if (data.error) {
-									throw new Error(data.error);
-								}
-								
-								if (data.type === 'done') {
-									break;
-								}
-								
-								if (data.content) {
-									// Update the AI message content progressively
-									setMessages(prev => prev.map(msg => 
-										msg.id === aiMessageId 
-											? { ...msg, content: data.content }
-											: msg
-									));
-								}
-							} catch (parseError) {
-								console.error('Error parsing streaming data:', parseError);
-							}
-						}
-					}
-				}
-			} finally {
-				reader.releaseLock();
-			}
-
+			console.log(thread)
+			// const dataSubmit = {
+			// 	image_url: diagnose_data?.image_url || "",
+			// 	diagnoses_ref: diagnose_data?.id || "",
+			// 	created_by: diagnose_data?.created_by,
+			// 	task_type: "diagnosis" as const,
+			// }
+			// console.log("Submitting data to thread:", dataSubmit);
+			// const newMessages: Message[] = [
+			// 	...(thread.messages || []),
+			// 	{
+			// 		type: "human",
+			// 		content: "Tolong deteksi penyakit tanaman ini.",
+			// 		id: Date.now().toString(),
+			// 	},
+			// ];
+			// thread.submit({
+			// 	messages: newMessages,
+			// 	...dataSubmit,
+			// })
 		} catch (err) {
 			console.error("Chat error:", err);
-			setError("Terjadi kesalahan saat menghubungi AI. Pastikan server LangGraph berjalan di port 3001.");
-			
-			// Remove the empty AI message if there was an error
-			setMessages(prev => prev.filter(msg => msg.id !== aiMessageId));
+			setError("Terjadi kesalahan saat menghubungi AI.");
 		} finally {
 			setIsLoading(false);
 		}
