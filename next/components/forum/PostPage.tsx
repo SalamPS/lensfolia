@@ -25,6 +25,7 @@ import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { useVote } from "../../hooks/useVote";
+import { cn } from "@/lib/utils";
 
 const PostPage = ({ slug }: { slug: string }) => {
   const [post, setPost] = React.useState<ForumPost | null>(null);
@@ -129,26 +130,36 @@ const PostPage = ({ slug }: { slug: string }) => {
             <div className="dark:bg-card bg-input flex items-center justify-between gap-2 rounded-full p-1 pr-4">
               {/* up */}
               <div className="flex items-center gap-1">
-                <div className="group rounded-full p-2 transition-colors hover:bg-green-500/10"
+                <div className={cn(
+                  "group rounded-full p-2 transition-colors hover:bg-green-500/10",
+                  rating.getUserVote() === "up" && "bg-green-500/20"
+                )}
                   onClick={() => rating.upVote()}>
                   <IconArrowBigUpLines
                     size={18}
                     className="group-hover:text-green-500"
                   />
                 </div>
-                <span className="text-sm">{rating.getUpVoteCount()}</span>
+                <span className={
+                  cn("text-sm", rating.getUserVote() === "up" && "text-green-500 dark:text-green-300")
+                }>{rating.getUpVoteCount()}</span>
               </div>
 
               {/* down */}
               <div className="flex items-center gap-1">
-                <div className="group rounded-full p-2 transition-colors hover:bg-red-500/10"
+                <div className={cn(
+                  "group rounded-full p-2 transition-colors hover:bg-red-500/10",
+                  rating.getUserVote() === "down" && "bg-red-500/20"
+                )}
                   onClick={() => rating.downVote()}>
                   <IconArrowBigDownLines
                     size={18}
                     className="group-hover:text-red-500"
                   />
                 </div>
-                <span className="text-sm">{rating.getDownVoteCount()}</span>
+                <span className={
+                  cn("text-sm", rating.getUserVote() === "down" && "text-red-500 dark:text-red-300")
+                }>{rating.getDownVoteCount()}</span>
               </div>
             </div>
 

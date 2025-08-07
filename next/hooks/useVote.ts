@@ -124,8 +124,6 @@ export function useVote({user}: { user: User | null }) {
 			setIsVoted(true);
 		}
 
-		console.log(result)
-
 		if (result.error) {
 			console.error("Error upvoting:", result.error);
 			setPostUpvotes(backupUpvotes);
