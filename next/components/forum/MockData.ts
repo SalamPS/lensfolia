@@ -44,12 +44,14 @@ export interface Comment {
   authorImg: string;
   authorId: string;
   timeAgo: string;
+  created_at: string; // ⬅ tambah
   content: string;
   upvotes: string[];
   downvotes: string[];
   nullvotes: string[];
   replies?: Comment[];
 }
+
 
 export interface Notification {
   id: string;

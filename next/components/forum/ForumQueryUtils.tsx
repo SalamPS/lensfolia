@@ -129,20 +129,44 @@ export const ForumReplyConverter = (comments: any): Comment => {
 	}
 }
 
+// export const ForumCommentConverter = (post: any): Comment[] => {
+// 	return post.forums_discussions.map((discussion: any) => ({
+// 		id: discussion.id,
+// 		author: discussion.user_profiles.name,
+// 		authorId: discussion.user_profiles.id,
+// 		authorImg: discussion.user_profiles.profile_picture,
+// 		timeAgo: getTimeAgo(discussion.created_at),
+// 		content: discussion.content,
+// 		upvotes: discussion.rating.filter((rating: any) => rating.is_upvote === true).map((rating: any) => rating?.created_by),
+// 		downvotes: discussion.rating.filter((rating: any) => rating.is_upvote === false).map((rating: any) => rating?.created_by),
+// 		nullvotes: discussion.rating.filter((rating: any) => rating.is_upvote === null).map((rating: any) => rating?.created_by),
+// 		replies: discussion.forums_comments.map((reply: any) => ForumReplyConverter(reply)),
+// 	}))
+// }
+
 export const ForumCommentConverter = (post: any): Comment[] => {
-	return post.forums_discussions.map((discussion: any) => ({
-		id: discussion.id,
-		author: discussion.user_profiles.name,
-		authorId: discussion.user_profiles.id,
-		authorImg: discussion.user_profiles.profile_picture,
-		timeAgo: getTimeAgo(discussion.created_at),
-		content: discussion.content,
-		upvotes: discussion.rating.filter((rating: any) => rating.is_upvote === true).map((rating: any) => rating?.created_by),
-		downvotes: discussion.rating.filter((rating: any) => rating.is_upvote === false).map((rating: any) => rating?.created_by),
-		nullvotes: discussion.rating.filter((rating: any) => rating.is_upvote === null).map((rating: any) => rating?.created_by),
-		replies: discussion.forums_comments.map((reply: any) => ForumReplyConverter(reply)),
-	}))
-}
+  return post.forums_discussions.map((discussion: any) => ({
+    id: discussion.id,
+    author: discussion.user_profiles.name,
+    authorId: discussion.user_profiles.id,
+    authorImg: discussion.user_profiles.profile_picture,
+    timeAgo: getTimeAgo(discussion.created_at),
+    created_at: discussion.created_at, // ⬅ isi di sini
+    content: discussion.content,
+    upvotes: discussion.rating
+      .filter((rating: any) => rating.is_upvote === true)
+      .map((rating: any) => rating?.created_by),
+    downvotes: discussion.rating
+      .filter((rating: any) => rating.is_upvote === false)
+      .map((rating: any) => rating?.created_by),
+    nullvotes: discussion.rating
+      .filter((rating: any) => rating.is_upvote === null)
+      .map((rating: any) => rating?.created_by),
+    replies: discussion.forums_comments.map((reply: any) =>
+      ForumReplyConverter(reply),
+    ),
+  }));
+};
 
 export const ForumConverter = (post: any):ForumPost => {
 	return {
