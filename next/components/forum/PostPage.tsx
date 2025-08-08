@@ -37,7 +37,22 @@ const PostPage = ({ slug }: { slug: string }) => {
   const { refresh, setRefresh } = useContext(PostContext);
   const { user } = useAuth();
   const rating = useVote({ user })
+  const [selectedTab, setSelectedTab] = React.useState<"terbaru" | "terbaik">(
+    "terbaru",
+  );
 
+const sortedComments = React.useMemo(() => {
+  if (selectedTab === "terbaru") {
+    return [...comments].sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    );
+  }
+  if (selectedTab === "terbaik") {
+    return [...comments].sort((a, b) => b.upvotes.length - a.upvotes.length);
+  }
+  return comments;
+}, [selectedTab, comments]);
   useEffect(() => {
     (async () => {
       const response = await ForumDetailQuery(slug.split("#")[0]);
@@ -136,36 +151,52 @@ const PostPage = ({ slug }: { slug: string }) => {
             <div className="dark:bg-card bg-input flex items-center justify-between gap-2 rounded-full p-1 pr-4">
               {/* up */}
               <div className="flex items-center gap-1">
-                <div className={cn(
-                  "group rounded-full p-2 transition-colors hover:bg-green-500/10",
-                  rating.getUserVote() === "up" && "bg-green-500/20"
-                )}
-                  onClick={() => rating.upVote()}>
+                <div
+                  className={cn(
+                    "group rounded-full p-2 transition-colors hover:bg-green-500/10",
+                    rating.getUserVote() === "up" && "bg-green-500/20",
+                  )}
+                  onClick={() => rating.upVote()}
+                >
                   <IconArrowBigUpLines
                     size={18}
                     className="group-hover:text-green-500"
                   />
                 </div>
-                <span className={
-                  cn("text-sm", rating.getUserVote() === "up" && "text-green-500 dark:text-green-300")
-                }>{rating.getUpVoteCount()}</span>
+                <span
+                  className={cn(
+                    "text-sm",
+                    rating.getUserVote() === "up" &&
+                      "text-green-500 dark:text-green-300",
+                  )}
+                >
+                  {rating.getUpVoteCount()}
+                </span>
               </div>
 
               {/* down */}
               <div className="flex items-center gap-1">
-                <div className={cn(
-                  "group rounded-full p-2 transition-colors hover:bg-red-500/10",
-                  rating.getUserVote() === "down" && "bg-red-500/20"
-                )}
-                  onClick={() => rating.downVote()}>
+                <div
+                  className={cn(
+                    "group rounded-full p-2 transition-colors hover:bg-red-500/10",
+                    rating.getUserVote() === "down" && "bg-red-500/20",
+                  )}
+                  onClick={() => rating.downVote()}
+                >
                   <IconArrowBigDownLines
                     size={18}
                     className="group-hover:text-red-500"
                   />
                 </div>
-                <span className={
-                  cn("text-sm", rating.getUserVote() === "down" && "text-red-500 dark:text-red-300")
-                }>{rating.getDownVoteCount()}</span>
+                <span
+                  className={cn(
+                    "text-sm",
+                    rating.getUserVote() === "down" &&
+                      "text-red-500 dark:text-red-300",
+                  )}
+                >
+                  {rating.getDownVoteCount()}
+                </span>
               </div>
             </div>
 
@@ -258,12 +289,15 @@ const PostPage = ({ slug }: { slug: string }) => {
 
         {/* Comments Section */}
         <div>
-          <div className="flex w-full justify-between items-center mb-4">
+          <div className="mb-4 flex w-full items-center justify-between">
             <h3 className="text-lg font-semibold">
               {comments.length} Komentar
             </h3>
             <Tabs
-              defaultValue="terbaru"
+              value={selectedTab}
+              onValueChange={(val) =>
+                setSelectedTab(val as "terbaru" | "terbaik")
+              }
             >
               <TabsList className="w-full shrink-0 flex-wrap">
                 <TabsTrigger value="terbaru">Terbaru</TabsTrigger>
@@ -271,14 +305,11 @@ const PostPage = ({ slug }: { slug: string }) => {
               </TabsList>
             </Tabs>
           </div>
-
-          {comments.length > 0 ? (
+          {sortedComments.length > 0 ? (
             <div className="space-y-4">
-              {comments.map((comment) => {
-                return (
-                  <CommentItem key={comment.id} {...comment} />
-                );
-              })}
+              {sortedComments.map((comment) => (
+                <CommentItem key={comment.id} {...comment} />
+              ))}
             </div>
           ) : (
             <p className="text-muted-foreground py-8 text-center">

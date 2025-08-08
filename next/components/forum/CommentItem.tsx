@@ -88,10 +88,10 @@ const CommentItem = ({
           <AvatarImage src={authorImg} />
         </Avatar>
         <div className="flex-1">
-          <div className="flex items-end gap-2">
+          <div className="flex flex-wrap jus items-center gap-2">
             <h4 className="font-medium">{author}</h4>
-            <span className="text-muted-foreground">—</span>
-            <span className="text-muted-foreground text-sm">{timeAgo}</span>
+            <span className="bg-muted-foreground my-auto rounded-full w-1 h-1 hidden md:inline"></span>
+            <span className="text-muted-foreground text-xs md:text-sm">{timeAgo}</span>
           </div>
           <p className="my-2 text-sm">{content}</p>
 
@@ -102,7 +102,8 @@ const CommentItem = ({
               <div
                 className={cn(
                   "flex items-center gap-1",
-                  rating.getUserVote() === "up" && "text-green-500 dark:text-green-300",
+                  rating.getUserVote() === "up" &&
+                    "text-green-500 dark:text-green-300",
                 )}
               >
                 <button
@@ -116,7 +117,8 @@ const CommentItem = ({
                     size={18}
                     className={cn(
                       "group-hover:text-green-500",
-                      rating.getUserVote() === "up" && "text-green-500 dark:text-green-300",
+                      rating.getUserVote() === "up" &&
+                        "text-green-500 dark:text-green-300",
                     )}
                   />
                 </button>
@@ -127,7 +129,8 @@ const CommentItem = ({
               <div
                 className={cn(
                   "flex items-center gap-1",
-                  rating.getUserVote() === "down" && "text-red-500 dark:text-red-300",
+                  rating.getUserVote() === "down" &&
+                    "text-red-500 dark:text-red-300",
                 )}
               >
                 <button
@@ -141,17 +144,20 @@ const CommentItem = ({
                     size={18}
                     className={cn(
                       "group-hover:text-red-500",
-                      rating.getUserVote() === "down" && "text-red-500 dark:text-red-300",
+                      rating.getUserVote() === "down" &&
+                        "text-red-500 dark:text-red-300",
                     )}
                   />
                 </button>
-                <span className="text-xs">{rating.getDownVoteCount() || 0}</span>
+                <span className="text-xs">
+                  {rating.getDownVoteCount() || 0}
+                </span>
               </div>
             </div>
 
             {/* Reply Button */}
             <button
-              className="dark:bg-card bg-input rounded-full px-3 py-[7px] hover:bg-foreground/15 transition-colors"
+              className="dark:bg-card bg-input hover:bg-foreground/15 rounded-full px-3 py-[7px] transition-colors"
               onClick={() => setShowReplyForm(!showReplyForm)}
             >
               <div className="flex items-center gap-1">

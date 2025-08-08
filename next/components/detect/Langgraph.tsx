@@ -15,7 +15,17 @@ import { LFD_ } from "../types/diagnoseResult";
 import { Button } from "../ui/button";
 import { useStream } from "@langchain/langgraph-sdk/react";
 import type { Message } from "@langchain/langgraph-sdk";
-import { IconBook2, IconCheck, IconDatabase, IconImageInPicture, IconLeaf, IconSearch, IconSparkles, IconStethoscope, IconX } from "@tabler/icons-react";
+import {
+  IconBook2,
+  IconCheck,
+  IconDatabase,
+  IconImageInPicture,
+  IconLeaf,
+  IconSearch,
+  IconSparkles,
+  IconStethoscope,
+  IconX,
+} from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 
@@ -50,7 +60,9 @@ const iconMaping: Record<string, React.ReactNode> = {
   overview: <IconBook2 className="text-muted-foreground h-6 w-6" />,
   treatment_query: <IconSearch className="text-muted-foreground h-6 w-6" />,
   treatment: <IconStethoscope className="text-muted-foreground h-6 w-6" />,
-  recommendation_query: <IconSearch className="text-muted-foreground h-6 w-6" />,
+  recommendation_query: (
+    <IconSearch className="text-muted-foreground h-6 w-6" />
+  ),
   recommendation: <IconSparkles className="text-muted-foreground h-6 w-6" />,
   check: <IconCheck className="text-muted-foreground h-6 w-6" />,
   error: <IconX className="text-destructive h-6 w-6" />,
@@ -245,15 +257,15 @@ export function LangGraphVisual({
   const router = useRouter();
   const scrollRef = useRef<HTMLDivElement>(null);
 
-useEffect(() => {
-  const container = scrollRef.current;
-  if (container) {
-    container.scrollTo({
-      top: container.scrollHeight,
-      behavior: "smooth",
-    });
-  }
-}, [processedSteps]);
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (container) {
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: "smooth",
+      });
+    }
+  }, [processedSteps]);
 
   const statusClearing = async () => {
     setProcessedSteps((prev) => [
@@ -328,58 +340,58 @@ useEffect(() => {
         setProcessedSteps((prev) => [...prev, LGStart]);
 
         await delay(3000);
-        console.log(thread)
-        const dataSubmit = {
-        	image_url: diagnose_data?.image_url || "",
-        	diagnoses_ref: diagnose_data?.id || "",
-        	created_by: diagnose_data?.created_by,
-        	task_type: "diagnosis" as const,
-        }
-        console.log("Submitting data to thread:", dataSubmit);
-        const newMessages: Message[] = [
-        	...(thread.messages || []),
-        	{
-        		type: "human",
-        		content: "Tolong deteksi penyakit tanaman ini.",
-        		id: Date.now().toString(),
-        	},
-        ];
-        thread.submit({
-        	messages: newMessages,
-        	...dataSubmit,
-        })
+        console.log(thread);
+        // const dataSubmit = {
+        // 	image_url: diagnose_data?.image_url || "",
+        // 	diagnoses_ref: diagnose_data?.id || "",
+        // 	created_by: diagnose_data?.created_by,
+        // 	task_type: "diagnosis" as const,
+        // }
+        // console.log("Submitting data to thread:", dataSubmit);
+        // const newMessages: Message[] = [
+        // 	...(thread.messages || []),
+        // 	{
+        // 		type: "human",
+        // 		content: "Tolong deteksi penyakit tanaman ini.",
+        // 		id: Date.now().toString(),
+        // 	},
+        // ];
+        // thread.submit({
+        // 	messages: newMessages,
+        // 	...dataSubmit,
+        // })
 
         for (const step of LGSteps) {
           console.log(`================\n${step.title}`);
-           statusHelper("success");
-           setProcessedSteps((prev) => [...prev, step]);
-           await delay(3000);
+          statusHelper("success");
+          setProcessedSteps((prev) => [...prev, step]);
+          await delay(3000);
         }
 
-         setProcessedSteps((prev) => [
-           ...prev,
-           {
-             step: "end",
-             title: "Mengumpulkan hasil akhir",
-             description:
-               "Proses diagnosis selesai. Mengalihkan ke halaman hasil.",
-             icon: "check",
-           },
-         ]);
-         setCountdown(5);
-         const countdownInterval = setInterval(() => {
-           setCountdown((prev) => {
-             if (prev <= 1) {
-               clearInterval(countdownInterval);
-               return 0;
-             }
-             return prev - 1;
-           });
-         }, 1000);
-         await delay(5000);
-         statusHelper("success");
-         await delay(500);
-        router.push("/result/" + diagnose_data?.id);
+        setProcessedSteps((prev) => [
+          ...prev,
+          {
+            step: "end",
+            title: "Mengumpulkan hasil akhir",
+            description:
+              "Proses diagnosis selesai. Mengalihkan ke halaman hasil.",
+            icon: "check",
+          },
+        ]);
+        setCountdown(5);
+        const countdownInterval = setInterval(() => {
+          setCountdown((prev) => {
+            if (prev <= 1) {
+              clearInterval(countdownInterval);
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+        await delay(5000);
+        statusHelper("success");
+        await delay(500);
+        // router.push("/result/" + diagnose_data?.id);
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -390,7 +402,6 @@ useEffect(() => {
   if (!trigger) {
     return <></>;
   }
-  
 
   return (
     <AnimatePresence>
@@ -406,7 +417,7 @@ useEffect(() => {
           style={{ height: "500px" }}
         >
           <div className="px-4 py-8 text-center">
-            <h1 className="font-mono text-lg md:text-2xl font-semibold">
+            <h1 className="font-mono text-lg font-semibold md:text-2xl">
               {processedStatus.includes("error")
                 ? "GAGAL MEMPROSES DIAGNOSIS"
                 : processedSteps.some((step) => step.step === "end")
@@ -415,7 +426,6 @@ useEffect(() => {
             </h1>
           </div>
 
-         
           <div className="relative flex-1 overflow-hidden">
             {/* gradient overlay */}
             <div className="from-background pointer-events-none absolute top-0 right-0 left-0 z-10 h-[36px] bg-gradient-to-b to-transparent" />
@@ -504,4 +514,3 @@ useEffect(() => {
     </AnimatePresence>
   );
 }
-
