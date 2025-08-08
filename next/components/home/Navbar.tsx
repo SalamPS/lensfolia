@@ -87,7 +87,7 @@ const Navbar = () => {
                 alt="App Logo"
                 className="hidden dark:block w-full h-full"
               />
-              <p className="text-foreground hidden pl-9 font-bold md:flex">
+              <p className="text-foreground hidden font-bold md:flex">
                 Lensfolia
               </p>
             </Link>

@@ -18,7 +18,11 @@ import {
 import ForumCard from "./ForumCard";
 import ForumCardSkeleton from "./ForumCardSkeleton";
 import { ForumPost } from "./MockData";
-import { ForumConverter, ForumNotificationSimpleQuery, ForumQuery } from "./ForumQueryUtils";
+import {
+  ForumConverter,
+  ForumNotificationSimpleQuery,
+  ForumQuery,
+} from "./ForumQueryUtils";
 import Link from "next/link";
 import { Badge } from "../ui/badge";
 import { PostContext } from "./PostContext";
@@ -32,7 +36,7 @@ const ForumPage = () => {
   const [loading, setLoading] = React.useState(true);
   const [forumPosts, setForumPosts] = React.useState<ForumPost[]>([]);
   const [unreadCount, setUnreadCount] = React.useState(0);
-  const {user} = useContext(PostContext);
+  const { user } = useContext(PostContext);
 
   const postsPerPage = 5;
 
@@ -85,7 +89,7 @@ const ForumPage = () => {
         const count = notifs.filter((notif: any) => !notif.is_read).length;
         setUnreadCount(count);
       }
-    })()
+    })();
   }, [user]);
 
   return (
@@ -217,8 +221,8 @@ const ForumPage = () => {
               )}
             </div>
 
-            <Pagination className="my-8">
-              <PaginationContent>
+            <Pagination className="my-8 flex flex-wrap justify-center gap-2 rounded-lg p-2">
+              <PaginationContent className="flex flex-wrap justify-center gap-1">
                 <PaginationItem>
                   <PaginationPrevious
                     href="#"
@@ -231,6 +235,7 @@ const ForumPage = () => {
                     }
                   />
                 </PaginationItem>
+
                 {Array.from({ length: totalPages || 1 }, (_, i) => i + 1).map(
                   (page) => (
                     <PaginationItem key={page}>
@@ -247,6 +252,7 @@ const ForumPage = () => {
                     </PaginationItem>
                   ),
                 )}
+
                 <PaginationItem>
                   <PaginationNext
                     href="#"

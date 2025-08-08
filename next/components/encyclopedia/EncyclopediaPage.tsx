@@ -268,13 +268,11 @@ const EncyclopediaPage = () => {
               </form>
             </div>
           </div>
-
           <div className="text-muted-foreground text-sm">
             Menampilkan {(currentPage - 1) * itemsPerPage + 1}-
             {Math.min(currentPage * itemsPerPage, filteredEntries.length)} dari{" "}
             {filteredEntries.length} entri
           </div>
-
           {/* Encyclopedia content */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {isLoading ? (
@@ -299,16 +297,14 @@ const EncyclopediaPage = () => {
                   Tidak ada entri yang cocok dengan pencarian atau filter Anda.
                   Coba gunakan kata kunci lain atau atur ulang filter.
                 </p>
-                
               </div>
             )}
           </div>
-
           {/* Pagination */}
           {!isLoading && filteredEntries.length > 0 && (
-            <div className="mt-4 mb-10 flex flex-col items-center">
+            <div className="mt-4 mb-10 flex flex-wrap items-center justify-center gap-2 p-2">
               <Pagination className="w-fit">
-                <PaginationContent>
+                <PaginationContent className="flex flex-wrap justify-center gap-1">
                   <PaginationItem>
                     <PaginationPrevious
                       href="#"
@@ -324,20 +320,73 @@ const EncyclopediaPage = () => {
                     />
                   </PaginationItem>
 
-                  {Array.from({ length: totalPages }).map((_, index) => (
-                    <PaginationItem key={index}>
+                  {/* Always show first page */}
+                  <PaginationItem>
+                    <PaginationLink
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setCurrentPage(1);
+                      }}
+                      isActive={currentPage === 1}
+                    >
+                      1
+                    </PaginationLink>
+                  </PaginationItem>
+
+                  {/* Show ellipsis if current page is far from start */}
+                  {currentPage > 3 && (
+                    <PaginationItem>
+                      <span className="px-2">...</span>
+                    </PaginationItem>
+                  )}
+
+                  {/* Show pages around current page */}
+                  {Array.from({ length: totalPages })
+                    .map((_, index) => index + 1)
+                    .filter(
+                      (page) =>
+                        page > 1 &&
+                        page < totalPages &&
+                        Math.abs(page - currentPage) <= 1,
+                    )
+                    .map((page) => (
+                      <PaginationItem key={page}>
+                        <PaginationLink
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setCurrentPage(page);
+                          }}
+                          isActive={currentPage === page}
+                        >
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ))}
+
+                  {/* Show ellipsis if current page is far from end */}
+                  {currentPage < totalPages - 2 && (
+                    <PaginationItem>
+                      <span className="px-2">...</span>
+                    </PaginationItem>
+                  )}
+
+                  {/* Always show last page if there's more than 1 page */}
+                  {totalPages > 1 && (
+                    <PaginationItem>
                       <PaginationLink
                         href="#"
                         onClick={(e) => {
                           e.preventDefault();
-                          setCurrentPage(index + 1);
+                          setCurrentPage(totalPages);
                         }}
-                        isActive={currentPage === index + 1}
+                        isActive={currentPage === totalPages}
                       >
-                        {index + 1}
+                        {totalPages}
                       </PaginationLink>
                     </PaginationItem>
-                  ))}
+                  )}
 
                   <PaginationItem>
                     <PaginationNext
