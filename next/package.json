@@ -8,7 +8,7 @@
     "start": "next start -p 3000",
     "lint": "next lint",
     "zip": "rm -rf .next next.zip && bun run build && zip -r next.zip .next/",
-    "pwa:test": "next build && next start"
+    "prod": "rm -rf .next && next build && next start"
   },
   "dependencies": {
     "@langchain/core": "^0.3.66",

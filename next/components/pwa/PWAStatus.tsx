@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 
 export default function PWAStatus() {
@@ -11,7 +11,15 @@ export default function PWAStatus() {
     caches: string[];
   } | null>(null);
 
-  const updateCacheInfo = async () => {
+  const formatBytes = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const updateCacheInfo = useCallback(async () => {
     if ('caches' in window) {
       try {
         const cacheNames = await caches.keys();
@@ -23,16 +31,16 @@ export default function PWAStatus() {
           const requests = await cache.keys();
           totalEntries += requests.length;
           
-          // Rough size estimation
-          for (const request of requests.slice(0, 10)) { // Limit to avoid performance issues
+          // Estimate size (rough calculation)
+          for (const request of requests) {
             try {
               const response = await cache.match(request);
               if (response) {
-                const blob = await response.blob();
+                const blob = await response.clone().blob();
                 totalSize += blob.size;
               }
             } catch {
-              // Ignore individual request errors
+              // Skip if can't read
             }
           }
         }
@@ -43,17 +51,23 @@ export default function PWAStatus() {
           caches: cacheNames
         });
       } catch (error) {
-        console.warn('Failed to get cache info:', error);
+        console.error('Error getting cache info:', error);
+        setCacheInfo({
+          count: 0,
+          size: '0 Bytes',
+          caches: []
+        });
       }
     }
-  };
+  }, []);
 
   useEffect(() => {
     // Check service worker status
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.ready.then((registration) => {
-        if (registration.active) {
-          setIsServiceWorkerActive(true);
+      navigator.serviceWorker.getRegistration().then(registration => {
+        setIsServiceWorkerActive(!!registration);
+        
+        if (registration) {
           console.log('✅ Service Worker is active and ready');
         }
       });
@@ -75,14 +89,6 @@ export default function PWAStatus() {
     
     return () => clearInterval(interval);
   }, [updateCacheInfo]);
-
-  const formatBytes = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
 
   const clearCache = async () => {
     if ('caches' in window) {
