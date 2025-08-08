@@ -95,7 +95,7 @@ const CommentItem = ({
           </div>
           <p className="my-2 text-sm">{content}</p>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {/* Votes */}
             <div className="dark:bg-card bg-input flex items-center justify-between gap-2 rounded-full p-1 pr-4">
               {/* Upvote */}
