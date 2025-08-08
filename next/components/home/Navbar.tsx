@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import SignupModal from "../auth/signup-modal";
 import { userNavbar_ } from "../types/user";
 import { useAuth } from "@/hooks/useAuth";
+import { PushNotificationToggle } from "../pwa/PushNotificationToggle";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -158,6 +159,11 @@ const Navbar = () => {
                       <IconBookmark size={16} />
                       Bookmark
                     </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="p-0">
+                    <div className="p-1 w-full">
+                      <PushNotificationToggle />
+                    </div>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem 

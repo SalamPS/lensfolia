@@ -225,3 +225,60 @@ if (isDevelopment) {
 }
 
 serwist.addEventListeners();
+
+// Push notification event handler
+self.addEventListener('push', function (event) {
+  if (event.data) {
+    const data = event.data.json();
+    const options = {
+      body: data.body,
+      icon: data.icon || '/logo-asset-white.svg',
+      badge: data.badge || '/logo-asset-white.svg',
+      data: {
+        dateOfArrival: Date.now(),
+        primaryKey: '1',
+        url: data.data?.url || '/',
+        ...data.data
+      }
+    };
+
+    event.waitUntil(
+      self.registration.showNotification(data.title, options)
+    );
+  }
+});
+
+// Notification click event handler
+self.addEventListener('notificationclick', function (event) {
+  console.log('Notification click received.');
+  
+  event.notification.close();
+
+  if (event.action === 'close') {
+    return;
+  }
+
+  // Get the URL to open
+  const urlToOpen = event.notification.data?.url || '/';
+  
+  event.waitUntil(
+    self.clients.matchAll({
+      type: 'window'
+    }).then(function (clientList: readonly WindowClient[]) {
+      // Try to find existing window with our app
+      for (let i = 0; i < clientList.length; i++) {
+        const client = clientList[i];
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          client.navigate(urlToOpen);
+          return client.focus();
+        }
+      }
+      
+      // If no existing window, open a new one
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(urlToOpen);
+      }
+      return null;
+    })
+  );
+});

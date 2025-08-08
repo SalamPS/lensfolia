@@ -61,21 +61,43 @@ const CommentItem = ({
       alert("Please log in to reply.");
       return;
     }
-    const submitted = await supabase
+    const {data, error} = await supabase
       .from("forums_comments")
       .insert({
         content: replyContent,
         media_url: null,
         comments_ref: isReply ? id : null,
         discussions_ref: isReply ? isReply : id,
-      });
-    if (submitted.error) {
-      console.error("Error submitting reply:", submitted.error);
+      })
+      .select(`
+        *,
+        author:user_profiles!created_by (
+          id,
+          name,
+          profile_picture
+        )
+      `)
+      .single()
+
+    if (error) {
+      console.error("Error submitting reply:", error);
       return;
     }
     setRefresh((prev) => prev + 1);
     setReplyContent("");
     setShowReplyForm(false);
+    await fetch('/api/v1/notify', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        title: 'Balasan Baru',
+        message: `${data.author.name.split(" ")[0]} membalas komentar Anda`,
+        url: `/forum/${isReply ? id : ''}`,
+        userId: authorId
+      })
+    })
   };
 
   return (
