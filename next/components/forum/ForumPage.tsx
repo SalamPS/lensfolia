@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import React from "react";
+import React, { useContext } from "react";
 import StaticBG from "../StaticBG";
 import { Button } from "../ui/button";
 import { IconBell, IconMessage2Share, IconPlus } from "@tabler/icons-react";
@@ -18,9 +18,10 @@ import {
 import ForumCard from "./ForumCard";
 import ForumCardSkeleton from "./ForumCardSkeleton";
 import { ForumPost } from "./MockData";
-import { ForumConverter, ForumQuery } from "./ForumQueryUtils";
+import { ForumConverter, ForumNotificationSimpleQuery, ForumQuery } from "./ForumQueryUtils";
 import Link from "next/link";
 import { Badge } from "../ui/badge";
+import { PostContext } from "./PostContext";
 
 const ForumPage = () => {
   const [currentPage, setCurrentPage] = React.useState(1);
@@ -31,6 +32,7 @@ const ForumPage = () => {
   const [loading, setLoading] = React.useState(true);
   const [forumPosts, setForumPosts] = React.useState<ForumPost[]>([]);
   const [unreadCount, setUnreadCount] = React.useState(0);
+  const {user} = useContext(PostContext);
 
   const postsPerPage = 5;
 
@@ -73,15 +75,19 @@ const ForumPage = () => {
   }, [searchQuery, activeTab]);
 
   React.useEffect(() => {
-    // Mock data - ganti dengan API call sebenarnya
-    const mockUnreadNotifications = [
-      { id: "1", isRead: false },
-      { id: "2", isRead: true },
-    ];
-
-    const count = mockUnreadNotifications.filter((n) => !n.isRead).length;
-    setUnreadCount(count);
-  }, []);
+    (async () => {
+      if (!user) return;
+      const notifs = await ForumNotificationSimpleQuery(user.id);
+      if (!notifs) {
+        console.error("Error fetching notifications");
+      } else {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const count = notifs.filter((notif: any) => !notif.is_read).length;
+        console.log(notifs)
+        setUnreadCount(count);
+      }
+    })()
+  }, [user]);
 
   return (
     <>

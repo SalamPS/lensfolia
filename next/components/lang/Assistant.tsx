@@ -73,7 +73,7 @@ export default function DokterLensfoliaFloating () {
 						</svg>
 				</div>
 			</button>
-			<div className={`z-[9998] flex flex-col justify-between bg-card/80 backdrop-blur-lg hover:bg-card border-primary shadow-md overflow-hidden rounded-b-xl w-[calc(100vw-0.5rem)] md:w-[30vw] ${open? 'md:h-[60vh] border-2 ' + (!focus ? 'h-[calc(90vh-3.5rem)]' : 'h-[calc(45vh-3.5rem)]') : 'h-0 w-0'}`}
+			<div className={`z-[9998] flex flex-col justify-between bg-card/80 backdrop-blur-lg hover:bg-card border-primary shadow-md overflow-hidden rounded-b-xl w-[calc(100vw-0.5rem)] md:w-[5vw] ${open? 'md:h-[60vh] border-2  md:w-[30vw] ' + (!focus ? 'h-[calc(90vh-3.5rem)]' : 'h-[calc(45vh-3.5rem)]') : 'h-0 w-0'}`}
 				style={{
 					opacity: !open ? 0 : 1,
 					transition: '0.3s',

@@ -12,6 +12,7 @@ import {
   IconPaperclip,
 } from "@tabler/icons-react";
 import CommentItem from "./CommentItem";
+import PostPageSkeleton from "./PostPageSkeleton";
 import {
   ForumCommentConverter,
   ForumConverter,
@@ -85,6 +86,10 @@ const PostPage = ({ slug }: { slug: string }) => {
   };
 
   if (!isLoading && !post) return notFound();
+
+  if (isLoading) {
+    return <PostPageSkeleton />;
+  }
 
   return (
     <div className="bg-background min-h-screen p-4">

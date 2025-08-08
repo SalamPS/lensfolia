@@ -53,22 +53,46 @@ export interface Comment {
 
 export interface Notification {
   id: string;
-  type: "reply" | "mention"; // 'reply' buat balasan post, 'mention' buat mention di komentar
-  user: {
+  timeAgo: string; //createdAt
+  is_read: boolean;
+  created_at: string;
+  replyContent: string;
+  content_type: "forums" | "discussions" | "comments" | "upvotes" | "downvotes";
+  content_uri: string;
+  author: {
     id: string;
     name: string;
-    avatar: string;
+    profile_picture: string;
   };
-  timeAgo: string; //createdAt
-  post: {
+  subscriber: {
     id: string;
-    title: string;
+    name: string;
+    profile_picture: string;
   };
-  comment?: {
+  ref_forums?: {
     id: string;
     content: string;
-    isYourComment?: boolean; 
+    contents: string;
+    media_url?: string;
   };
-  replyContent: string;
-  isRead: boolean;
+  ref_discussions?: {
+    id: string;
+    content: string;
+    media_url?: string;
+  };
+  ref_comments?: {
+    id: string;
+    content: string;
+    media_url?: string;
+  };
+  ori_discussions? : {
+    id: string;
+    content: string;
+    media_url?: string;
+  }
+  ori_comments? : {
+    id: string;
+    content: string;
+    media_url?: string;
+  }
 }
