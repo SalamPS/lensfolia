@@ -121,6 +121,7 @@ export const ForumReplyConverter = (comments: any): Comment => {
 		author: comments.user_profiles.name,
 		authorId: comments.user_profiles.id,
 		authorImg: comments.user_profiles.profile_picture,
+		created_at: comments.created_at,
 		timeAgo: getTimeAgo(comments.created_at),
 		content: comments.content,
 		upvotes: comments.rating.filter((rating: any) => rating.is_upvote === true).map((rating: any) => rating?.created_by),
