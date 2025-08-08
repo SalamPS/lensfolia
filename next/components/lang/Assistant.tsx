@@ -41,7 +41,7 @@ export default function DokterLensfoliaFloating () {
 		}]
 		setChatLog([...chatLog, ...rawData])
 		const base_url = "https://lensfolia-chatbot.andyathsid.com"
-		const firstTry = await fetch(`${base_url}/api/chat`, {
+		await fetch(`${base_url}/api/chat`, {
 			method: 'POST',
 			headers: {'Content-Type': 'application/json'},
 			body: JSON.stringify({ content: chatTmp, thread_id: threadId })
@@ -61,28 +61,6 @@ export default function DokterLensfoliaFloating () {
 			setChatLog([...chatLog, ...rawData])
 			return false
 		})
-		// if (!firstTry) {
-		// 	await fetch('https://jay-fit-safely.ngrok-free.app/api/chat', {
-		// 		method: 'POST',
-		// 		headers: {'Content-Type': 'application/json'},
-		// 		body: JSON.stringify({ message: chatTmp, threadId })
-		// 	})
-		// 	.then(async (response) => {
-		// 		if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
-		// 		return response.json()
-		// 	})
-		// 	.then((data) => {
-		// 		rawData.push({ message: data.message, role: 'bot' })
-		// 		setChatLog([...chatLog, ...rawData])
-		// 		return true
-		// 	})
-		// 	.catch((error) => {
-		// 		console.error('Error fetching chat response:', error)
-		// 		rawData.push({ message: 'Maaf, terjadi kesalahan saat menghubungi server.', role: 'bot' })
-		// 		setChatLog([...chatLog, ...rawData])
-		// 		return false
-		// })
-		// }
 	}
 
 	if (!path.includes('/assistant') && !path.includes('post')) return <>
