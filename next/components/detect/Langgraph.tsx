@@ -329,25 +329,25 @@ useEffect(() => {
 
         await delay(3000);
         console.log(thread)
-        // const dataSubmit = {
-        // 	image_url: diagnose_data?.image_url || "",
-        // 	diagnoses_ref: diagnose_data?.id || "",
-        // 	created_by: diagnose_data?.created_by,
-        // 	task_type: "diagnosis" as const,
-        // }
-        // console.log("Submitting data to thread:", dataSubmit);
-        // const newMessages: Message[] = [
-        // 	...(thread.messages || []),
-        // 	{
-        // 		type: "human",
-        // 		content: "Tolong deteksi penyakit tanaman ini.",
-        // 		id: Date.now().toString(),
-        // 	},
-        // ];
-        // thread.submit({
-        // 	messages: newMessages,
-        // 	...dataSubmit,
-        // })
+        const dataSubmit = {
+        	image_url: diagnose_data?.image_url || "",
+        	diagnoses_ref: diagnose_data?.id || "",
+        	created_by: diagnose_data?.created_by,
+        	task_type: "diagnosis" as const,
+        }
+        console.log("Submitting data to thread:", dataSubmit);
+        const newMessages: Message[] = [
+        	...(thread.messages || []),
+        	{
+        		type: "human",
+        		content: "Tolong deteksi penyakit tanaman ini.",
+        		id: Date.now().toString(),
+        	},
+        ];
+        thread.submit({
+        	messages: newMessages,
+        	...dataSubmit,
+        })
 
         for (const step of LGSteps) {
           console.log(`================\n${step.title}`);
@@ -379,7 +379,7 @@ useEffect(() => {
          await delay(5000);
          statusHelper("success");
          await delay(500);
-        // router.push("/result/" + diagnose_data?.id);
+        router.push("/result/" + diagnose_data?.id);
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps

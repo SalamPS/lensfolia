@@ -44,7 +44,7 @@ export default function DokterLensfoliaFloating () {
 			style={{
 				transition: '0.3s ease-out'
 			}}>
-			<button className={`z-[9999] md:scrollnima-none bg-primary/80 duration-500 w-12 h-12 flex items-center ${prepOpen? 'w-[calc(100vw-0.5rem)] md:w-[30vw] opacity-100 justify-between px-2' : 'hover:scale-[1.03] justify-center'} ${open?'cursor-default rounded-t-[1rem]':'scrollnima-btt-[0,97] cursor-pointer rounded-[3rem]'}`}
+			<button className={`z-[9999] md:scrollnima-none bg-primary duration-500 w-12 h-12 flex items-center ${prepOpen? 'w-[calc(100vw-0.5rem)] md:w-[30vw] opacity-100 justify-between px-2' : 'hover:scale-[1.03] justify-center'} ${open?'cursor-default rounded-t-[1rem]':'scrollnima-btt-[0,97] cursor-pointer rounded-[3rem]'}`}
 				onClick={() => {
 					if (!prepOpen && !open) {
 						setPrepOpen(true)
@@ -80,8 +80,8 @@ export default function DokterLensfoliaFloating () {
 				}}>
 				<div ref={scrollerRef} className="grow overflow-y-auto pt-2 pb-3 hidden-scroll">
 					{chatLog.map((chat, idx) => (
-						<div key={idx} className={`px-4 py-2 ${chat.role === 'bot' ? 'text-left text-foreground' : 'text-right text-background'}`}>
-							<div className={`${chat.role === 'bot' ? 'bg-primary/80' : 'bg-card text-foreground'} px-4 py-2 rounded-lg shadow-md inline-block max-w-[80%]`}>
+						<div key={idx} className={`px-3 py-2 text-sm md:text-base ${chat.role === 'bot' ? 'text-left text-foreground' : 'text-right text-background'}`}>
+							<div className={`${chat.role === 'bot' ? 'bg-teal-800' : 'bg-border text-foreground'} px-4 py-2 rounded-lg inline-block max-w-[80%]`}>
 								<Markdown>
 									{chat.message}
 								</Markdown>
@@ -90,18 +90,18 @@ export default function DokterLensfoliaFloating () {
 					))}
 				</div>
 	
-				<form onSubmit={sendChat} className="shadow-md cursor-default flex items-center">
+				<form onSubmit={sendChat} className="cursor-default flex gap-2 p-3 justify-between items-center">
 					<input 
 						type="text" 
-						className="grow px-4 py-4 hidden-scroll border-none rounded-tr-lg shadow-sm outline-none ring-1 ring-primary duration-200 focus:ring-primary bg-card placeholder:text-sm" 
+						className="grow w-full h-full p-1.5 px-2 hidden-scroll rounded border-none outline-none duration-200 ring-1 ring-border focus:ring-3 focus:ring-primary/50 bg-background/90 placeholder:text-sm" 
 						value={chatTmp} 
 						onFocus={() => setFocus(true)}
 						onBlur={() => setFocus(false)}
 						placeholder="Tanya apapun tentang LensFolia!" 
 						onChange={(e) => (e.target.value.length < 100) ? setChatTmp(e.target.value) : ''} 
 					/>
-					<button type="submit" className="flex items-center justify-center cursor-pointer bg-primary/80 hover:bg-primary duration-200 h-10 aspect-square rounded-full mx-4">
-						<IconSend className="mr-1"/>
+					<button type="submit" className="flex items-center justify-center cursor-pointer bg-primary/80 hover:bg-primary duration-200 p-2 aspect-square rounded-full">
+						<IconSend size={20} className="text-white"/>
 					</button>
 				</form>
 			</div>
