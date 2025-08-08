@@ -7,6 +7,7 @@ import {
   IconBookmark,
   IconBookmarkFilled,
   IconClipboardText,
+  IconExternalLink,
   IconStethoscope,
   IconThumbUp,
 } from "@tabler/icons-react";
@@ -145,8 +146,8 @@ export default function LFDResultPage({detId}: {detId?: string}) {
     });
   }, [api]);
 
-  const handleBookmark = () => {
-    setBookmarked(!bookmarked);
+  const goToBookmark = () => {
+    router.push("/bookmarks");
   };
 
   if (loading || !result) {
@@ -204,7 +205,7 @@ export default function LFDResultPage({detId}: {detId?: string}) {
 
       {/* Disease Result Section */}
       <section id="disease-result" className="z-20">
-        <h1 className="dark:from-primary mt-8 mb-4 bg-gradient-to-b from-zinc-500 to-zinc-700 bg-clip-text text-center text-4xl font-bold text-transparent dark:to-emerald-800">
+        <h1 className="dark:from-primary mt-12 mb-8 bg-gradient-to-b from-zinc-500 to-zinc-700 bg-clip-text text-center text-3xl md:text-4xl font-bold text-transparent dark:to-emerald-800">
           {!result?.diagnoses_result.length ? (
             <span className="">
               Tidak ada penyakit atau hama yang terindikasi!
@@ -217,7 +218,7 @@ export default function LFDResultPage({detId}: {detId?: string}) {
         </h1>
 
         {result?.diagnoses_result[0]?.list_of_diseases.length ? (
-          <div className="my-14">
+          <div className="mb-14">
             <div className="flex justify-center px-4">
               <Carousel setApi={setApi} className="w-fit max-w-[350px]">
                 <CarouselContent>
@@ -280,16 +281,8 @@ export default function LFDResultPage({detId}: {detId?: string}) {
         ) : null}
 
         <div className="flex justify-center">
-          <Button onClick={handleBookmark}>
-            {bookmarked ? (
-              <>
-                <IconBookmarkFilled size={24} /> Hasil Deteksi Tersimpan
-              </>
-            ) : (
-              <>
-                <IconBookmark size={24} /> Simpan Hasil Deteksi
-              </>
-            )}
+          <Button onClick={goToBookmark}>
+            <IconExternalLink size={24} /> Lihat Riwayat Diagnosis
           </Button>
         </div>
       </section>

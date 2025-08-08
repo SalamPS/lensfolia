@@ -245,7 +245,7 @@ export default function DetectionMenu() {
       </div>
       {!capturedFile ? (
         <section
-          className="bg-card/[0.4] border-border m-4 grid grid-cols-1 items-center gap-5 rounded-2xl border-[1px] p-4 backdrop-blur-xs md:grid-cols-2"
+          className="bg-card/[0.4] border-border m-4 grid grid-cols-2 md:grid-cols-2 items-center gap-5 rounded-2xl border-[1px] p-4 backdrop-blur-xs"
           id="set-image"
         >
           <LFDISContainer
@@ -257,7 +257,7 @@ export default function DetectionMenu() {
           </LFDISContainer>
           <LFDISContainer
             onClick={triggerFileUpload}
-            title="Unggah dari perangkat Anda"
+            title="Unggah dari perangkat"
             subtitle="Drag and drop file atau klik untuk upload"
           >
             <IconUpload size={20} className="text-white" />
@@ -386,7 +386,7 @@ function LFDISContainer({
       className={`border-border bg-card/[0.5] border-[2px] border-dashed p-4`}
     >
       <div
-        className="dark:bg-input border-border flex cursor-pointer flex-col items-center justify-center gap-1 rounded-md border bg-zinc-100 p-18 duration-200 hover:scale-[1.02] md:aspect-[4/3] dark:border-none"
+        className="dark:bg-input border-border flex cursor-pointer flex-col items-center justify-center gap-1 rounded-md border bg-zinc-100 p-4 md:p-18 duration-200 hover:scale-[1.02] md:aspect-[4/3] dark:border-none"
         onClick={onClick}
       >
         <div className="bg-primary dark:shadow-foreground/[0.6] mb-5 flex aspect-square items-center justify-center rounded-md p-5 duration-200 dark:shadow-inner">
@@ -395,7 +395,7 @@ function LFDISContainer({
         <h1 className="text-foreground text-center text-sm font-bold">
           {title}
         </h1>
-        <h2 className="text-muted-foreground text-center text-xs">
+        <h2 className="text-muted-foreground text-center text-xs hidden md:block">
           {subtitle}
         </h2>
       </div>

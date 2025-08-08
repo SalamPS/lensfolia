@@ -145,7 +145,7 @@ export default function BookmarksPage () {
 			<header className="flex p-4 z-10 mx-auto w-full items-center md:items-end gap-8">
 				<div className="grow flex flex-col items-start justify-center gap-2 md:gap-4">
 					<h1 className="bg-gradient-to-b from-zinc-500 to-zinc-700 bg-clip-text text-2xl font-bold text-wrap text-transparent md:text-4xl dark:from-zinc-50 dark:to-zinc-400">
-						Bookmark anda
+						Bookmark Diagnosis
 					</h1>
 					<p className="text-muted-foreground max-w-2xl text-sm text-pretty">
 						Kelola dan jelajahi Bookmark hasil deteksi milik Anda
@@ -187,7 +187,7 @@ export default function BookmarksPage () {
 									placeholder="Telusuri..." 
 									value={searchQuery}
 									onChange={(e) => setSearchQuery(e.target.value)}
-									className="pl-10 outline-none border border-border p-3 rounded-xl w-full"
+									className="pl-10 outline-none border placeholder:text-card md:placeholder:text-muted-foreground border-border p-3 rounded-xl w-full"
 								/>
 							</form>
 							<Select
