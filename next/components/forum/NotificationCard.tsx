@@ -26,6 +26,17 @@ const NotificationCard = ({ notification }: NotificationCardProps) => {
     setRefresh(prev => prev+1);
   }
 
+  const deleteNotificationHandler = async () => {
+    const {error} = await supabase
+      .from("notifications")
+      .delete()
+      .eq("id", notification.id);
+    if (error) {
+      return console.error("Error deleting notification:", error);
+    }
+    setRefresh(prev => prev+1);
+  }
+
   return (
     <div
       className={`bg-background border-border rounded-xl border p-4 ${!notification.is_read ? "border-primary ring-4 ring-teal-500/20" : ""}`}
@@ -49,7 +60,7 @@ const NotificationCard = ({ notification }: NotificationCardProps) => {
             </div>
           </div>
           {/* button delete notif */}
-          <Button variant="outline" size="icon">
+          <Button variant="outline" size="icon" onClick={deleteNotificationHandler}>
             <IconX />
           </Button>
         </div>
@@ -71,17 +82,16 @@ const NotificationCard = ({ notification }: NotificationCardProps) => {
 
           {/* Post title */}
           <div>
-            <p className="bg-card text-muted-foreground flex flex-col md:flex-row items-start w-fit md:items-center gap-1 rounded p-2 text-sm">
-              Pada postingan :{" "}
-              <Link href={notification.content_uri}>
-                {" "}
-                <span className="hover:text-primary font-bold hover:underline">
-                  {
-                    notification.ref_forums?.content ||
-                    notification.ref_comments?.content ||
-                    notification.ref_discussions?.content
-                  }
-                </span>
+            <p className="bg-card text-muted-foreground items-center rounded p-2 text-sm">
+              <span className="w-fit">
+                Pada postingan:{" "}
+              </span>
+              <Link href={notification.content_uri} className="hover:text-primary font-bold hover:underline line-clamp-1">
+              {
+                notification.ref_forums?.content ||
+                notification.ref_comments?.content ||
+                notification.ref_discussions?.content
+              }
               </Link>
             </p>
           </div>
