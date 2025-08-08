@@ -57,7 +57,6 @@ export default function BookmarksPage () {
 				if (response.data) {
 					setBookmarks(response.data);
 				}
-				console.log(response);
 			} catch (error) {
 				setIsLoading(false);
 				console.error("Error fetching bookmarks:", error);
@@ -303,7 +302,6 @@ export default function BookmarksPage () {
 												</h2>
 												<IconDotsDropdown>
 													<DropdownMenuItem onClick={() => {
-														console.log("Rename clicked");
 														setEditIndex(index); 
 														setEditValue(bookmark.name || "");
 													}}>

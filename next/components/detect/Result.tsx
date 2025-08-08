@@ -78,7 +78,6 @@ export default function LFDResultPage({detId}: {detId?: string}) {
 
         const recoms = res_clone.diagnoses_result[0].recommendations;
         const productList = ProductList.filter((product) => recoms.includes(product));
-        console.log("Filtered product list:", productList);
 
         const fetchedProducts = await supabase
           .from("products")

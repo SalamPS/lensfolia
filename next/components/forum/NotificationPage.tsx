@@ -49,7 +49,6 @@ const NotificationPage = () => {
       if (!data) {
         console.error("Error fetching notifications");
       } else {
-        console.log(data);
         const clone = data
           .map((notif) => ({
             ...notif,

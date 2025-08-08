@@ -112,7 +112,6 @@ export const ForumDetailQuery = async (id:string) => {
 	`)
 	.order("created_at", { ascending: false })
 	.eq("id", id);
-	console.log(response)
 	return response.data
 }
 
@@ -196,6 +195,5 @@ export const ForumNotificationQuery = async (userId: string) => {
 	`)
 	.eq("subscriber", userId)
 	.order("created_at", { ascending: false });
-	console.log(response)
 	return response.data;
 }

@@ -248,7 +248,6 @@ const PostPage = ({ slug }: { slug: string }) => {
                     className="hidden"
                     onChange={(e) => {
                       if (e.target.files) {
-                        console.log("File selected:", e.target.files[0]);
                         // Handle file upload logic here
                       }
                     }}

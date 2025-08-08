@@ -83,7 +83,6 @@ const ForumPage = () => {
       } else {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const count = notifs.filter((notif: any) => !notif.is_read).length;
-        console.log(notifs)
         setUnreadCount(count);
       }
     })()

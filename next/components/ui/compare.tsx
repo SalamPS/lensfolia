@@ -85,11 +85,10 @@ export const Compare = ({
   }
 
   const handleStart = useCallback(
-    (clientX: number) => {
+    () => {
       if (slideMode === "drag") {
         setIsDragging(true);
       }
-      console.log(clientX)
     },
     [slideMode],
   );
