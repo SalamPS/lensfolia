@@ -115,7 +115,7 @@ export function AskAI ({disease, thread_id}: {disease: LFDResult_ | undefined, t
 		messages: Message[];
 		task_type: string;
 	}>({
-		apiUrl: "https://jay-fit-safely.ngrok-free.app/",
+		apiUrl: process.env.NEXT_PUBLIC_AGENTIC_RESULT_API || "https://jay-fit-safely.ngrok-free.app",
 		assistantId: "agent",
 		messagesKey: "messages",
 		threadId: thread_id,

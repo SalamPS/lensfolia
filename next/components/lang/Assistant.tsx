@@ -22,6 +22,7 @@ export default function DokterLensfoliaFloating () {
 	const [prepOpen, setPrepOpen] = useState(false)
 	const [open, setOpen] = useState(false)
 	const [focus, setFocus] = useState(false)
+	const [isLoading, setIsLoading] = useState(false)
 	const [threadId] = useState<string>(uuidv4() + '-' + new Date().getTime().toString(36))
 
 	const scrollerRef = useRef<HTMLDivElement>(null)
@@ -33,18 +34,22 @@ export default function DokterLensfoliaFloating () {
 
 	const sendChat = async (e: { preventDefault: () => void }) => {
 		e.preventDefault()
-		if (!chatTmp) return
+		if (!chatTmp || isLoading) return
+		
+		const userMessage = chatTmp
 		setChatTmp('')
+		setIsLoading(true)
+		
 		const rawData: _chatLog[] = [{
-			message: chatTmp,
+			message: userMessage,
 			role: 'user',
 		}]
 		setChatLog([...chatLog, ...rawData])
-		const base_url = "https://lensfolia-chatbot.andyathsid.com"
+		const base_url = process.env.NEXT_PUBLIC_GLOBAL_CHATBOT_API || "https://lensfolia-chatbot.andyathsid.com"
 		await fetch(`${base_url}/api/chat`, {
 			method: 'POST',
 			headers: {'Content-Type': 'application/json'},
-			body: JSON.stringify({ content: chatTmp, thread_id: threadId })
+			body: JSON.stringify({ content: userMessage, thread_id: threadId })
 		})
 		.then(async (response) => {
 			if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
@@ -53,12 +58,14 @@ export default function DokterLensfoliaFloating () {
 		.then((data) => {
 			rawData.push({ message: data.content, role: 'bot' })
 			setChatLog([...chatLog, ...rawData])
+			setIsLoading(false)
 			return true
 		})
 		.catch((error) => {
 			console.error('Error fetching chat response:', error)
 			rawData.push({ message: 'Maaf, terjadi kesalahan saat menghubungi server.', role: 'bot' })
 			setChatLog([...chatLog, ...rawData])
+			setIsLoading(false)
 			return false
 		})
 	}
@@ -112,19 +119,38 @@ export default function DokterLensfoliaFloating () {
 							</div>
 						</div>
 					))}
+					
+					{/* Loading Animation */}
+					{isLoading && (
+						<div className="px-3 py-2 text-sm md:text-base text-left text-foreground">
+							<div className="bg-teal-800 px-4 py-2 rounded-lg inline-block">
+								<div className="flex items-center space-x-1">
+									<div className="flex h-6 items-center space-x-1">
+										<div className="w-1 h-1 bg-white rounded-full animate-bounce" style={{animationDelay: '0ms'}}></div>
+										<div className="w-1 h-1 bg-white rounded-full animate-bounce" style={{animationDelay: '150ms'}}></div>
+										<div className="w-1 h-1 bg-white rounded-full animate-bounce" style={{animationDelay: '300ms'}}></div>
+									</div>
+								</div>
+							</div>
+						</div>
+					)}
 				</div>
 	
 				<form onSubmit={sendChat} className="cursor-default flex gap-2 p-3 justify-between items-center">
 					<input 
 						type="text" 
-						className="grow w-full h-full p-1.5 px-2 hidden-scroll rounded border-none outline-none duration-200 ring-1 ring-border focus:ring-3 focus:ring-primary/50 bg-background/90 placeholder:text-sm" 
+						className="grow w-full h-full p-1.5 px-2 hidden-scroll rounded border-none outline-none duration-200 ring-1 ring-border focus:ring-3 focus:ring-primary/50 bg-background/90 placeholder:text-sm disabled:opacity-50 disabled:cursor-not-allowed" 
 						value={chatTmp} 
+						disabled={isLoading}
 						onFocus={() => setFocus(true)}
 						onBlur={() => setFocus(false)}
-						placeholder="Tanya apapun tentang LensFolia!" 
+						placeholder={isLoading ? "Menunggu respon..." : "Tanya apapun tentang LensFolia!"} 
 						onChange={(e) => (e.target.value.length < 100) ? setChatTmp(e.target.value) : ''} 
 					/>
-					<button type="submit" className="flex items-center justify-center cursor-pointer bg-primary/80 hover:bg-primary duration-200 p-2 aspect-square rounded-full">
+					<button 
+						type="submit" 
+						disabled={isLoading}
+						className="flex items-center justify-center cursor-pointer bg-primary/80 hover:bg-primary duration-200 p-2 aspect-square rounded-full disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary/80">
 						<IconSend size={20} className="text-white"/>
 					</button>
 				</form>
