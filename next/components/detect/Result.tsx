@@ -4,8 +4,6 @@
 /* eslint-disable @next/next/no-img-element */
 import {
   IconArrowLeft,
-  IconBookmark,
-  IconBookmarkFilled,
   IconClipboardText,
   IconExternalLink,
   IconStethoscope,
