@@ -23,6 +23,7 @@ interface CommentItemProps {
   downvotes: string[];
   nullvotes: string[];
   replies?: CommentItemProps[];
+  postId?: string; // Add postId prop
 }
 
 const CommentItem = ({
@@ -37,10 +38,12 @@ const CommentItem = ({
   downvotes,
   nullvotes,
   replies = [],
+  postId, // Add postId parameter
 }: CommentItemProps) => {
   const [showReplyForm, setShowReplyForm] = React.useState(false);
   const [replyContent, setReplyContent] = React.useState("");
   const { setRefresh, user } = useContext(PostContext);
+  const [isLoading, setIsLoading] = React.useState(false);
   const rating = useVote({ user });
 
   useEffect(() => {
@@ -61,6 +64,8 @@ const CommentItem = ({
       alert("Please log in to reply.");
       return;
     }
+    if (isLoading) return; // Prevent multiple submissions
+    setIsLoading(true);
     const submitted = await supabase
       .from("forums_comments")
       .insert({
@@ -68,14 +73,40 @@ const CommentItem = ({
         media_url: null,
         comments_ref: isReply ? id : null,
         discussions_ref: isReply ? isReply : id,
-      });
+      })
+      .select(); // Add select to get returned data
+    
     if (submitted.error) {
       console.error("Error submitting reply:", submitted.error);
       return;
     }
+
+    // Trigger notification to the author of the comment being replied to via API
+    if (submitted.data && submitted.data.length > 0 && postId) {
+      try {
+        await fetch('/api/v1/notifications', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            subscriber: authorId,
+            created_by: user.id,
+            content_type: 'comments',
+            content_uri: `/forum/post/${postId}${isReply ? `#d-${isReply}` : ''}#c-${id}`,
+            ref_comments: id,
+            ori_discussion: isReply ? isReply : id,
+            ori_comments: id
+          })
+        });
+      } catch (error) {
+        console.error('Error creating comment reply notification:', error);
+        // Don't fail the reply submission if notification fails
+      }
+    }
+
     setRefresh((prev) => prev + 1);
     setReplyContent("");
     setShowReplyForm(false);
+    setIsLoading(false);
   };
 
   return (
@@ -178,8 +209,12 @@ const CommentItem = ({
                 >
                   Batal
                 </Button>
-                <Button size="sm" onClick={handleReplySubmit}>
-                  Kirim
+                <Button size="sm" onClick={handleReplySubmit} disabled={isLoading}>
+                    {isLoading ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+                    ) : (
+                    "Kirim"
+                    )}
                 </Button>
               </div>
             </div>
@@ -188,7 +223,7 @@ const CommentItem = ({
           {replies.length > 0 && (
             <div className="mt-4">
               {replies.map((reply) => (
-                <CommentItem key={reply.id} {...reply} isReply={id} />
+                <CommentItem key={reply.id} {...reply} isReply={id} postId={postId} />
               ))}
             </div>
           )}

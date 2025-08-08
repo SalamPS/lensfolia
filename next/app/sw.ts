@@ -320,8 +320,8 @@ self.addEventListener('push', function (event) {
       const data = event.data.json();
       const options = {
         body: data.body,
-        icon: data.icon || '/logo-asset-white.svg',
-        badge: data.badge || '/logo-asset-white.svg',
+        icon: data.icon || '/pwa/LogoRounded_150_Asset.svg',
+        badge: data.badge || '/pwa/LogoRounded_150_Asset.svg',
         tag: data.tag || 'default',
         renotify: true,
         data: {

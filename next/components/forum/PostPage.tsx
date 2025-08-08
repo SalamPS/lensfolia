@@ -76,11 +76,34 @@ const PostPage = ({ slug }: { slug: string }) => {
       content: commentContent,
       media_url: null,
       forums_ref: post.id,
-    });
+    }).select();
+    
     if (submitted.error) {
       console.error("Error submitting reply:", submitted.error);
       return;
     }
+
+    // Trigger notification to post author via API
+    if (submitted.data && submitted.data.length > 0) {
+      try {
+        await fetch('/api/v1/notifications', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            subscriber: post.authorId,
+            created_by: user.id,
+            content_type: 'discussions',
+            content_uri: `/forum/post/${post.id}#d-${submitted.data[0].id}`,
+            ref_forums: post.id,
+            ref_discussions: submitted.data[0].id
+          })
+        });
+      } catch (error) {
+        console.error('Error creating reply notification:', error);
+        // Don't fail the comment submission if notification fails
+      }
+    }
+
     setRefresh((prev) => prev + 1);
     setCommentContent("");
   };
@@ -276,7 +299,7 @@ const PostPage = ({ slug }: { slug: string }) => {
             <div className="space-y-4">
               {comments.map((comment) => {
                 return (
-                  <CommentItem key={comment.id} {...comment} />
+                  <CommentItem key={comment.id} {...comment} postId={post?.id} />
                 );
               })}
             </div>
