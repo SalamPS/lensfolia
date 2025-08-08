@@ -114,7 +114,7 @@ const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: true,
   clientsClaim: true,
-  navigationPreload: !isDevelopment, // Disable in development
+  navigationPreload: !isDevelopment,
   disableDevLogs: !isDevelopment,
   fallbacks: {
     entries: [
@@ -130,98 +130,98 @@ const serwist = new Serwist({
   ],
 });
 
-// Enhanced install event listener with better error handling
-self.addEventListener('install', (event) => {
-  console.log('🔧 Service Worker installing...');
+// Add event listeners first
+serwist.addEventListeners();
+
+// Custom install logic - use global event listener instead of Serwist's method
+self.addEventListener('install', (event: ExtendableEvent) => {
+  console.log('🔧 Service Worker installing with custom logic...');
   
-  event.waitUntil(
-    (async () => {
-      try {
-        const cache = await caches.open('pages-cache');
-        console.log('📦 Attempting to precache critical pages...');
-        
-        // Precache critical pages one by one with error handling
-        const criticalPages = [
-          '/',
-          '/detect',
-          '/encyclopedia', 
-          '/forum',
-          '/bookmarks',
-        ];
-        
-        const manifestPage = '/manifest.webmanifest';
-        
-        // Cache critical pages
-        for (const page of criticalPages) {
-          try {
-            await cache.add(page);
-            console.log('✅ Cached:', page);
-          } catch (err) {
-            console.warn('⚠️ Failed to cache page:', page, err);
-          }
-        }
-        
-        // Try to cache manifest separately
+  // Add our custom precaching logic
+  const customInstallLogic = async () => {
+    try {
+      const cache = await caches.open('pages-cache');
+      console.log('📦 Attempting to precache critical pages...');
+      
+      // Precache critical pages one by one with error handling
+      const criticalPages = [
+        '/',
+        '/detect',
+        '/encyclopedia', 
+        '/forum',
+        '/bookmarks',
+      ];
+      
+      const manifestPage = '/manifest.webmanifest';
+      
+      // Cache critical pages
+      for (const page of criticalPages) {
         try {
-          await cache.add(manifestPage);
-          console.log('✅ Cached manifest');
+          await cache.add(page);
+          console.log('✅ Cached:', page);
         } catch (err) {
-          console.warn('⚠️ Failed to cache manifest:', err);
+          console.warn('⚠️ Failed to cache page:', page, err);
         }
-        
-        console.log('📦 Manual precaching completed');
-        
-      } catch (error) {
-        console.error('❌ Install event failed:', error);
-        // Don't throw error to prevent installation failure
       }
-    })()
-  );
+      
+      // Try to cache manifest separately
+      try {
+        await cache.add(manifestPage);
+        console.log('✅ Cached manifest');
+      } catch (err) {
+        console.warn('⚠️ Failed to cache manifest:', err);
+      }
+      
+      console.log('📦 Manual precaching completed');
+      
+    } catch (error) {
+      console.error('❌ Custom install logic failed:', error);
+      // Don't throw error to prevent installation failure
+    }
+  };
+
+  // Extend the install event with our custom logic
+  event.waitUntil(customInstallLogic());
 });
 
-// Enhanced activate event for cleanup with better error handling
-self.addEventListener('activate', (event) => {
-  console.log('✅ Service Worker activating...');
+// Custom activate logic
+self.addEventListener('activate', (event: ExtendableEvent) => {
+  console.log('✅ Service Worker activating with custom logic...');
   
-  event.waitUntil(
-    (async () => {
-      try {
-        const cacheNames = await caches.keys();
-        
-        // Clean up old caches
-        const cacheCleanupPromises = cacheNames
-          .filter(cacheName => {
-            // Delete old caches and problematic ones
-            return cacheName.startsWith('old-') || 
-                   cacheName.startsWith('v1-') ||
-                   cacheName.includes('workbox') ||
-                   cacheName.includes('serwist-precache');
-          })
-          .map(async cacheName => {
-            try {
-              console.log('🗑️ Deleting old cache:', cacheName);
-              await caches.delete(cacheName);
-              return true;
-            } catch (err) {
-              console.warn('⚠️ Failed to delete cache:', cacheName, err);
-              return false;
-            }
-          });
-        
-        await Promise.allSettled(cacheCleanupPromises);
-        
-        // Claim clients for immediate control
-        if (self.clients && self.clients.claim) {
-          await self.clients.claim();
-        }
-        
-        console.log('✅ Service Worker activated successfully');
-        
-      } catch (error) {
-        console.error('❌ Activation failed:', error);
-      }
-    })()
-  );
+  const customActivateLogic = async () => {
+    try {
+      const cacheNames = await caches.keys();
+      
+      // Clean up old caches
+      const cacheCleanupPromises = cacheNames
+        .filter(cacheName => {
+          // Delete old caches and problematic ones
+          return cacheName.startsWith('old-') || 
+                 cacheName.startsWith('v1-') ||
+                 cacheName.includes('workbox') ||
+                 (cacheName.includes('serwist-precache') && cacheName !== 'serwist-precache-v1');
+        })
+        .map(async cacheName => {
+          try {
+            console.log('🗑️ Deleting old cache:', cacheName);
+            await caches.delete(cacheName);
+            return true;
+          } catch (err) {
+            console.warn('⚠️ Failed to delete cache:', cacheName, err);
+            return false;
+          }
+        });
+      
+      await Promise.allSettled(cacheCleanupPromises);
+      
+      console.log('✅ Service Worker activated successfully');
+      
+    } catch (error) {
+      console.error('❌ Custom activation failed:', error);
+    }
+  };
+
+  event.waitUntil(customActivateLogic());
 });
 
 // Improved custom fetch handler for development mode
@@ -312,7 +312,6 @@ if (isDevelopment) {
   });
 }
 
-serwist.addEventListeners();
 
 // Enhanced push notification event handler
 self.addEventListener('push', function (event) {
