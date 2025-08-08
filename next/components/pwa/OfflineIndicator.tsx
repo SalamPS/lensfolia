@@ -116,7 +116,7 @@ export default function OfflineIndicator() {
 
       {/* Install PWA Prompt */}
       {showInstallPrompt && !isInstalled && (
-        <div className="fixed bottom-4 left-4 right-4 z-50 bg-card border border-border rounded-lg p-4 shadow-lg w-[70vw] md:max-w-sm mx-auto animate-in slide-in-from-bottom-2 duration-300">
+        <div className="fixed bottom-4 left-4 right-4 z-[9997] bg-card border border-border rounded-lg p-4 shadow-lg w-[70vw] md:max-w-sm mx-auto animate-in slide-in-from-bottom-2 duration-300">
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <h3 className="font-semibold text-sm mb-1">Install LensFolia</h3>
