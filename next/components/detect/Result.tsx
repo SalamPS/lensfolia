@@ -35,7 +35,6 @@ import ResultSkeleton from "./ResultSkeleton";
 
 export default function LFDResultPage({detId}: {detId?: string}) {
   const [result, setResult] = React.useState<LFD_ | null>(null);
-  const [bookmarked, setBookmarked] = React.useState(false);
   const [api, setApi] = React.useState<CarouselApi>();
   const [loading, setLoading] = React.useState(true);
   const [loadingProgress, setLoadingProgress] = React.useState(0);
@@ -125,9 +124,6 @@ export default function LFDResultPage({detId}: {detId?: string}) {
           .eq("id_anon", anonUser.id);
         if (res.error) {
           console.error("Error updating diagnosis:", res.error);
-        }
-        else {
-          setBookmarked(true);
         }
       }
     })();
