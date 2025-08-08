@@ -28,7 +28,6 @@ import { supabase } from "@/lib/supabase";
 import { LFD_, LFDProduct_ } from "../types/diagnoseResult";
 import { useAuth } from "@/hooks/useAuth";
 import ReactMarkdown from "react-markdown";
-import { ProductList } from "@/lib/products";
 import ResultSkeleton from "./ResultSkeleton";
 
 export default function LFDResultPage({detId}: {detId?: string}) {
@@ -50,7 +49,6 @@ export default function LFDResultPage({detId}: {detId?: string}) {
       .from("diagnoses")
       .select(`
         *,
-        diagnoses_aichat(*),
         diagnoses_result(
           *,
           encyclopedia(*)
@@ -73,9 +71,18 @@ export default function LFDResultPage({detId}: {detId?: string}) {
         res_clone.diagnoses_result[0].list_of_diseases = parsedDiseases;
 
         setLoadingProgress(60); // Data processed
-
         const recoms = res_clone.diagnoses_result[0].recommendations;
-        const productList = ProductList.filter((product) => recoms.includes(product));
+        res_clone.diagnoses_result[0].recommendations = recoms.replace(/\$/g, "**")
+
+        const treats = res_clone.diagnoses_result[0].treatment;
+        res_clone.diagnoses_result[0].treatment = treats.replace(/\$/g, "**");
+
+        const overvw = res_clone.diagnoses_result[0].overview;
+        res_clone.diagnoses_result[0].overview = overvw.replace(/\$/g, "**");
+
+        // Extract product names wrapped with $...$
+        const productMatches = recoms.match(/\$(.*?)\$/g) || [];
+        const productList = productMatches.map((match) => match.replace(/\$/g, ""));
 
         const fetchedProducts = await supabase
           .from("products")

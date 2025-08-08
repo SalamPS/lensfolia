@@ -97,11 +97,10 @@ export function LangGraphVisual({
     threadId: threadId,
     onThreadId: async (id) => {
       setThreadId(id);
-      const updateThread = await supabase
+      await supabase
         .from("diagnoses")
         .update({ thread_id: id })
         .eq("id", diagnose_data?.id);
-      console.log("Thread updated:", updateThread);
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onUpdateEvent(event: any) {
@@ -120,7 +119,6 @@ export function LangGraphVisual({
             icon: "image",
           },
         ]);
-        console.log("Image analysis result:", event.image_analysis);
       } else if (event.plant_disease_detection) {
         statusHelper("success");
         setProcessedSteps((prev) => [
@@ -133,10 +131,6 @@ export function LangGraphVisual({
             icon: "leaf",
           },
         ]);
-        console.log(
-          "Plant disease detection result:",
-          event.plant_disease_detection,
-        );
       } else if (event.retriever_agent) {
         statusHelper("success");
         setProcessedSteps((prev) => [
@@ -148,7 +142,6 @@ export function LangGraphVisual({
             icon: "data",
           },
         ]);
-        console.log("Retriever agent result:", event.retriever_agent);
       } else if (event.overview_query_generation) {
         statusHelper("success");
         setProcessedSteps((prev) => [
@@ -160,10 +153,6 @@ export function LangGraphVisual({
             icon: "query",
           },
         ]);
-        console.log(
-          "Overview query generation result:",
-          event.overview_query_generation,
-        );
       } else if (event.overview_generation) {
         statusHelper("success");
         setProcessedSteps((prev) => [
@@ -175,7 +164,6 @@ export function LangGraphVisual({
             icon: "overview",
           },
         ]);
-        console.log("Overview generation result:", event.overview_generation);
       } else if (event.treatment_query_generation) {
         statusHelper("success");
         setProcessedSteps((prev) => [
@@ -187,10 +175,6 @@ export function LangGraphVisual({
             icon: "treatment_query",
           },
         ]);
-        console.log(
-          "Treatment query generation result:",
-          event.treatment_query_generation,
-        );
       } else if (event.treatment_generation) {
         statusHelper("success");
         setProcessedSteps((prev) => [
@@ -202,7 +186,6 @@ export function LangGraphVisual({
             icon: "treatment",
           },
         ]);
-        console.log("Treatment generation result:", event.treatment_generation);
       } else if (event.recommendation_query_generation) {
         statusHelper("success");
         setProcessedSteps((prev) => [
@@ -214,10 +197,6 @@ export function LangGraphVisual({
             icon: "recommendation_query",
           },
         ]);
-        console.log(
-          "Recommendation query generation result:",
-          event.recommendation_query_generation,
-        );
       } else if (event.recommendation_generation) {
         statusHelper("success");
         setProcessedSteps((prev) => [
@@ -229,24 +208,13 @@ export function LangGraphVisual({
             icon: "recommendation",
           },
         ]);
-        console.log(
-          "Recommendation generation result:",
-          event.recommendation_generation,
-        );
       } else if (event.create_final_response) {
-        statusHelper("success");
-        setProcessedSteps((prev) => [
-          ...prev,
-          {
-            step: "end",
-            title: "Mengumpulkan Hasil Akhir",
-            description:
-              "Proses diagnosis selesai. Mengalihkan ke halaman hasil.",
-            icon: "check",
-          },
-        ]);
-        console.log("Final response created:", event.create_final_response);
-        statusClearing();
+        if (event.create_final_response.is_plant_leaf) {
+          statusClearing();
+        }
+        else {
+          statusPurging();
+        }
       }
     },
   });
@@ -267,7 +235,25 @@ export function LangGraphVisual({
     }
   }, [processedSteps]);
 
+  const statusPurging = async () => {
+    statusHelper("error", "error");
+    setProcessedSteps((prev) => [
+      ...prev,
+      LGFail({
+        title: "Gagal memproses diagnosis",
+        description:
+          "Kami tidak dapat mendeteksi daun pada gambar anda. Silakan coba lagi.",
+        icon: "error",
+      }),
+    ]);
+    await supabase
+      .from("diagnoses")
+      .delete()
+      .eq("id", diagnose_data?.id);
+  }
+
   const statusClearing = async () => {
+    statusHelper("success");
     setProcessedSteps((prev) => [
       ...prev,
       {
@@ -306,7 +292,6 @@ export function LangGraphVisual({
   };
 
   useEffect(() => {
-    console.log("Status changed:", uploadStatus);
     (async () => {
       if (uploadStatus === "idle") {
         setProcessedSteps([]);
@@ -340,58 +325,53 @@ export function LangGraphVisual({
         setProcessedSteps((prev) => [...prev, LGStart]);
 
         await delay(3000);
-        console.log(thread);
-        // const dataSubmit = {
-        // 	image_url: diagnose_data?.image_url || "",
-        // 	diagnoses_ref: diagnose_data?.id || "",
-        // 	created_by: diagnose_data?.created_by,
-        // 	task_type: "diagnosis" as const,
-        // }
-        // console.log("Submitting data to thread:", dataSubmit);
-        // const newMessages: Message[] = [
-        // 	...(thread.messages || []),
-        // 	{
-        // 		type: "human",
-        // 		content: "Tolong deteksi penyakit tanaman ini.",
-        // 		id: Date.now().toString(),
-        // 	},
-        // ];
-        // thread.submit({
-        // 	messages: newMessages,
-        // 	...dataSubmit,
-        // })
-
-        for (const step of LGSteps) {
-          console.log(`================\n${step.title}`);
-          statusHelper("success");
-          setProcessedSteps((prev) => [...prev, step]);
-          await delay(3000);
+        const dataSubmit = {
+        	image_url: diagnose_data?.image_url || "",
+        	diagnoses_ref: diagnose_data?.id || "",
+        	created_by: diagnose_data?.created_by,
+        	task_type: "diagnosis" as const,
         }
+        console.log("Submitting data to thread:", dataSubmit);
+        const newMessages: Message[] = [
+        	...(thread.messages || []),
+        	{
+        		type: "human",
+        		content: "Tolong deteksi penyakit tanaman ini.",
+        		id: Date.now().toString(),
+        	},
+        ];
+        thread.submit({
+        	messages: newMessages,
+        	...dataSubmit,
+        })
 
-        setProcessedSteps((prev) => [
-          ...prev,
-          {
-            step: "end",
-            title: "Mengumpulkan hasil akhir",
-            description:
-              "Proses diagnosis selesai. Mengalihkan ke halaman hasil.",
-            icon: "check",
-          },
-        ]);
-        setCountdown(5);
-        const countdownInterval = setInterval(() => {
-          setCountdown((prev) => {
-            if (prev <= 1) {
-              clearInterval(countdownInterval);
-              return 0;
-            }
-            return prev - 1;
-          });
-        }, 1000);
-        await delay(5000);
-        statusHelper("success");
-        await delay(500);
-        // router.push("/result/" + diagnose_data?.id);
+        // for (const step of LGSteps) {
+        //   console.log(`================\n${step.title}`);
+        //   statusHelper("success");
+        //   setProcessedSteps((prev) => [...prev, step]);
+        //   await delay(3000);
+        // }
+
+        // setProcessedSteps((prev) => [
+        //   ...prev,
+        //   {
+        //     step: "end",
+        //     title: "Mengumpulkan hasil akhir",
+        //     description:
+        //       "Proses diagnosis selesai. Mengalihkan ke halaman hasil.",
+        //     icon: "check",
+        //   },
+        // ]);
+        // setCountdown(5);
+        // const countdownInterval = setInterval(() => {
+        //   setCountdown((prev) => {
+        //     if (prev <= 1) {
+        //       clearInterval(countdownInterval);
+        //       return 0;
+        //     }
+        //     return prev - 1;
+        //   });
+        // }, 1000);
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
