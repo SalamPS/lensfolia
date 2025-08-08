@@ -16,10 +16,15 @@ declare const self: ServiceWorkerGlobalScope & {
   __WB_DISABLE_DEV_LOGS: boolean;
 };
 
-// Detect environment
-const isDevelopment = self.location.hostname === 'localhost' || self.location.hostname === '127.0.0.1';
+// Detect environment - improved detection
+const isDevelopment = 
+  self.location.hostname === 'localhost' || 
+  self.location.hostname === '127.0.0.1' ||
+  self.location.hostname.includes('localhost') ||
+  self.location.port === '3000';
 
-if (isDevelopment) self.__WB_DISABLE_DEV_LOGS = true;
+// Disable dev logs appropriately
+self.__WB_DISABLE_DEV_LOGS = !isDevelopment;
 
 // Enhanced runtime caching for better offline support
 const customRuntimeCaching: RuntimeCaching[] = [
@@ -31,7 +36,7 @@ const customRuntimeCaching: RuntimeCaching[] = [
       request.method === 'GET',
     handler: new NetworkFirst({
       cacheName: "pages-cache",
-      networkTimeoutSeconds: isDevelopment ? 1 : 3, // Shorter timeout in dev
+      networkTimeoutSeconds: isDevelopment ? 2 : 5,
       plugins: [
         {
           cacheWillUpdate: async ({ response }) => {
@@ -41,7 +46,7 @@ const customRuntimeCaching: RuntimeCaching[] = [
       ],
     }),
   },
-  // Cache static assets with cache first
+  // Cache static assets with cache first - simplified
   {
     matcher: ({ request }) => 
       request.destination === 'style' ||
@@ -52,9 +57,8 @@ const customRuntimeCaching: RuntimeCaching[] = [
       cacheName: "static-assets",
       plugins: [
         {
-          cacheKeyWillBeUsed: async ({ request }) => {
-            // Add version to prevent stale cache
-            return `${request.url}?v=${Date.now()}`;
+          cacheWillUpdate: async ({ response }) => {
+            return response.status === 200 ? response : null;
           },
         },
       ],
@@ -66,7 +70,7 @@ const customRuntimeCaching: RuntimeCaching[] = [
       sameOrigin && url.pathname.startsWith('/api/'),
     handler: new NetworkFirst({
       cacheName: "api-cache",
-      networkTimeoutSeconds: 5,
+      networkTimeoutSeconds: 8,
       plugins: [
         {
           cacheWillUpdate: async ({ response }) => {
@@ -76,15 +80,15 @@ const customRuntimeCaching: RuntimeCaching[] = [
       ],
     }),
   },
-  // Cache images with cache first strategy
+  // Cache images with cache first strategy - simplified
   {
     matcher: /\.(?:png|jpg|jpeg|gif|webp|svg|ico)$/,
     handler: new CacheFirst({
       cacheName: "images-cache",
       plugins: [
         {
-          cacheKeyWillBeUsed: async ({ request }) => {
-            return `${request.url}?version=1`;
+          cacheWillUpdate: async ({ response }) => {
+            return response.status === 200 ? response : null;
           },
         },
       ],
@@ -110,8 +114,8 @@ const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: true,
   clientsClaim: true,
-  navigationPreload: true,
-  disableDevLogs: false, // Enable logs for debugging
+  navigationPreload: !isDevelopment, // Disable in development
+  disableDevLogs: !isDevelopment,
   fallbacks: {
     entries: [
       {
@@ -126,99 +130,183 @@ const serwist = new Serwist({
   ],
 });
 
-// Add install event listener to cache critical pages
+// Enhanced install event listener with better error handling
 self.addEventListener('install', (event) => {
   console.log('🔧 Service Worker installing...');
   
   event.waitUntil(
-    caches.open('pages-cache').then(cache => {
-      console.log('📦 Precaching critical pages...');
-      // Cache critical pages manually
-      return cache.addAll([
-        '/',
-        '/detect',
-        '/encyclopedia', 
-        '/forum',
-        '/bookmarks',
-        '/manifest.webmanifest',
-      ]).catch(err => {
-        console.warn('⚠️ Failed to precache some pages:', err);
-      });
-    })
+    (async () => {
+      try {
+        const cache = await caches.open('pages-cache');
+        console.log('📦 Attempting to precache critical pages...');
+        
+        // Precache critical pages one by one with error handling
+        const criticalPages = [
+          '/',
+          '/detect',
+          '/encyclopedia', 
+          '/forum',
+          '/bookmarks',
+        ];
+        
+        const manifestPage = '/manifest.webmanifest';
+        
+        // Cache critical pages
+        for (const page of criticalPages) {
+          try {
+            await cache.add(page);
+            console.log('✅ Cached:', page);
+          } catch (err) {
+            console.warn('⚠️ Failed to cache page:', page, err);
+          }
+        }
+        
+        // Try to cache manifest separately
+        try {
+          await cache.add(manifestPage);
+          console.log('✅ Cached manifest');
+        } catch (err) {
+          console.warn('⚠️ Failed to cache manifest:', err);
+        }
+        
+        console.log('📦 Manual precaching completed');
+        
+      } catch (error) {
+        console.error('❌ Install event failed:', error);
+        // Don't throw error to prevent installation failure
+      }
+    })()
   );
 });
 
-// Add activate event for cleanup
+// Enhanced activate event for cleanup with better error handling
 self.addEventListener('activate', (event) => {
-  console.log('✅ Service Worker activated');
+  console.log('✅ Service Worker activating...');
   
   event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames
+    (async () => {
+      try {
+        const cacheNames = await caches.keys();
+        
+        // Clean up old caches
+        const cacheCleanupPromises = cacheNames
           .filter(cacheName => {
-            // Delete old caches if needed
-            return cacheName.startsWith('old-') || cacheName.startsWith('v1-');
+            // Delete old caches and problematic ones
+            return cacheName.startsWith('old-') || 
+                   cacheName.startsWith('v1-') ||
+                   cacheName.includes('workbox') ||
+                   cacheName.includes('serwist-precache');
           })
-          .map(cacheName => {
-            console.log('🗑️ Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
-          })
-      );
-    })
+          .map(async cacheName => {
+            try {
+              console.log('🗑️ Deleting old cache:', cacheName);
+              await caches.delete(cacheName);
+              return true;
+            } catch (err) {
+              console.warn('⚠️ Failed to delete cache:', cacheName, err);
+              return false;
+            }
+          });
+        
+        await Promise.allSettled(cacheCleanupPromises);
+        
+        // Claim clients for immediate control
+        if (self.clients && self.clients.claim) {
+          await self.clients.claim();
+        }
+        
+        console.log('✅ Service Worker activated successfully');
+        
+      } catch (error) {
+        console.error('❌ Activation failed:', error);
+      }
+    })()
   );
 });
 
-// Custom fetch handler for development mode
+// Improved custom fetch handler for development mode
 if (isDevelopment) {
   self.addEventListener('fetch', (event) => {
     // Only handle navigation requests in development
     if (event.request.mode === 'navigate') {
       event.respondWith(
-        fetch(event.request).catch(async () => {
-          console.log('🔄 Development offline fallback for:', event.request.url);
-          
-          // Try to find cached page first
-          const cache = await caches.open('pages-cache');
-          let response = await cache.match(event.request);
-          
-          if (!response) {
-            // Fallback to homepage
-            response = await cache.match('/');
-          }
-          
-          if (!response) {
+        (async () => {
+          try {
+            // Try network first
+            const response = await fetch(event.request);
+            return response;
+          } catch {
+            console.log('🔄 Development offline fallback for:', event.request.url);
+            
+            try {
+              // Try to find cached page first
+              const cache = await caches.open('pages-cache');
+              let cachedResponse = await cache.match(event.request);
+              
+              if (!cachedResponse) {
+                // Fallback to homepage
+                cachedResponse = await cache.match('/');
+              }
+              
+              if (cachedResponse) {
+                return cachedResponse;
+              }
+            } catch (cacheError) {
+              console.warn('⚠️ Cache access failed:', cacheError);
+            }
+            
             // Last resort: create a basic offline page
             return new Response(
               `<!DOCTYPE html>
               <html>
                 <head>
-                  <title>Offline - ReaksJS</title>
+                  <title>Offline - LensFolia</title>
                   <meta name="viewport" content="width=device-width, initial-scale=1">
                   <style>
-                    body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-                    .container { max-width: 400px; margin: 0 auto; }
+                    body { 
+                      font-family: Arial, sans-serif; 
+                      text-align: center; 
+                      padding: 50px;
+                      background: #f5f5f5;
+                    }
+                    .container { 
+                      max-width: 400px; 
+                      margin: 0 auto;
+                      background: white;
+                      padding: 40px;
+                      border-radius: 8px;
+                      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                    }
                     .icon { font-size: 64px; margin-bottom: 20px; }
+                    button {
+                      background: #007bff;
+                      color: white;
+                      border: none;
+                      padding: 12px 24px;
+                      border-radius: 6px;
+                      cursor: pointer;
+                      font-size: 16px;
+                    }
+                    button:hover { background: #0056b3; }
                   </style>
                 </head>
                 <body>
                   <div class="container">
-                    <div class="icon">🔌</div>
+                    <div class="icon">🌱</div>
                     <h1>You're Offline</h1>
-                    <p>Development mode offline fallback is active.</p>
+                    <p>LensFolia development mode is active.</p>
                     <p>Please check your internet connection and try again.</p>
                     <button onclick="window.location.reload()">Retry</button>
                   </div>
                 </body>
               </html>`,
               {
-                headers: { 'Content-Type': 'text/html' }
+                headers: { 'Content-Type': 'text/html' },
+                status: 200
               }
             );
           }
-          
-          return response;
-        })
+        })()
       );
     }
   });
@@ -226,31 +314,38 @@ if (isDevelopment) {
 
 serwist.addEventListeners();
 
-// Push notification event handler
+// Enhanced push notification event handler
 self.addEventListener('push', function (event) {
   if (event.data) {
-    const data = event.data.json();
-    const options = {
-      body: data.body,
-      icon: data.icon || '/logo-asset-white.svg',
-      badge: data.badge || '/logo-asset-white.svg',
-      data: {
-        dateOfArrival: Date.now(),
-        primaryKey: '1',
-        url: data.data?.url || '/',
-        ...data.data
-      }
-    };
+    try {
+      const data = event.data.json();
+      const options = {
+        body: data.body,
+        icon: data.icon || '/logo-asset-white.svg',
+        badge: data.badge || '/logo-asset-white.svg',
+        tag: data.tag || 'default',
+        renotify: true,
+        data: {
+          dateOfArrival: Date.now(),
+          primaryKey: Date.now().toString(),
+          url: data.data?.url || '/',
+          ...data.data
+        },
+        actions: data.actions || []
+      };
 
-    event.waitUntil(
-      self.registration.showNotification(data.title, options)
-    );
+      event.waitUntil(
+        self.registration.showNotification(data.title, options)
+      );
+    } catch (error) {
+      console.error('❌ Push notification error:', error);
+    }
   }
 });
 
-// Notification click event handler
+// Enhanced notification click event handler
 self.addEventListener('notificationclick', function (event) {
-  console.log('Notification click received.');
+  console.log('🔔 Notification click received.');
   
   event.notification.close();
 
@@ -262,23 +357,37 @@ self.addEventListener('notificationclick', function (event) {
   const urlToOpen = event.notification.data?.url || '/';
   
   event.waitUntil(
-    self.clients.matchAll({
-      type: 'window'
-    }).then(function (clientList: readonly WindowClient[]) {
-      // Try to find existing window with our app
-      for (let i = 0; i < clientList.length; i++) {
-        const client = clientList[i];
-        if (client.url.includes(self.location.origin) && 'focus' in client) {
-          client.navigate(urlToOpen);
-          return client.focus();
+    (async () => {
+      try {
+        const clientList = await self.clients.matchAll({
+          type: 'window',
+          includeUncontrolled: true
+        });
+        
+        // Try to find existing window with our app
+        for (const client of clientList) {
+          if (client.url.includes(self.location.origin) && 'focus' in client) {
+            if ('navigate' in client) {
+              await client.navigate(urlToOpen);
+            }
+            return client.focus();
+          }
+        }
+        
+        // If no existing window, open a new one
+        if (self.clients.openWindow) {
+          return self.clients.openWindow(urlToOpen);
+        }
+        
+      } catch (error) {
+        console.error('❌ Notification click error:', error);
+        // Fallback: try to open window anyway
+        if (self.clients.openWindow) {
+          return self.clients.openWindow(urlToOpen);
         }
       }
       
-      // If no existing window, open a new one
-      if (self.clients.openWindow) {
-        return self.clients.openWindow(urlToOpen);
-      }
       return null;
-    })
+    })()
   );
 });

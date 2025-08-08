@@ -5,6 +5,21 @@ const withSerwist = withSerwistInit({
   swSrc: "app/sw.ts",
   swDest: "public/sw.js",
   cacheOnNavigation: true,
+  // Improved configuration for better precaching
+  additionalPrecacheEntries: [],
+  disable: false,
+  // More robust precaching options
+  maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB
+  exclude: [
+    // Exclude problematic files from precaching
+    /\.map$/,
+    /manifest$/,
+    /\.htaccess$/,
+    // Let runtime caching handle CSS to avoid 404 errors
+    ({ asset }) => {
+      return asset.name?.endsWith('.css') ?? false;
+    }
+  ],
 });
 
 const nextConfig: NextConfig = {
