@@ -17,7 +17,7 @@ import {
 } from "../ui/pagination";
 import ForumCard from "./ForumCard";
 import ForumCardSkeleton from "./ForumCardSkeleton";
-import { ForumPost, Notification } from "./MockData";
+import { ForumPost } from "./MockData";
 import { ForumConverter, ForumNotificationSimpleQuery, ForumQuery } from "./ForumQueryUtils";
 import Link from "next/link";
 import { Badge } from "../ui/badge";

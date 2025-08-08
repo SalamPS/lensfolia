@@ -6,6 +6,7 @@ import { Button } from "../ui/button";
 import { ChevronLeft } from "lucide-react";
 import { Badge } from "../ui/badge";
 import NotificationCard from "./NotificationCard";
+import NotificationCardSkeleton from "./NotificationCardSkeleton";
 import { Notification } from "./MockData";
 import { PostContext } from "./PostContext";
 import { ForumNotificationQuery } from "./ForumQueryUtils";
@@ -96,52 +97,66 @@ const NotificationPage = () => {
 
             {/* Notifications list */}
             <div className="mt-6 space-y-6">
-              {/* Hari Ini */}
-              {groupedNotifications.today.length > 0 && (
-                <div className="space-y-4">
-                  <h2 className="text-lg font-semibold">Hari Ini</h2>
-                  {groupedNotifications.today.map((notification) => (
-                    <NotificationCard
-                      key={notification.id}
-                      notification={notification}
-                    />
-                  ))}
-                </div>
-              )}
+              {loading ? (
+                // Show skeletons while loading
+                <>
+                  <div className="space-y-4">
+                    <h2 className="text-lg font-semibold">Memuat notifikasi...</h2>
+                    {Array.from({ length: 5 }).map((_, index) => (
+                      <NotificationCardSkeleton key={index} />
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Hari Ini */}
+                  {groupedNotifications.today.length > 0 && (
+                    <div className="space-y-4">
+                      <h2 className="text-lg font-semibold">Hari Ini</h2>
+                      {groupedNotifications.today.map((notification) => (
+                        <NotificationCard
+                          key={notification.id}
+                          notification={notification}
+                        />
+                      ))}
+                    </div>
+                  )}
 
-              {/* 7 Hari Terakhir */}
-              {groupedNotifications.lastWeek.length > 0 && (
-                <div className="space-y-4">
-                  <h2 className="text-lg font-semibold">7 Hari Terakhir</h2>
-                  {groupedNotifications.lastWeek.map((notification) => (
-                    <NotificationCard
-                      key={notification.id}
-                      notification={notification}
-                    />
-                  ))}
-                </div>
-              )}
+                  {/* 7 Hari Terakhir */}
+                  {groupedNotifications.lastWeek.length > 0 && (
+                    <div className="space-y-4">
+                      <h2 className="text-lg font-semibold">7 Hari Terakhir</h2>
+                      {groupedNotifications.lastWeek.map((notification) => (
+                        <NotificationCard
+                          key={notification.id}
+                          notification={notification}
+                        />
+                      ))}
+                    </div>
+                  )}
 
-              {/* Lebih Lama */}
-              {groupedNotifications.older.length > 0 && (
-                <div className="space-y-4">
-                  <h2 className="text-lg font-semibold">Lebih Lama</h2>
-                  {groupedNotifications.older.map((notification) => (
-                    <NotificationCard
-                      key={notification.id}
-                      notification={notification}
-                    />
-                  ))}
-                </div>
-              )}
+                  {/* Lebih Lama */}
+                  {groupedNotifications.older.length > 0 && (
+                    <div className="space-y-4">
+                      <h2 className="text-lg font-semibold">Lebih Lama</h2>
+                      {groupedNotifications.older.map((notification) => (
+                        <NotificationCard
+                          key={notification.id}
+                          notification={notification}
+                        />
+                      ))}
+                    </div>
+                  )}
 
-              {/* Jika tidak ada notifikasi */}
-              {notifs.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <p className="text-muted-foreground">
-                    Tidak ada notifikasi saat ini
-                  </p>
-                </div>
+                  {/* Jika tidak ada notifikasi */}
+                  {notifs.length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                      <p className="text-muted-foreground">
+                        Tidak ada notifikasi saat ini
+                      </p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>

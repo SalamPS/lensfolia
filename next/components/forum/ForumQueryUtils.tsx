@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { supabase } from "@/lib/supabase";
-import { Comment, ForumPost, Notification } from "./MockData";
+import { Comment, ForumPost } from "./MockData";
 
 export const getTimeAgo = (dateString: string): string => {
 	const now = new Date();
@@ -51,7 +51,8 @@ export const ForumQuery = async () => {
 				rating(*)
 			)
 		)
-	`);
+	`)
+	.order("created_at", { ascending: false });
 	return response.data
 }
 
@@ -75,6 +76,7 @@ export const ForumQueryWithID = async (userId:string) => {
 			)
 		)
 	`)
+	.order("created_at", { ascending: false })
 	.eq("created_by", userId);
 	return response.data
 }
@@ -108,7 +110,9 @@ export const ForumDetailQuery = async (id:string) => {
 			)
 		)
 	`)
+	.order("created_at", { ascending: false })
 	.eq("id", id);
+	console.log(response)
 	return response.data
 }
 

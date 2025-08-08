@@ -88,8 +88,9 @@ const CommentItem = ({
           <AvatarImage src={authorImg} />
         </Avatar>
         <div className="flex-1">
-          <div className="flex items-center gap-2">
+          <div className="flex items-end gap-2">
             <h4 className="font-medium">{author}</h4>
+            <span className="text-muted-foreground">—</span>
             <span className="text-muted-foreground text-sm">{timeAgo}</span>
           </div>
           <p className="my-2 text-sm">{content}</p>
