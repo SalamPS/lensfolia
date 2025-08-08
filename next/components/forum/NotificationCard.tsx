@@ -2,32 +2,49 @@ import Link from "next/link";
 import { Avatar, AvatarImage } from "../ui/avatar";
 import { Button } from "../ui/button";
 import { Notification } from "./MockData";
-import { IconArrowUpRight, IconAt, IconMessageCircle, IconX } from "@tabler/icons-react";
+import { IconArrowUpRight, IconAt, IconCheck, IconMessageCircle, IconX } from "@tabler/icons-react";
+import { getTimeAgo } from "./ForumQueryUtils";
+import { supabase } from "@/lib/supabase";
+import { useContext } from "react";
+import { PostContext } from "./PostContext";
 
 interface NotificationCardProps {
   notification: Notification;
 }
 
 const NotificationCard = ({ notification }: NotificationCardProps) => {
+  const {setRefresh} = useContext(PostContext)
+
+  const markAsReadHandler = async () => {
+    const {error} = await supabase
+      .from("notifications")
+      .update({ is_read: true })
+      .eq("id", notification.id);
+    if (error) {
+      return console.error("Error marking notification as read:", error);
+    }
+    setRefresh(prev => prev+1);
+  }
+
   return (
     <div
-      className={`bg-background border-border rounded-xl border p-4 ${!notification.isRead ? "border-primary ring-4 ring-teal-500/20" : ""}`}
+      className={`bg-background border-border rounded-xl border p-4 ${!notification.is_read ? "border-primary ring-4 ring-teal-500/20" : ""}`}
     >
       {/* Content */}
       <div className="flex flex-col">
         {/* User info and time */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <Avatar>
               <AvatarImage
-                src={notification.user.avatar}
-                alt={notification.user.name}
+                src={notification.author.profile_picture}
+                alt={notification.author.name}
               />
             </Avatar>
             <div className="flex w-full flex-col">
-              <p className="font-medium">{notification.user.name}</p>
+              <p className="font-medium">{notification.author.name}</p>
               <span className="text-muted-foreground text-xs">
-                {notification.timeAgo}
+                {getTimeAgo(notification.created_at)}
               </span>
             </div>
           </div>
@@ -40,13 +57,13 @@ const NotificationCard = ({ notification }: NotificationCardProps) => {
         <div className="my-4 flex flex-col gap-2">
           {/* status */}
           <div className="flex w-full items-center gap-1">
-            {notification.type === "reply" ? (
+            {notification.content_type === "discussions" ? (
               <IconMessageCircle className="h-4 w-4 text-teal-500" />
             ) : (
               <IconAt className="h-4 w-4 text-teal-500" />
             )}
             <p className="text-muted-foreground font semibold text-sm">
-              {notification.type === "reply"
+              {notification.content_type === "discussions"
                 ? "membalas postingan Anda"
                 : "membalas komentar Anda"}
             </p>
@@ -56,10 +73,14 @@ const NotificationCard = ({ notification }: NotificationCardProps) => {
           <div>
             <p className="bg-card text-muted-foreground flex flex-col md:flex-row items-start w-fit md:items-center gap-1 rounded p-2 text-sm">
               Pada postingan :{" "}
-              <Link href={`/forum/post/${notification.post.id}`}>
+              <Link href={notification.content_uri}>
                 {" "}
                 <span className="hover:text-primary font-bold hover:underline">
-                  {notification.post.title}
+                  {
+                    notification.ref_forums?.content ||
+                    notification.ref_comments?.content ||
+                    notification.ref_discussions?.content
+                  }
                 </span>
               </Link>
             </p>
@@ -67,24 +88,27 @@ const NotificationCard = ({ notification }: NotificationCardProps) => {
 
           {/* reply */}
           <div className="dark:bg-muted/30 flex flex-col gap-2 rounded-lg bg-zinc-200 p-3">
-            {/* my refer comment */}
-            {notification.type === "mention" && notification.comment && (
-              <div className="text-muted-foreground text-sm">
-                <p className="line-clamp-3 italic">
-                  &ldquo;{notification.comment.content}&rdquo;
-                </p>
-              </div>
-            )}
-            <p className="font-medium">{notification.replyContent}</p>
+            <p className="text-muted-foreground line-clamp-3">{
+              notification.ori_comments?.content ||
+              notification.ori_discussions?.content
+            }</p>
           </div>
         </div>
 
         {/* Action button */}
-        <div className="flex justify-end">
-          {/* ceritanya pas diklik langsung ke bagian komennya xixixi */}
-          <Link
-            href={`/forum/post/${notification.post.id}${notification.comment ? `#c-${notification.comment.id}` : ""}`}
-          >
+        <div className="flex justify-end gap-2">
+          {/* Button to mark as read */}
+          {!notification.is_read && (
+            <Button
+              variant="outline"
+              onClick={markAsReadHandler}
+            >
+              <IconCheck className="mr-1 h-4 w-4" />
+              Tandai dibaca
+            </Button>
+          )}
+          {/* Link to navigate to the content */}
+          <Link href={notification.content_uri}>
             <Button variant="outline">
               Kunjungi
               <IconArrowUpRight />

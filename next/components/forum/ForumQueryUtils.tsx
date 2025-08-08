@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { supabase } from "@/lib/supabase";
-import { Comment, ForumPost } from "./MockData";
+import { Comment, ForumPost, Notification } from "./MockData";
 
-const getTimeAgo = (dateString: string): string => {
+export const getTimeAgo = (dateString: string): string => {
 	const now = new Date();
 	const postDate = new Date(dateString);
 	const diffInMs = now.getTime() - postDate.getTime();
@@ -78,7 +78,6 @@ export const ForumQueryWithID = async (userId:string) => {
 	.eq("created_by", userId);
 	return response.data
 }
-
 
 export const ForumDetailQuery = async (id:string) => {
 	const response = await supabase
@@ -160,4 +159,39 @@ export const ForumConverter = (post: any):ForumPost => {
 		downvotes: post.rating.filter((rating: any) => rating.is_upvote === false).map((rating: any) => rating?.created_by),
 		nullvotes: post.rating.filter((rating: any) => rating.is_upvote === null).map((rating: any) => rating?.created_by),
 	}
+}
+
+export const ForumNotificationSimpleQuery = async (userId: string) => {
+	const { data } = await supabase
+	.from("notifications")
+	.select("id, is_read")
+	.eq("subscriber", userId);
+	return data;
+}
+
+export const ForumNotificationQuery = async (userId: string) => {
+	const response = await supabase
+	.from("notifications")
+	.select(`
+		*,
+		ref_forums(*),
+		ref_comments:forums_comments!notifications_duplicate_ref_comments_fkey(*),
+		ref_discussions:forums_discussions!notifications_duplicate_ref_discussions_fkey(*),
+		ori_comments:forums_comments!notifications_duplicate_ori_comments_fkey(*),
+		ori_discussions:forums_discussions!notifications_duplicate_ori_discussion_fkey(*),
+		author:user_profiles!created_by (
+			id,
+			name,
+			profile_picture
+		),
+		subscriber:user_profiles!subscriber (
+			id,
+			name,
+			profile_picture
+		)
+	`)
+	.eq("subscriber", userId)
+	.order("created_at", { ascending: false });
+	console.log(response)
+	return response.data;
 }

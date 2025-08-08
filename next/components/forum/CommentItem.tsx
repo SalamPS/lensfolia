@@ -66,7 +66,8 @@ const CommentItem = ({
       .insert({
         content: replyContent,
         media_url: null,
-        discussions_ref: isReply || id,
+        comments_ref: isReply ? id : null,
+        discussions_ref: isReply ? isReply : id,
       });
     if (submitted.error) {
       console.error("Error submitting reply:", submitted.error);
@@ -80,7 +81,7 @@ const CommentItem = ({
   return (
     <div
       className={`mb-4 ${!isReply ? "border-border bg-card rounded-lg border p-4" : ""}`}
-      id={`comment-${id}`}
+      id={`${!isReply ? "d" : "c"}-${id}`}
     >
       <div className="flex gap-3">
         <Avatar>

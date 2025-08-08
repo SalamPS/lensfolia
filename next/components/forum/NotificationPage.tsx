@@ -1,90 +1,14 @@
+"use client"
+
 import Link from "next/link";
-import React from "react";
+import React, { useContext, useEffect } from "react";
 import { Button } from "../ui/button";
 import { ChevronLeft } from "lucide-react";
 import { Badge } from "../ui/badge";
 import NotificationCard from "./NotificationCard";
 import { Notification } from "./MockData";
-
-// Mock data notifikasi
-const mockNotifications: Notification[] = [
-  {
-    id: "1",
-    type: "reply",
-    user: {
-      id: "u1",
-      name: "Budi Santoso",
-      avatar: "/asset-web-1.png",
-    },
-    timeAgo: "2 jam yang lalu",
-    post: {
-      id: "p1",
-      title: "Masalah pada daun jagung menguning",
-    },
-    replyContent:
-      "Saya pernah mengalami masalah serupa, coba gunakan pupuk organik...",
-    isRead: false,
-  },
-  {
-    id: "2",
-    type: "mention",
-    user: {
-      id: "u2",
-      name: "Ani Wijaya",
-      avatar: "/avatars/ani.jpg",
-    },
-    timeAgo: "1 hari yang lalu",
-    post: {
-      id: "p2",
-      title: "Hama ulat pada tanaman tomat",
-    },
-    comment: {
-      id: "c1",
-      content: "Saya sudah mencoba pestisida organik tapi tidak mempan...",
-      isYourComment: true,
-    },
-    replyContent:
-      "@Andi Coba gunakan larutan bawang putih, lebih ampuh untuk ulat kecil...",
-    isRead: true,
-  },
-  {
-    id: "3",
-    type: "reply",
-    user: {
-      id: "u3",
-      name: "Rudi Hartono",
-      avatar: "/avatars/rudi.jpg",
-    },
-    timeAgo: "3 hari yang lalu",
-    post: {
-      id: "p3",
-      title: "Tips merawat tanaman cabai di musim hujan",
-    },
-    replyContent: "Terima kasih atas tipsnya, sangat membantu!",
-    isRead: true,
-  },
-  {
-    id: "4",
-    type: "mention",
-    user: {
-      id: "u4",
-      name: "Dewi Lestari",
-      avatar: "/avatars/dewi.jpg",
-    },
-    timeAgo: "3 minggu yang lalu",
-    post: {
-      id: "p4",
-      title: "Pertanyaan tentang hidroponik untuk pemula",
-    },
-    comment: {
-      id: "c2",
-      content: "Tanaman apa yang paling mudah untuk pemula hidroponik?",
-      isYourComment: true,
-    },
-    replyContent: "@Andi Saya sarankan mulai dengan kangkung atau selada...",
-    isRead: true,
-  },
-];
+import { PostContext } from "./PostContext";
+import { ForumNotificationQuery } from "./ForumQueryUtils";
 
 // Fungsi mengelompokkan notifikasi 
 const groupNotificationsByTime = (notifications: Notification[]) => {
@@ -113,9 +37,36 @@ const groupNotificationsByTime = (notifications: Notification[]) => {
 
 
 const NotificationPage = () => {
-  const groupedNotifications = groupNotificationsByTime(mockNotifications);
+  const [notifs, setNotifs] = React.useState<Notification[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const {user, refresh} = useContext(PostContext);
 
-  return (
+  useEffect(() => {
+    (async () => {
+      if (!user) return;
+      const data = await ForumNotificationQuery(user.id);
+      if (!data) {
+        console.error("Error fetching notifications");
+      } else {
+        console.log(data);
+        const clone = data
+          .map((notif) => ({
+            ...notif,
+            timeAgo: notif.created_at
+              ? new Date().getTime() - new Date(notif.created_at).getTime() < 86400000
+          ? `${Math.floor((new Date().getTime() - new Date(notif.created_at).getTime()) / 3600000)} jam yang lalu`
+          : `${Math.floor((new Date().getTime() - new Date(notif.created_at).getTime()) / 86400000)} hari yang lalu`
+              : "Waktu tidak diketahui",
+          }))
+        setNotifs(clone);
+        }
+        setLoading(false);
+      })();
+    }, [user, refresh])
+
+    const groupedNotifications = groupNotificationsByTime(notifs);
+
+    return (
     <>
       <section className="bg-background flex min-h-screen w-full justify-center px-4 pt-20 pb-10">
         <div className="w-full max-w-4xl">
@@ -133,7 +84,7 @@ const NotificationPage = () => {
               <div className="flex items-center gap-2">
                 <h1 className="text-2xl font-semibold">Notifikasi</h1>
                 <Badge variant="default">
-                  {mockNotifications.filter((n) => !n.isRead).length} notifikasi
+                  {notifs.filter((n) => !n.is_read).length} notifikasi
                   baru
                 </Badge>
               </div>
@@ -185,7 +136,7 @@ const NotificationPage = () => {
               )}
 
               {/* Jika tidak ada notifikasi */}
-              {mockNotifications.length === 0 && (
+              {notifs.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <p className="text-muted-foreground">
                     Tidak ada notifikasi saat ini
