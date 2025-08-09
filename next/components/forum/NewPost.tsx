@@ -144,6 +144,18 @@ const NewPost = () => {
         imageData = await uploadResponse.json();
       }
 
+      if (selectedDiagnosis) {
+        const { error: diagError } = await supabase
+          .from('diagnoses')
+          .update({is_public: true})
+          .eq('id', selectedDiagnosis);
+        if (diagError) {
+          console.error("Error updating diagnosis:", diagError);
+          alert("Gagal update data diagnosis!");
+          return;
+        }
+      }
+
       const postData = {
         content: title.trim(),
         contents: description.trim(),

@@ -156,9 +156,14 @@ const sortedComments = React.useMemo(() => {
             <p className="text-muted-foreground">{post?.content}</p>
           </div>
 
-          <div className="my-4">
-            <img src={post?.imageUrl} alt={post?.title} className="rounded-md w-[50%] h-auto" />
-          </div>
+          {/* Post Image */}
+          {post?.imageUrl && (
+            <img
+              src={post.imageUrl}
+              alt="Post Image"
+              className="w-full rounded-lg object-cover"
+            />
+          )}
           {/* Tags */}
           <div className="mb-6 flex flex-wrap gap-1">
             {post?.tags.map((tag, index) => (
@@ -249,17 +254,16 @@ const sortedComments = React.useMemo(() => {
                 </div>
               </div>
             </div>
-            <div className="">
-              {/* Diagnoses */}
-              <div className="dark:bg-card bg-input rounded-full px-6 py-3 text-sm w-fit">
-                <Link href={`/result/${post?.diagnoses_ref}`} className="flex gap-3">
-                  <span>
-                    Diagnosa Terkait
-                  </span>
-                  <IconExternalLink size={18} className="inline-block"/>
-                </Link>
-              </div>
-            </div>
+            {/* Diagnoses */}
+            { post?.diagnoses_ref && (
+            <div className="dark:bg-card bg-input rounded-full px-6 py-3 text-sm w-fit">
+              <Link href={`/result/${post?.diagnoses_ref}`} className="flex gap-3">
+                <span>
+                  Diagnosa Terkait
+                </span>
+                <IconExternalLink size={18} className="inline-block"/>
+              </Link>
+            </div>)}
           </div>
         </div>
 
