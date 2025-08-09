@@ -180,6 +180,7 @@ export const ForumConverter = (post: any):ForumPost => {
 		timeAgo: getTimeAgo(post.created_at),
 		type: post.category,
 		tags: post.tags,
+		diagnoses_ref: post.diagnoses_ref,
 		imageUrl: post.media_url,
 		comments: post.forums_discussions.map((discussion: any) => (discussion.id)),
 		views: post.forums_views.length,

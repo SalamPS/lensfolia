@@ -10,6 +10,7 @@ import {
   IconArrowBigUpLines,
   IconMessageCircle,
   IconEye,
+  IconExternalLink,
 } from "@tabler/icons-react";
 import CommentItem from "./CommentItem";
 import PostPageSkeleton from "./PostPageSkeleton";
@@ -171,79 +172,92 @@ const sortedComments = React.useMemo(() => {
           </div>
 
           {/* Post Stats */}
-          <div className="flex items-center gap-2">
-            {/* votes */}
-            <div className="dark:bg-card bg-input flex items-center justify-between gap-2 rounded-full p-1 pr-4">
-              {/* up */}
-              <div className="flex items-center gap-1">
-                <div
-                  className={cn(
-                    "group rounded-full p-2 transition-colors hover:bg-green-500/10",
-                    rating.getUserVote() === "up" && "bg-green-500/20",
-                  )}
-                  onClick={() => rating.upVote()}
-                >
-                  <IconArrowBigUpLines
-                    size={18}
-                    className="group-hover:text-green-500"
-                  />
+          <div className="flex gap-4 justify-between flex-col md:flex-row">
+            <div className="flex items-center gap-2">
+              {/* votes */}
+              <div className="dark:bg-card bg-input flex items-center justify-between gap-2 rounded-full p-1 pr-4">
+                {/* up */}
+                <div className="flex items-center gap-1">
+                  <div
+                    className={cn(
+                      "group rounded-full p-2 transition-colors hover:bg-green-500/10",
+                      rating.getUserVote() === "up" && "bg-green-500/20",
+                    )}
+                    onClick={() => rating.upVote()}
+                  >
+                    <IconArrowBigUpLines
+                      size={18}
+                      className="group-hover:text-green-500"
+                    />
+                  </div>
+                  <span
+                    className={cn(
+                      "text-sm",
+                      rating.getUserVote() === "up" &&
+                        "text-green-500 dark:text-green-300",
+                    )}
+                  >
+                    {rating.getUpVoteCount()}
+                  </span>
                 </div>
-                <span
-                  className={cn(
-                    "text-sm",
-                    rating.getUserVote() === "up" &&
-                      "text-green-500 dark:text-green-300",
-                  )}
-                >
-                  {rating.getUpVoteCount()}
-                </span>
+
+                {/* down */}
+                <div className="flex items-center gap-1">
+                  <div
+                    className={cn(
+                      "group rounded-full p-2 transition-colors hover:bg-red-500/10",
+                      rating.getUserVote() === "down" && "bg-red-500/20",
+                    )}
+                    onClick={() => rating.downVote()}
+                  >
+                    <IconArrowBigDownLines
+                      size={18}
+                      className="group-hover:text-red-500"
+                    />
+                  </div>
+                  <span
+                    className={cn(
+                      "text-sm",
+                      rating.getUserVote() === "down" &&
+                        "text-red-500 dark:text-red-300",
+                    )}
+                  >
+                    {rating.getDownVoteCount()}
+                  </span>
+                </div>
               </div>
 
-              {/* down */}
-              <div className="flex items-center gap-1">
-                <div
-                  className={cn(
-                    "group rounded-full p-2 transition-colors hover:bg-red-500/10",
-                    rating.getUserVote() === "down" && "bg-red-500/20",
-                  )}
-                  onClick={() => rating.downVote()}
-                >
-                  <IconArrowBigDownLines
-                    size={18}
-                    className="group-hover:text-red-500"
-                  />
+              {/* comments */}
+              <div className="dark:bg-card bg-input rounded-full px-3 py-3">
+                <div className="flex items-center gap-1">
+                  <IconMessageCircle size={18} />
+                  <span className="text-sm">
+                    {post?.comments.length}{" "}
+                    <span className="hidden md:inline">Komentar</span>
+                  </span>
                 </div>
-                <span
-                  className={cn(
-                    "text-sm",
-                    rating.getUserVote() === "down" &&
-                      "text-red-500 dark:text-red-300",
-                  )}
-                >
-                  {rating.getDownVoteCount()}
-                </span>
+              </div>
+
+              {/* views */}
+              <div className="dark:bg-card bg-input rounded-full px-3 py-3">
+                <div className="flex items-center gap-1">
+                  <IconEye size={18} />
+                  <span className="text-sm">
+                    {post?.views}{" "}
+                    <span className="hidden md:inline">Dilihat</span>
+                  </span>
+                </div>
               </div>
             </div>
-
-            {/* comments */}
-            <div className="dark:bg-card bg-input rounded-full px-3 py-3">
-              <div className="flex items-center gap-1">
-                <IconMessageCircle size={18} />
-                <span className="text-sm">
-                  {post?.comments.length}{" "}
-                  <span className="hidden md:inline">Komentar</span>
-                </span>
-              </div>
-            </div>
-
-            {/* views */}
-            <div className="dark:bg-card bg-input rounded-full px-3 py-3">
-              <div className="flex items-center gap-1">
-                <IconEye size={18} />
-                <span className="text-sm">
-                  {post?.views}{" "}
-                  <span className="hidden md:inline">Dilihat</span>
-                </span>
+            <div className="">
+              {/* Diagnoses */}
+              <div className="dark:bg-card bg-input rounded-full px-6 py-3 text-sm w-fit">
+                <Link href={`/result/${post?.diagnoses_ref}`} className="flex gap-3">
+                  <span>
+                    Diagnosa Terkait
+                  </span>
+                  <IconExternalLink size={18} className="inline-block"/>
+                </Link>
               </div>
             </div>
           </div>
