@@ -21,6 +21,8 @@ dependencies = [
     "requests>=2.32.4",
     "supabase>=2.18.0",
     "transformers>=4.55.0",
+    "langgraph-cli[inmem]",
+    "langgraph-runtime-inmem==0.6.8",
 ]
 
 [build-system]
