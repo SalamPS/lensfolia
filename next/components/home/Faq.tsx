@@ -6,27 +6,27 @@ import Accordion, { type AccordionItem } from "../ui/accordion";
 const items: AccordionItem[] = [
   {
     id: "faq-1",
-    title: "Apakah layanan ini gratis?",
+    title: "Apakah aplikasi ini dapat digunakan untuk semua jenis tanaman?",
     content:
-      "Tentu saja, semua layanan pada platform ini gratis! Daftar dengan akun anda  jika hasil deteksi anda ingin disimpan. ",
+      "Aplikasi ini dirancang untuk mendeteksi penyakit pada berbagai jenis tanaman umum. Namun, kami terus memperbarui data untuk mendukung lebih banyak jenis tanaman di masa depan.",
   },
   {
     id: "faq-2",
-    title: "Lorem ipsum dolor sit amet, consectetur adipiscing elit?",
+    title: "Bagaimana cara menggunakan aplikasi ini untuk mendiagnosa penyakit tanaman?",
     content:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+      "Anda hanya perlu mengunggah foto tanaman yang ingin didiagnosa, dan sistem kami akan menganalisis serta memberikan hasil deteksi penyakit beserta rekomendasi penanganannya.",
   },
   {
     id: "faq-3",
-    title: "Lorem ipsum dolor sit amet, consectetur adipiscing elit?",
+    title: "Apakah aplikasi ini membutuhkan koneksi internet?",
     content:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+      "Ya, aplikasi ini membutuhkan koneksi internet untuk memproses data dan memberikan hasil diagnosa yang akurat karena analisis dilakukan di server kami. Namun, aplikasi ini dapat diakses secara offline jika Anda sudah pernah mengaksesnya sebelumnya, dengan data yang telah di-cache.",
   },
   {
     id: "faq-4",
-    title: "Lorem ipsum dolor sit amet, consectetur adipiscing elit?",
+    title: "Apakah data tanaman saya aman saat menggunakan aplikasi ini?",
     content:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+      "Tentu saja! Kami memastikan semua data yang Anda unggah aman dan hanya digunakan untuk keperluan analisis tanpa dibagikan kepada pihak ketiga.",
   },
 ];
 

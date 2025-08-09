@@ -1,160 +1,369 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
 /* eslint-disable @next/next/no-img-element */
-import { IconArrowLeft, IconBookmark, IconBookmarkFilled, IconClipboardText, IconEdit, IconSend, IconSparkles, IconThumbUp } from "@tabler/icons-react";
+import {
+  IconArrowLeft,
+  IconClipboardText,
+  IconExternalLink,
+  IconStethoscope,
+  IconThumbUp,
+} from "@tabler/icons-react";
 import LFDWrapper from "./Wrapper";
 import { Button } from "../ui/button";
-import { useState } from "react";
+import * as React from "react";
 import { useRouter } from "next/navigation";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
+import { Card, CardContent } from "@/components/ui/card";
+import type { CarouselApi } from "@/components/ui/carousel";
+import { ProductRecommendation } from "./ProductRecommendation";
+import { AskAI } from "./AskAI";
+import { supabase } from "@/lib/supabase";
+import { LFD_, LFDProduct_ } from "../types/diagnoseResult";
+import { useAuth } from "@/hooks/useAuth";
+import ReactMarkdown from "react-markdown";
+import ResultSkeleton from "./ResultSkeleton";
 
-export default function LFDResultPage ({result}: {result?: LFDResult_}) {
-	const router = useRouter();
-	const [bookmarked, setBookmarked] = useState(false);
+export default function LFDResultPage({detId}: {detId?: string}) {
+  const [result, setResult] = React.useState<LFD_ | null>(null);
+  const [api, setApi] = React.useState<CarouselApi>();
+  const [loading, setLoading] = React.useState(true);
+  const [loadingProgress, setLoadingProgress] = React.useState(0);
+  const [error, setError] = React.useState<string | null>(null);
+  const [current, setCurrent] = React.useState(0);
+  const [count, setCount] = React.useState(0);
+  const {user, anonUser} = useAuth();
+  const router = useRouter();
 
-	const handleBookmark = () => {
-		// Implement bookmark functionality here
-		setBookmarked(!bookmarked);
-	}
+  React.useEffect(() => {
+    (async () => {
+      setLoadingProgress(10); // Start loading
+      
+      const res = await supabase
+      .from("diagnoses")
+      .select(`
+        *,
+        diagnoses_result(
+          *,
+          encyclopedia(*)
+        )
+      `)
+      .eq("id", detId)
+      .single();
+      
+      setLoadingProgress(40); // Data fetched
+      
+      if (res.data === null) {
+        console.error("Error fetching result:", res.error);
+        setError("Data tidak ditemukan atau terjadi kesalahan");
+        setLoading(false);
+        return;
+      }
+      else {
+        const res_clone:LFD_ = res.data;
+        const parsedDiseases = JSON.parse(res.data.diagnoses_result[0].cropped_images);
+        res_clone.diagnoses_result[0].list_of_diseases = parsedDiseases;
 
-	return <LFDWrapper>
-		<header className="text-center w-[40vw] my-8 z-20">
-			<h1 className="bg-gradient-to-b from-zinc-500 to-zinc-700 bg-clip-text py-4 text-center text-xl font-bold text-transparent md:text-4xl dark:from-zinc-50 dark:to-zinc-400">LensFolia—Deteksi Penyakit Tanaman dengan AI</h1>
-			<p className=" text-muted-foreground">Kami telah menganalisis gambar daun yang Anda unggah. Berikut adalah hasil deteksi dan rekomendasi perawatan yang sesuai.</p>
-		</header>
-		<section id='preview-image' className="p-6 border-[1px] border-border border-dashed bg-card/[0.12] backdrop-blur-md">
-			<div className='mb-6 flex items-center gap-4 text-sm font-semibold'>
-				<Button className="inline-block py-2 aspect-square bg-secondary/40 rounded-full cursor-pointer hover:bg-secondary transition-colors"
-					onClick={() => {router.back()}}>
-					<IconArrowLeft size={18}/>
-				</Button>
-				{result?.imageName}
-			</div>
-			<div className="flex flex-col items-center justify-center gap-1 border-[1px] border-border p-6 rounded-2xl bg-card">
-				<img src={result?.imageUrl} alt="Captured Image" className="max-w-md rounded-xl" />
-			</div>
-		</section>
-		<section id='disease-result' className="z-20">
-			<h1 className="text-4xl font-bold mt-8 mb-4 text-transparent text-center bg-gradient-to-b from-zinc-500 to-zinc-700 dark:from-primary dark:to-emerald-800 bg-clip-text">
-				{!result?.result.length? 
-				<span className="">Tidak ada penyakit terdeteksi!</span> 
-				: 
-				<span className="">{result.result.length} Penyakit Terdeteksi!</span> 
-				}
-			</h1>
-			{result?.result.length ? 
-			<div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-14"
-				style={result?.result.length == 1 ? { gridTemplateColumns: 'repeat(auto-fill, minmax(0, 1fr))' } : {}}>
-				{result.result.map((disease, index) => (
-					<div key={index} className="p-4 border-[1px] border-border rounded-2xl bg-card flex flex-col items-center">
-						<img src={disease.exampleImageUrl} alt={disease.diseaseName} className="h-full w-64 object-cover rounded-xl mb-2" />
-						<h2 className="text-lg font-semibold my-2">{disease.diseaseName}</h2>
-						<p 
-							className={`text-xs font-semibold text-foreground mt-1 border-[1px] rounded-full p-2 px-4 mb-2
-								${disease.confidence > 0.8 ? 'bg-primary/30' : disease.confidence > 0.5 ? 'bg-[#FF8904]/30' : 'bg-destructive/30'}
-								${disease.confidence > 0.8 ? 'border-primary' : disease.confidence > 0.5 ? 'border-[#FF8904]' : 'border-destructive'}
-							`}>
-							Tingkat Keyakinan: {Math.round(disease.confidence * 100)}%
-						</p>
-					</div>
-				))}
-			</div>
-			: ''}
-			<div className="flex justify-center">
-				<Button onClick={() => {handleBookmark()}}>
-					{bookmarked ?<>
-						<IconBookmarkFilled size={24} /> Hasil Deteksi Tersimpan
-					</> : <>
-						<IconBookmark size={24} /> Simpan Hasil Deteksi
-					</>}
-				</Button>
-			</div>
-		</section>
-		<section id='discussion' className="z-20 my-16 p-8 px-4 pb-4 w-[60vw] rounded-4xl bg-card flex flex-col gap-4">
-			<h2 className="text-2xl font-semibold mb-4 text-center">Pembahasan Terkait Penyakit Tanaman</h2>
-			<Discussion title="Overview"
-				description={result?.overview || "Tidak ada overview yang tersedia."}>
-				<IconClipboardText className="text-primary" size={24} />
-			</Discussion>
-			<Discussion title="Rekomendasi"
-				description={result?.recommendation || "Tidak ada rekomendasi yang tersedia."}>
-				<IconThumbUp className="text-[#53EAFD]" size={24} />
-			</Discussion>
-			<Discussion title="Catatan Penting"
-				description={result?.notes || "Tidak ada catatan penting yang tersedia."}>
-				<IconEdit className="text-[#FB7185]" size={24} />
-			</Discussion>
-			<p className="text-muted-foreground text-sm px-6">
-				*Catatan: Informasi ini hanya sebagai referensi. Untuk penanganan lebih lanjut, konsultasikan dengan ahli pertanian atau dokter tanaman.
-			</p>
-			<div id="ask-ai" className="border-border border-[1px] rounded-3xl">
-				<h3 className="flex items-center justify-center font-semibold p-2 py-6 border-b-[1px] border-border">
-					<IconSparkles className="inline mr-2" size={24} />
-					Konsultasi  lebih lanjut dengan AI
-				</h3>
-				<div className="flex flex-col gap-4 px-6">
-					<div className="grow flex flex-col items-center justify-center h-80">
-						<h4 className="font-semibold mb-8">Apa yang bisa saya bantu?</h4>
-						<div className="text-center w-[80%]">
-							{result?.aibubble && result.aibubble.length > 0 &&
-								result.aibubble.map((text, index) => (
-									<AIBubble key={index} text={text} />
-								))
-							}
-						</div>
-					</div>
-					<div className="flex mt-2 bg-secondary rounded-t-2xl p-3 px-5">
-						<input className="grow outline-none text-muted-foreground" type="text" placeholder="Tanyakan apapun terkait deteksi daunmu"/>
-						<button className="bg-foreground text-background p-3 rounded-full hover:bg-primary/10 transition-colors">
-							<IconSend/>
-						</button>
-					</div>
-				</div>
-			</div>
-		</section>
-	</LFDWrapper>
-}
+        setLoadingProgress(60); // Data processed
+        const recoms = res_clone.diagnoses_result[0].recommendations;
+        res_clone.diagnoses_result[0].recommendations = recoms.replace(/\$/g, "**")
 
-interface LFDResult_ {
-  id: string;
-  createdAt: string;
-  updatedAt: string;
-  imageUrl: string;
-	imageName: string;
-	overview: string;
-	recommendation: string;
-	notes: string;
-  result: {
-    diseaseName: string;
-    confidence: number;
-		exampleImageUrl: string;
-  }[];
-	aibubble?: string[];
+        const treats = res_clone.diagnoses_result[0].treatment;
+        res_clone.diagnoses_result[0].treatment = treats.replace(/\$/g, "**");
+
+        const overvw = res_clone.diagnoses_result[0].overview;
+        res_clone.diagnoses_result[0].overview = overvw.replace(/\$/g, "**");
+
+        // Extract product names wrapped with $...$
+        const productMatches = recoms.match(/\$(.*?)\$/g) || [];
+        const productList = productMatches.map((match) => match.replace(/\$/g, ""));
+
+        const fetchedProducts = await supabase
+          .from("products")
+          .select("*")
+          .in("name", productList);
+
+        setLoadingProgress(80); // Products fetched
+
+        if (fetchedProducts.error) {
+          console.error("Error fetching products:", fetchedProducts.error);
+        } else {
+          const products: LFDProduct_[] = fetchedProducts.data.map((product) => ({
+            id: product.id,
+            name: product.name,
+            description: product.description,
+            price: product.price,
+            image_url: product.image_url,
+            link: product.link,
+            category: product.category,
+          }));
+          res_clone.diagnoses_result[0].product_list = products;
+        }
+        
+        setLoadingProgress(100); // Complete
+        setResult(res_clone);
+        await new Promise(resolve => setTimeout(resolve, 500));
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  React.useEffect(() => {
+    (async () => {
+      if (result && !result.created_by && user && anonUser) {
+        const res = await supabase
+          .from("diagnoses")
+          .update({ 
+            created_by: user.id,
+            id_anon: null,
+            is_public: false,
+            is_bookmark: true,
+          })
+          .eq("id", result.id)
+          .eq("id_anon", anonUser.id);
+        if (res.error) {
+          console.error("Error updating diagnosis:", res.error);
+        }
+      }
+    })();
+  }, [user, anonUser, result]);
+
+  React.useEffect(() => {
+    if (!api) {
+      return;
+    }
+
+    setCount(api.scrollSnapList().length);
+    setCurrent(api.selectedScrollSnap() + 1);
+
+    api.on("select", () => {
+      setCurrent(api.selectedScrollSnap() + 1);
+    });
+  }, [api]);
+
+  const goToBookmark = () => {
+    router.push("/bookmarks");
+  };
+
+  if (error) {
+    return (
+      <LFDWrapper>
+        <section className="flex w-full items-center justify-center px-4 py-20">
+          <div className="text-center">
+            <h1 className="mb-4 text-2xl font-bold text-foreground">
+              Oops! Terjadi Kesalahan
+            </h1>
+            <p className="text-muted-foreground mb-6">{error}</p>
+            <Button onClick={() => router.back()}>
+              <IconArrowLeft className="mr-2" size={16} />
+              Kembali
+            </Button>
+          </div>
+        </section>
+      </LFDWrapper>
+    );
+  }
+
+  if (loading || !result) {
+    return <ResultSkeleton progress={loadingProgress} />;
+  }
+  
+  return (
+    <LFDWrapper>
+      <section className="flex w-full items-center justify-center px-4">
+        <div
+          id="preview-image"
+          className="border-border bg-card/[0.12] w-full border-[2px] border-dashed p-4 backdrop-blur-md sm:max-w-[500px] sm:p-6"
+        >
+          <div className="text-foreground mb-4 flex items-center gap-2 text-xs font-semibold sm:mb-6 sm:gap-4 sm:text-sm">
+            <Button
+              className="dark:bg-secondary/40 dark:hover:bg-secondary flex h-8 w-8 cursor-pointer rounded-full bg-zinc-200 transition-colors hover:bg-zinc-300 sm:h-10 sm:w-10"
+              onClick={() => {
+                router.back();
+              }}
+            >
+              <IconArrowLeft className="text-foreground text-sm sm:text-base" />
+            </Button>
+            <div className="overflow-hidden overflow-ellipsis whitespace-nowrap">
+              {result?.image_url}
+            </div>
+          </div>
+          <div className="border-border bg-card flex flex-col items-center justify-center gap-1 overflow-hidden rounded-lg border-[1px] p-2 sm:rounded-[20px] sm:p-4">
+            <img
+              src={result?.diagnoses_result[0].annotated_image || "not-found.svg"}
+              alt="Captured Image"
+              className="w-full max-w-xs rounded-md object-cover sm:max-w-md"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* Disease Result Section */}
+      <section id="disease-result" className="z-20">
+        <h1 className="dark:from-primary mt-12 mb-8 bg-gradient-to-b from-zinc-500 to-zinc-700 bg-clip-text text-center text-3xl md:text-4xl font-bold text-transparent dark:to-emerald-800">
+          {!result?.diagnoses_result.length ? (
+            <span className="">
+              Tidak ada penyakit atau hama yang terindikasi!
+            </span>
+          ) : (
+            <span className="w-full px-4 text-center">
+              Ditemukan {result.diagnoses_result.length} indikasi!
+            </span>
+          )}
+        </h1>
+
+        {result?.diagnoses_result[0]?.list_of_diseases.length ? (
+          <div className="mb-14">
+            <div className="flex justify-center px-4">
+              <Carousel setApi={setApi} className="w-fit max-w-[350px]">
+                <CarouselContent>
+                  {result.diagnoses_result[0]?.list_of_diseases.map((disease, index) => (
+                    <CarouselItem key={index}>
+                      <Card className="border-border w-full">
+                        <CardContent className="flex flex-col items-center justify-center">
+                          <img
+                            src={disease.base64_image || "not-found.svg"}
+                            alt={disease.label || "Disease Image"}
+                            className="mb-4 aspect-[4/3] min-h-[200px] w-full rounded-md object-cover"
+                          />
+                          <h2 className="my-2 text-lg font-semibold">
+                            {disease.label || "Penyakit Tidak Diketahui"}
+                          </h2>
+                          <p
+                            className={`text-foreground mt-1 mb-2 rounded-full border-[1px] p-2 px-4 text-xs font-semibold ${
+                              disease.confidence > 80
+                                ? "bg-primary/30 border-primary"
+                                : disease.confidence > 50
+                                  ? "border-[#FF8904] bg-[#FF8904]/30"
+                                  : "bg-destructive/30 border-destructive"
+                            }`}
+                          >
+                            Tingkat Keyakinan: {Math.round(disease.confidence/100 * 100)}
+                            %
+                          </p>
+                        </CardContent>
+                      </Card>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                {result.diagnoses_result.length > 1 && (
+                  <>
+                    <CarouselPrevious className="hidden sm:flex" />
+                    <CarouselNext className="hidden sm:flex" />
+                  </>
+                )}
+              </Carousel>
+            </div>
+
+            {/* Dot Indicators */}
+            {result.diagnoses_result.length > 1 && (
+              <div className="mt-4 flex justify-center gap-2">
+                {Array.from({ length: count }).map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => api?.scrollTo(index)}
+                    className={`h-2 w-2 rounded-full transition-colors ${
+                      current === index + 1
+                        ? "bg-primary"
+                        : "dark:bg-muted bg-zinc-300"
+                    }`}
+                    aria-label={`Go to slide ${index + 1}`}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        ) : null}
+
+        <div className="flex justify-center">
+          <Button onClick={goToBookmark}>
+            <IconExternalLink size={24} /> Lihat Riwayat Diagnosis
+          </Button>
+        </div>
+      </section>
+
+      <section className="mx-auto flex w-full flex-col items-center justify-center p-4">
+        <div
+          id="discussion"
+          className="bg-card z-20 mx-4 my-16 flex w-full flex-col gap-4 rounded-4xl p-8 px-4 pb-4 md:max-w-7xl"
+        >
+          <h2 className="text-foreground mb-4 text-center text-2xl font-semibold">
+            Pembahasan Terkait{" "}
+            {result?.diagnoses_result[0]?.encyclopedia?.name || "Penyakit Tanaman"}
+          </h2>
+          <Discussion
+            title="Overview"
+            description={
+              result?.diagnoses_result[0]?.overview || "Tidak ada overview yang tersedia."
+            }
+          >
+            <IconClipboardText className="text-primary" size={24} />
+          </Discussion>
+          <Discussion
+            title="Perawatan"
+            description={
+              result?.diagnoses_result[0]?.treatment ||
+              "Tidak ada rekomendasi yang tersedia."
+            }
+          >
+            <IconStethoscope className="text-[#53EAFD]" size={24} />
+          </Discussion>
+          <Discussion
+            title="Rekomendasi"
+            description={
+              result?.diagnoses_result[0]?.recommendations ||
+              "Tidak ada catatan penting yang tersedia."
+            }
+          >
+            <IconThumbUp className="text-[#FB7185]" size={24} />
+          </Discussion>
+          {result?.diagnoses_result[0]?.product_list && (
+            <div className={`${user?.id !== result?.created_by ? "my-3 mx-2" : "mt-6 sm:mt-8"}`}>
+              <ProductRecommendation products={result?.diagnoses_result[0].product_list} />
+            </div>
+          )}
+          <p className="text-muted-foreground px-6 text-sm">
+            *Catatan: Informasi ini hanya sebagai referensi. Untuk penanganan
+            lebih lanjut, konsultasikan dengan ahli pertanian atau dokter
+            tanaman.
+          </p>
+          {user?.id == result?.created_by && (
+            <AskAI thread_id={result?.thread_id} disease={result?.diagnoses_result[0]} />
+          )}
+        </div>
+      </section>
+    </LFDWrapper>
+  );
 }
 
 interface DiscussionProps {
-	children: React.ReactNode;
-	title: string;
-	description: string;
+  children: React.ReactNode;
+  title: string;
+  description: string;
 }
 
-const AIBubble = ({text}: {text:string}) => {
-	return <div className="cursor-pointer text-xs bg-secondary p-2 px-3 shadow-inner shadow-foreground/[0.1] rounded-full m-1 inline-block hover:bg-secondary/80 transition-colors">
-		{text}
-	</div>
-}
-
-const Discussion: React.FC<DiscussionProps> = ({children, title, description}) => {
-	return <div className="border-border border-[1px] rounded-2xl p-4">
-		<div className="flex items-center mb-4 w-fit">
-			<div className="p-3 border-border border-[1px] flex items-center justify-center rounded-full bg-card mr-3 shadow-2xl">
-				{children}
-			</div>
-			<h3 className="text-lg font-semibold">
-				{title}
-			</h3>
-		</div>
-		<p className="text-muted-foreground">
-			{description}
-		</p>
-	</div>
-}
+const Discussion: React.FC<DiscussionProps> = ({
+  children,
+  title,
+  description,
+}) => {
+  return (
+    <div className="border-border rounded-2xl border-[1px] p-4">
+      <div className="mb-4 flex w-fit items-center">
+        <div className="border-border bg-card mr-3 flex items-center justify-center rounded-full border-[1px] p-3 shadow-2xl">
+          {children}
+        </div>
+        <h3 className="text-lg font-semibold text-foreground">{title}</h3>
+      </div>
+      <div className="text-muted-foreground">
+        <ReactMarkdown>{description}</ReactMarkdown>
+      </div>
+    </div>
+  );
+};

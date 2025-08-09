@@ -89,7 +89,7 @@ export const Compare = ({
       if (slideMode === "drag") {
         setIsDragging(true);
       }
-      console.log(clientX)
+      console.log("Drag started at:", clientX);
     },
     [slideMode],
   );

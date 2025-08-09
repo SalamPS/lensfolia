@@ -1,6 +1,6 @@
+/* eslint-disable @next/next/no-img-element */
 import React from "react";
 import TitleBadge from "../ui/title-badge";
-import Image from "next/image";
 
 const HowItWorks = () => {
   const CARDS = [
@@ -9,9 +9,9 @@ const HowItWorks = () => {
       image: "/asset-web-1.png",
       alt: "Step 1",
       step: "STEP 1",
-      title: "Ambil atau Upload Gambar Daun",
+      title: "Upload Gambar Daun",
       description:
-        "Ambil atau upload gambar daun tanaman yang ingin Anda periksa. Pastikan gambar jelas dan tidak buram.",
+        "Ambil gambar daun tanaman yang ingin diperiksa dengan kamera atau dari galeri. Pastikan gambar jelas dan tidak buram.",
       imageClass: "rounded-lg object-cover",
     },
     {
@@ -52,8 +52,7 @@ const HowItWorks = () => {
 
               {/* Title */}
               <h1 className="max-w-4xl bg-gradient-to-b from-zinc-500 to-zinc-700 bg-clip-text py-4 text-center text-xl font-bold text-pretty text-transparent md:text-3xl dark:from-zinc-50 dark:to-zinc-400">
-                Cara Kerja Platform LensFolia untuk Deteksi Dini Penyakit
-                Tanaman
+                Cara Menggunakan LensFolia untuk Mendiagnosa Penyakit Tanaman Sedini Mungkin
               </h1>
 
               {/* Card container */}
@@ -63,7 +62,7 @@ const HowItWorks = () => {
                     key={card.id}
                     className="bg-card border-border group flex gap-2 rounded-2xl border p-2 md:flex-col md:gap-4"
                   >
-                    <Image
+                    <img
                       src={card.image}
                       alt={card.alt}
                       width={300}
