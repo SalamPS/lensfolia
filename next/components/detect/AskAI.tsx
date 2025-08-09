@@ -121,15 +121,16 @@ export function AskAI ({disease, thread_id}: {disease: LFDResult_ | undefined, t
 		threadId: thread_id,
 		onUpdateEvent(event: any) {
 			setIsWaitingForResponse(false);
+			const formatted = event.qa_agent.messages[event.qa_agent.messages.length - 1].content.replace(/\$/g, "**");
 			setMessages(prev => ([
 				...prev, {
 					id: `ai-${Date.now()}`,
 					type: "ai",
-					content: event.qa_agent.messages[event.qa_agent.messages.length - 1].content,
+					content: formatted,
 					isTyping: true
 				}
 			]))
-			saveChatHelper(event.qa_agent.messages[event.qa_agent.messages.length - 1].content, true);
+			saveChatHelper(formatted, true);
 			console.log("Event received:", event);
 		},
 	});
