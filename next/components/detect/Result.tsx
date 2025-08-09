@@ -324,14 +324,18 @@ export default function LFDResultPage({detId}: {detId?: string}) {
             <IconThumbUp className="text-[#FB7185]" size={24} />
           </Discussion>
           {result?.diagnoses_result[0]?.product_list && (
-            <ProductRecommendation products={result?.diagnoses_result[0].product_list} />
+            <div className={`${user?.id !== result?.created_by ? "my-3 mx-2" : "mt-6 sm:mt-8"}`}>
+              <ProductRecommendation products={result?.diagnoses_result[0].product_list} />
+            </div>
           )}
           <p className="text-muted-foreground px-6 text-sm">
             *Catatan: Informasi ini hanya sebagai referensi. Untuk penanganan
             lebih lanjut, konsultasikan dengan ahli pertanian atau dokter
             tanaman.
           </p>
-          <AskAI thread_id={result?.thread_id} disease={result?.diagnoses_result[0]} />
+          {user?.id == result?.created_by && (
+            <AskAI thread_id={result?.thread_id} disease={result?.diagnoses_result[0]} />
+          )}
         </div>
       </section>
     </LFDWrapper>

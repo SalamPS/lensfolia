@@ -12,7 +12,7 @@ export function ProductRecommendation({
   if (!products || products.length === 0) return null;
 
   return (
-    <div className="mt-6 sm:mt-8">
+    <>
       <h3 className="mb-3 text-lg font-semibold sm:mb-4 sm:text-xl">
         Rekomendasi Produk
       </h3>
@@ -53,6 +53,6 @@ export function ProductRecommendation({
           </div>
         ))}
       </div>
-    </div>
+    </>
   );
 }
