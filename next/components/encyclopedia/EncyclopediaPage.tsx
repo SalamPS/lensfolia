@@ -171,6 +171,7 @@ const EncyclopediaPage = () => {
                           <SelectItem value="all">Semua</SelectItem>
                           <SelectItem value="hama">Hama</SelectItem>
                           <SelectItem value="penyakit">Penyakit</SelectItem>
+                          <SelectItem value="tanaman">Tanaman</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
