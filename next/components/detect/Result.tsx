@@ -151,10 +151,6 @@ export default function LFDResultPage({detId}: {detId?: string}) {
     router.push("/bookmarks");
   };
 
-  if (loading || !result) {
-    return <ResultSkeleton progress={loadingProgress} />;
-  }
-
   if (error) {
     return (
       <LFDWrapper>
@@ -172,6 +168,10 @@ export default function LFDResultPage({detId}: {detId?: string}) {
         </section>
       </LFDWrapper>
     );
+  }
+
+  if (loading || !result) {
+    return <ResultSkeleton progress={loadingProgress} />;
   }
   
   return (
