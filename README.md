@@ -18,14 +18,14 @@
 
 ## 🎯 About
 
-**LensFolia** is a cutting-edge Progressive Web Application (PWA) that leverages AI and computer vision to revolutionize plant disease detection and management. Built with Next.js 15 and powered by advanced machine learning models including YOLOv8 and MobileNetV2, LensFolia provides instant, accurate plant health analysis through smartphone photography.
+**LensFolia** is a cutting-edge Progressive Web Application (PWA) that leverages AI and computer vision to revolutionize plant disease detection and management. Built with Next.js 15 and powered by AI Agents, LensFolia provides instant, accurate plant health analysis through smartphone photography.
 
 The platform combines real-time plant disease detection with a comprehensive knowledge base, community forum, and personalized recommendations system, making plant care accessible to everyone from home gardeners to agricultural professionals.
 
 ### ✨ Key Features
 
 - 🚀 **Next.js 15**: App Router with SSR optimization and React 19
-- 🤖 **AI-Powered Detection**: YOLOv8 + MobileNetV2 for accurate disease identification
+- 🤖 **AI-Powered Two-Stage Detection**: YOLOv8 + MobileNetV2 for accurate disease identification
 - ⚡ **Multi-Agent System**: LangGraph-based workflow for comprehensive analysis
 - 🎨 **Modern UI**: shadcn/ui components with responsive design
 - 📱 **PWA Ready**: Offline capabilities and mobile app experience
@@ -54,12 +54,12 @@ The platform combines real-time plant disease detection with a comprehensive kno
 
 | Technology           | Purpose                                    |
 | -------------------- | ------------------------------------------ |
-| **Python**           | Backend Services                           |
-| **YOLOv8**           | Object Detection (Plant Disease Detection) |
+| **Python & FastAPI** | Backend Services                           |
+| **YOLOv8**           | Object Detection                           |
 | **MobileNetV2**      | Image Classification                       |
 | **LangGraph**        | Multi-Agent AI Workflow                    |
 | **LangChain**        | LLM Integration                            |
-| **OpenAI/Anthropic** | Language Models                            |
+| **Google Gemini**    | Language Models                            |
 | **Tavily**           | Web Search Integration                     |
 
 ### DevOps & Tools
@@ -107,24 +107,17 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_key
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_maps_key
 
 # For AI Services
-OPENAI_API_KEY=your_openai_key
-ANTHROPIC_API_KEY=your_anthropic_key
+GOOGLE_API_KEY=your_google_key
 TAVILY_API_KEY=your_tavily_key
+SUPABASE_URL=your_supabase_url
+SUPABASE_ANON_KEY=your_supabase_key
 ```
 
 ### Development
-
+#### Next.js client
 ```bash
 # Start Next.js development server
 pnpm dev
-
-# Start AI diagnosis service (in separate terminal)
-cd ../services/diagnosis
-python -m uvicorn main:app --reload --port 8000
-
-# Start chatbot service (in separate terminal)
-cd ../services/chatbot
-python -m uvicorn main:app --reload --port 8001
 
 # Build for production
 pnpm build
@@ -132,6 +125,8 @@ pnpm build
 # Run linting
 pnpm lint
 ```
+#### AI Service
+[Follow AI service documentation here](services)
 
 ---
 
@@ -270,17 +265,7 @@ lensfolia-secomp2025/
 
 ## 🚀 Deployment
 
-### Docker Deployment (Recommended)
-
-#### Frontend (Next.js)
-
-```bash
-cd lensfolia/next
-docker build -t lensfolia-frontend .
-docker run -p 3000:3000 lensfolia-frontend
-```
-
-#### AI Services
+### Docker Deployment For AI Services
 
 ```bash
 # Diagnosis Service
@@ -314,26 +299,6 @@ cd lensfolia-secomp2025/services/diagnosis
 cd ../chatbot
 ./deploy.sh
 ```
-
-### Environment Variables
-
-Configure the following environment variables in your deployment platform:
-
-#### Frontend
-
-- `NEXT_PUBLIC_API_URL`
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`
-
-#### AI Services
-
-- `OPENAI_API_KEY`
-- `ANTHROPIC_API_KEY`
-- `TAVILY_API_KEY`
-- `SUPABASE_URL`
-- `SUPABASE_SERVICE_ROLE_KEY`
-
 ---
 
 ## 🤝 Contributing
@@ -374,25 +339,6 @@ Configure the following environment variables in your deployment platform:
 
 ---
 
-## 🔧 AI Model Information
-
-### Detection Models
-
-- **YOLOv8**: Real-time object detection for plant disease localization
-- **MobileNetV2**: Lightweight classification model for disease identification
-- **Model Size**: Optimized for edge deployment and fast inference
-- **Accuracy**: 90%+ accuracy on common plant diseases
-- **Languages Supported**: Indonesian (Bahasa Indonesia)
-
-### Training Data
-
-- Curated dataset of plant disease images
-- Augmented with various lighting and angle conditions
-- Regularly updated with new disease patterns
-- Community-contributed validation images
-
----
-
 ## 📞 Support & Contact
 
 - **Repository**: [GitHub - lensfolia](https://github.com/SalamPS/lensfolia)
@@ -418,7 +364,7 @@ When reporting bugs, please include:
 
 ## 📄 License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+MIT License
 
 ---
 
