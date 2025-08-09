@@ -17,7 +17,7 @@ export function LangGraphTestBox () {
 		task_type: "diagnosis" | "qa";
 		thread_id?: string;
    }>({
-    apiUrl: "https://jay-fit-safely.ngrok-free.app/",
+    apiUrl: "https://lensfolia-diagnosis.andyathsid.com/",
     assistantId: "agent",
     messagesKey: "messages",
 		threadId: threadId,

@@ -91,7 +91,7 @@ export function LangGraphVisual({
     diagnoses_ref: string;
     task_type: "diagnosis" | "qa";
   }>({
-		apiUrl: process.env.NEXT_PUBLIC_AGENTIC_API || "https://jay-fit-safely.ngrok-free.app",
+		apiUrl: process.env.NEXT_PUBLIC_AGENTIC_API || "https://lensfolia-diagnosis.andyathsid.com/",
     assistantId: "agent",
     messagesKey: "messages",
     threadId: threadId,
