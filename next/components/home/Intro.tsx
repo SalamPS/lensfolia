@@ -21,9 +21,9 @@ const Intro = () => {
 
   // Data untuk statistik
   const stats = [
-    { value: "99.9%", label: "Tingkat akurasi*" },
-    { value: "~2.2s", label: "Hasil cepat*" },
-    { value: "999+", label: "Jenis penyakit*" },
+    { value: "92.1%", label: "Tingkat akurasi*" },
+    { value: "< 1 menit", label: "Hasil cepat*" },
+    { value: "100+", label: "Jenis penyakit*" },
   ];
 
   return (
@@ -34,7 +34,7 @@ const Intro = () => {
             className={cn(
               "absolute inset-0",
               "[background-size:20px_20px]",
-              "[background-image:radial-gradient(#d4d4d8_1px,transparent_1px)]",
+              "[background-image:radial-gradient(#d4d4d8_1px,tra/*  */nsparent_1px)]",
               "dark:[background-image:radial-gradient(#404040_1px,transparent_1px)]",
             )}
           />
