@@ -6,7 +6,6 @@ import {
   IconArrowBigUpLines,
   IconEye,
   IconMessageCircle,
-  IconEdit,
 } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -200,13 +199,6 @@ const MyPostCard = ({
           {/* Edit Button */}
           {/* page desainnya sama kaya yang create ceritanya */}
           <div className="flex w-full items-center justify-end gap-2 md:w-fit">
-            <Link href={`/forum/edit-post/${id}`}>
-              <Button variant="outline" className="gap-2">
-                <IconEdit size={16} />
-                Edit
-              </Button>
-            </Link>
-
             {/* Delete Button */}
             <AlertDialog>
               <AlertDialogTrigger asChild>
