@@ -142,7 +142,7 @@ export function LangGraphVisual({
             icon: "data",
           },
         ]);
-      } else if (event.overview_query_generation) {
+      } else if (event.overview_query_agent) {
         statusHelper("success");
         setProcessedSteps((prev) => [
           ...prev,
@@ -153,7 +153,7 @@ export function LangGraphVisual({
             icon: "query",
           },
         ]);
-      } else if (event.overview_generation) {
+      } else if (event.overview_agent) {
         statusHelper("success");
         setProcessedSteps((prev) => [
           ...prev,
@@ -164,7 +164,7 @@ export function LangGraphVisual({
             icon: "overview",
           },
         ]);
-      } else if (event.treatment_query_generation) {
+      } else if (event.treatment_query_agent) {
         statusHelper("success");
         setProcessedSteps((prev) => [
           ...prev,
@@ -175,7 +175,7 @@ export function LangGraphVisual({
             icon: "treatment_query",
           },
         ]);
-      } else if (event.treatment_generation) {
+      } else if (event.treatment_agent) {
         statusHelper("success");
         setProcessedSteps((prev) => [
           ...prev,
@@ -186,7 +186,7 @@ export function LangGraphVisual({
             icon: "treatment",
           },
         ]);
-      } else if (event.recommendation_query_generation) {
+      } else if (event.recommendation_query_agent) {
         statusHelper("success");
         setProcessedSteps((prev) => [
           ...prev,
@@ -197,7 +197,7 @@ export function LangGraphVisual({
             icon: "recommendation_query",
           },
         ]);
-      } else if (event.recommendation_generation) {
+      } else if (event.recommendation_agent) {
         statusHelper("success");
         setProcessedSteps((prev) => [
           ...prev,
