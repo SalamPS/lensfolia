@@ -20,7 +20,7 @@ const MyPostPage = () => {
   const [loading, setLoading] = React.useState(true);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [activeFilter, setActiveFilter] = React.useState("all");
-  const {user, refresh} = useContext(PostContext)
+  const {user, refresh, authLoading} = useContext(PostContext)
 
   // Filter dan search logic
   const filteredPosts = React.useMemo(() => {
@@ -58,6 +58,14 @@ const MyPostPage = () => {
       setLoading(false);
     })();
   }, [user, refresh]);
+
+  if (!user && !authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen p-8">
+        Silahkan daftar / masuk ke akun anda untuk membuka halaman postingan.
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -119,7 +127,7 @@ const MyPostPage = () => {
                 {/* Tampilan ketika ada postingan */}
                 <div className="my-4 flex items-center gap-4">
                   <Avatar>
-                    <AvatarImage src="/globe.svg" alt="User Avatar" />
+                    <AvatarImage src={user?.user_metadata?.avatar_url || '/profile.jpg'} alt="User Avatar" />
                   </Avatar>
                   <div className="flex flex-col">
                     <h1 className="text-xl font-semibold">Postingan Saya</h1>

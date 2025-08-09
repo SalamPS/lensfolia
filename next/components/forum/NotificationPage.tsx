@@ -40,7 +40,8 @@ const groupNotificationsByTime = (notifications: Notification[]) => {
 const NotificationPage = () => {
   const [notifs, setNotifs] = React.useState<Notification[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const {user, refresh} = useContext(PostContext);
+  const {user, refresh, authLoading} = useContext(PostContext);
+  
 
   useEffect(() => {
     (async () => {
@@ -63,6 +64,14 @@ const NotificationPage = () => {
         setLoading(false);
       })();
     }, [user, refresh])
+
+  if (!user && !authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen p-8">
+        Silahkan daftar / masuk ke akun anda untuk membuka notifikasi.
+      </div>
+    );
+  }
 
     const groupedNotifications = groupNotificationsByTime(notifs);
 
