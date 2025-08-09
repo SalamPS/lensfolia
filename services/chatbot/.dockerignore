@@ -1,0 +1,49 @@
+# Virtual environments
+.venv/
+*-venv/
+
+# Python cache and build artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Environment files
+.env
+.env.*
+
+# Development and deployment scripts
+*.sh
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Database and storage files 
+qdrant_storage/
+
+# Documentation 
+*.md
+
+# Testing artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
