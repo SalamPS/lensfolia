@@ -10,7 +10,7 @@ export interface ForumPost {
   timeAgo: string;
   type: PostType;
   tags: string[];
-  imageUrl?: string[];
+  imageUrl?: string;
   comments: string[];
   upvotes: string[];
   downvotes: string[];
@@ -29,7 +29,7 @@ export interface ForumPostDetail {
   timeAgo: string;
   type: PostType;
   tags: string[];
-  imageUrl?: string[];
+  imageUrl?: string;
   comments: Comment[];
   upvotes: string[];
   downvotes: string[];

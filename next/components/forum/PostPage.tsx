@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import React, { useContext, useEffect } from "react";
@@ -149,13 +150,15 @@ const sortedComments = React.useMemo(() => {
               <p className="text-muted-foreground text-sm">{post?.timeAgo}</p>
             </div>
           </div>
-
           <h1 className="text-2xl font-bold">{post?.title}</h1>
 
           <div className="my-4">
             <p className="text-muted-foreground">{post?.content}</p>
           </div>
 
+          <div className="my-4">
+            <img src={post?.imageUrl} alt={post?.title} className="rounded-md w-[50%] h-auto" />
+          </div>
           {/* Tags */}
           <div className="mb-6 flex flex-wrap gap-1">
             {post?.tags.map((tag, index) => (
