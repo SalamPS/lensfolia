@@ -267,26 +267,6 @@ const sortedComments = React.useMemo(() => {
             <div className="flex items-center justify-between">
               {/* Tombol upload file */}
               <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  className="gap-2 rounded-full"
-                  size="icon"
-                  onClick={() =>
-                    document.getElementById("file-upload")?.click()
-                  }
-                >
-                  <IconPaperclip size={20} />
-                  <input
-                    id="file-upload"
-                    type="file"
-                    className="hidden"
-                    onChange={(e) => {
-                      if (e.target.files) {
-                        // Handle file upload logic here
-                      }
-                    }}
-                  />
-                </Button>
               </div>
 
               {/* Tombol kirim */}
