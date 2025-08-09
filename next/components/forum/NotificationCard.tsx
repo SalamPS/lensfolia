@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Avatar, AvatarImage } from "../ui/avatar";
 import { Button } from "../ui/button";
 import { Notification } from "./MockData";
-import { IconArrowUpRight, IconAt, IconCheck, IconMessageCircle, IconX } from "@tabler/icons-react";
+import { IconArrowUpRight, IconAt, IconCheck, IconChevronDown, IconChevronUp, IconMessageCircle, IconX } from "@tabler/icons-react";
 import { getTimeAgo } from "./ForumQueryUtils";
 import { supabase } from "@/lib/supabase";
 import { useContext } from "react";
@@ -70,13 +70,21 @@ const NotificationCard = ({ notification }: NotificationCardProps) => {
           <div className="flex w-full items-center gap-1">
             {notification.content_type === "discussions" ? (
               <IconMessageCircle className="h-4 w-4 text-teal-500" />
-            ) : (
+            ): notification.content_type === "comments" ?(
               <IconAt className="h-4 w-4 text-teal-500" />
+            ): notification.content_type === "upvotes" ? (
+              <IconChevronUp className="h-4 w-4 text-primary bg-primary/30 rounded-full mr-1" />
+            ) : (
+              <IconChevronDown className="h-4 w-4 text-destructive bg-destructive/30 rounded-full mr-1" />
             )}
             <p className="text-muted-foreground font semibold text-sm">
               {notification.content_type === "discussions"
                 ? "membalas postingan Anda"
-                : "membalas komentar Anda"}
+              : notification.content_type === "comments"
+                ? "membalas komentar Anda"
+              : notification.content_type === "upvotes"
+              ? "Setuju dengan konten Anda"
+              : "Tidak setuju dengan konten Anda"}
             </p>
           </div>
 
@@ -97,12 +105,14 @@ const NotificationCard = ({ notification }: NotificationCardProps) => {
           </div>
 
           {/* reply */}
-          <div className="dark:bg-muted/30 flex flex-col gap-2 rounded-lg bg-zinc-200 p-3">
-            <p className="text-muted-foreground line-clamp-3">{
-              notification.ori_comments?.content ||
-              notification.ori_discussions?.content
-            }</p>
-          </div>
+          {notification.content_type !== "upvotes" && notification.content_type !== "downvotes" && (
+            <div className="dark:bg-muted/30 flex flex-col gap-2 rounded-lg bg-zinc-200 p-3">
+              <p className="text-muted-foreground line-clamp-3">{
+                notification.ori_comments?.content ||
+                notification.ori_discussions?.content
+              }</p>
+            </div>
+          )}
         </div>
 
         {/* Action button */}

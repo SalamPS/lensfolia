@@ -220,5 +220,6 @@ export const ForumNotificationQuery = async (userId: string) => {
 	`)
 	.eq("subscriber", userId)
 	.order("created_at", { ascending: false });
+	console.log("ForumNotificationQuery response:", response);
 	return response.data;
 }

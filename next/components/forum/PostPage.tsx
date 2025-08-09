@@ -10,7 +10,6 @@ import {
   IconArrowBigUpLines,
   IconMessageCircle,
   IconEye,
-  IconPaperclip,
 } from "@tabler/icons-react";
 import CommentItem from "./CommentItem";
 import PostPageSkeleton from "./PostPageSkeleton";
