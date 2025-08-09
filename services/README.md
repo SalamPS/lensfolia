@@ -147,7 +147,7 @@ GET  /docs                # API documentation
 | Metric | Value |
 |--------|-------|
 | **Architecture** | Agentic RAG |
-| **LLM** | Google Gemini Pro |
+| **LLM** | Google Gemini |
 | **Context Window** | 32K tokens |
 | **Response Accuracy** | 92% |
 | **Memory Size** | 10 messages per thread |
