@@ -73,20 +73,6 @@ class State(ChatState):
     detection_results: Dict[str, Any] = field(default_factory=dict)
     """Results from the plant disease detection pipeline."""
     
-    overview_query: str = field(default="")
-    """Generated search query for disease overview information."""
-    
-    treatment_query: str = field(default="")
-    """Generated search query for treatment information."""
-    
-    recommendation_query: str = field(default="")
-    """Generated search query for treatment recommendations."""
-    
-    current_retrieval_task: str = field(default="")
-    """Current retrieval task: 'overview', 'treatment', or 'product'."""
-    
-    retrieval_context: str = field(default="")
-    """Context retrieved by the retriever agent for the current task."""
     
     disease_name: str = field(default="None detected")
     """Identified disease name or 'None detected'."""

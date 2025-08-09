@@ -27,37 +27,11 @@ def enlarge_bbox(x1, y1, x2, y2, scale, img_width, img_height):
 
 def annotate_image_with_predictions(img, boxes, predictions=None):
     annotated_img = img.copy()
-    font = cv2.FONT_HERSHEY_SIMPLEX
-    font_scale = 0.5
-    font_thickness = 2
-
-    for i, (x1, y1, x2, y2) in enumerate(boxes):
-        color = (153, 255, 153)  # Default color for detections
+    color = (153, 255, 153)  # Default color for detections
+    
+    for (x1, y1, x2, y2) in boxes:
         cv2.rectangle(annotated_img, (x1, y1), (x2, y2), color, 2)
-
-        if predictions and i < len(predictions):
-            text = f"{predictions[i]['label']} ({predictions[i]['confidence']}%)"
-        else:
-            text = f"Detection {i+1}"
-        # Calculate text size and position
-        (text_w, text_h), baseline = cv2.getTextSize(text, font, font_scale, font_thickness)
-        text_x = x1
-        text_y = y1 - 10 if y1 - 10 > text_h else y1 + text_h + 10
-
-        # Draw text background for better visibility
-        cv2.rectangle(
-            annotated_img,
-            (text_x, text_y - text_h - baseline),
-            (text_x + text_w, text_y + baseline),
-            (0, 0, 0),
-            thickness=cv2.FILLED,
-        )
-
-        # Put text over rectangle
-        cv2.putText(
-            annotated_img, text, (text_x, text_y), font, font_scale, color, font_thickness, lineType=cv2.LINE_AA
-        )
-
+        
     return annotated_img
 
 class DetectionPipeline:
