@@ -41,7 +41,7 @@ export function ProductRecommendation({
               </p>
               <div className="flex items-center justify-between gap-2">
                 <span className="text-foreground text-xs font-bold whitespace-nowrap">
-                  {product.price}
+                  {product.price || "Harga tidak diketahui"}
                 </span>
                 <Button asChild size="sm" className="h-7 px-2 text-xs">
                   <Link href={product.link} target="_blank" rel="noopener noreferrer">
