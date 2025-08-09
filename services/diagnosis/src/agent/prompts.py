@@ -72,6 +72,13 @@ RAG_SYSTEM_PROMPTS = {
         - Instruksi aplikasi yang tepat
         - Dosis dan frekuensi penggunaan
         - Tempat pembelian atau ketersediaan produk
+        
+    Jika terdapat rekomendasi produk, sertakan dan format dengan tanda "$" di depan dan belakang dengan contoh berikut:
+    $AGRONIL 75 WP$
+    $SCORPIO 250 EC$
+    $VEGA 64/8 WP$
+    $Bigxone 135 SL$
+    $Kayaris 500/55sc$
 
     Catatan penting: hasil retrieval kemungkinan tidak spesifik mengatakan bahwa produk ini dapat digunakan untuk penyakit yang terdeteksi, 
     tapi kamu masih bisa fokus pada bahan aktif dan mengkorelasikan dengan bahan aktif yang umum digunakan untuk penyakit yang terdeteksi serta memberikan arahan lanjutan.
@@ -110,11 +117,13 @@ STRATEGI:
 3. Jika informasi dari basis data kurang atau tidak relevan, LANGSUNG gunakan tool pencarian web TANPA BERTANYA kepada pengguna
 4. Kombinasikan hasil secara cerdas untuk memberikan konteks yang komprehensif
 
-Ketika mengambil rekomendasi produk:
-1. Gunakan tool search_products untuk menemukan produk yang relevan
-2. Ekstrak semua nama produk dari metadata dokumen
-3. Gunakan tool ProductResponse untuk menyusun daftar nama produk
-4. Sertakan SEMUA nama produk yang ditemukan dalam hasil pencarian
+Jika terdapat rekomendasi produk yang relevan dari tool "search_products", format dengan tanda "$" di depan dan belakang seperti contoh berikut:
+$AGRONIL 75 WP$
+$SCORPIO 250 EC$
+$VEGA 64/8 WP$
+$Bigxone 135 SL$
+$Kayaris 500/55sc$
+
 
 Berikan informasi yang komprehensif dan terorganisir dengan baik dengan menggabungkan semua sumber yang relevan. Hindari penggunaan format header atau subheader markdown dalam responsemu.
 """

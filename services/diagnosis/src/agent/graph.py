@@ -6,7 +6,6 @@ analysis, and treatment recommendations using LangGraph.
 
 from __future__ import annotations
 
-import json
 import os
 import asyncio
 from typing import Literal
@@ -16,10 +15,6 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.graph import StateGraph, END, START
 from langgraph.prebuilt import create_react_agent
 from langgraph.types import Command
-from langgraph.checkpoint.memory import InMemorySaver
-
-# Initialize checkpoint saver for conversation history
-checkpoint_saver = InMemorySaver()
 
 from dotenv import load_dotenv
 
@@ -38,7 +33,6 @@ from agent.tools import (
 from agent.utils import load_chat_model
 from agent import prompts
 
-# Load environment variables
 load_dotenv()
 
 def qa_agent_node(state: ChatState) -> dict:
@@ -51,7 +45,7 @@ def qa_agent_node(state: ChatState) -> dict:
     if hasattr(state, 'plant_type') and state.plant_type and state.plant_type != "Unknown":
         context += f"\nPlant type: {state.plant_type}"
     if hasattr(state, 'overview') and state.overview:
-        context += f"\nDisease overview: {state.overvie}"
+        context += f"\nDisease overview: {state.overview}"
     if hasattr(state, 'treatment') and state.treatment:
         context += f"\nTreatment: {state.treatment}"
     if hasattr(state, 'recommendations') and state.recommendations:
@@ -144,21 +138,23 @@ def retriever_agent_node(state: State) -> Command[str]:
     
     current_task = task_mapping[state.current_retrieval_task]
     
-    # Create react agent with retrieval tools
     tools = [search_plant_info, search_products, web_search]
+
+    system_prompt = prompts.RETRIEVER_AGENT_PROMPT.format(
+        task_type=state.current_retrieval_task,
+        query=current_task["query"],
+        context=current_task["context"],
+    )
+    system_message = SystemMessage(content=system_prompt)
+    
     retriever_agent = create_react_agent(
         model,
         tools,
-        state_modifier=prompts.RETRIEVER_AGENT_PROMPT.format(
-            task_type=state.current_retrieval_task,
-            query=current_task["query"],
-            context=current_task["context"],
-        )
     )
     
-    # Run the retriever agent
+    # Run the retriever agent with system message
     result = retriever_agent.invoke({
-        "messages": [HumanMessage(content=current_task["query"])]
+        "messages": [system_message, HumanMessage(content=current_task["query"])]
     })
     
     # Extract context from the messages
@@ -389,11 +385,13 @@ def create_final_response_node(state: State) -> dict:
     final_response = {
         "is_plant_leaf": state.is_plant_leaf,
         "has_disease": state.has_disease,
+        "annotated_image": annotated_image,
+        "cropped_images": cropped_images,
         "overview": overview,
         "treatment": treatment,
         "recommendations": recommendations,
         "diagnoses_ref": state.diagnoses_ref,
-        "created_by": state.created_by
+        "created_by": state.created_by,
     }
     
     # Save the structured response to JSON file
@@ -405,15 +403,16 @@ def create_final_response_node(state: State) -> dict:
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     
     # Save the complete structured response
-    try:
-        with open(output_path, 'w', encoding='utf-8') as f:
-            json.dump(final_response, f, indent=2, ensure_ascii=False)
-    except Exception as e:
-        pass
+    # try:
+    #     with open(output_path, 'w', encoding='utf-8') as f:
+    #         json.dump(final_response, f, indent=2, ensure_ascii=False)
+    #     print(f"📄 Analysis saved to: {output_path}")
+    # except Exception as e:
+    #     print(f"❌ Error saving analysis: {e}")
     
     # Store the response in Supabase
     try:
-        store_final_response_in_supabase.invoke({
+        supabase_result = store_final_response_in_supabase.invoke({
             "diagnoses_ref": final_response.get("diagnoses_ref"),
             "created_by": final_response.get("created_by"),
             "is_plant_leaf": final_response.get("is_plant_leaf", False),
@@ -422,14 +421,26 @@ def create_final_response_node(state: State) -> dict:
             "cropped_images": final_response.get("cropped_images", []),
             "overview": final_response.get("overview", ""),
             "treatment": final_response.get("treatment", ""),
-            "recommendations": final_response.get("recommendations", "")
+            "recommendations": final_response.get("recommendations", ""),
         })
+        if supabase_result.get("status") == "success":
+            print("✅ Response successfully stored in Supabase")
+        else:
+            print(f"⚠️  Failed to store response in Supabase: {supabase_result.get('message')}")
     except Exception as e:
-        pass
+        print(f"❌ Error storing response in Supabase: {e}")
     
     # Return the response as state values
     return {
-        "final_response": final_response
+        "is_plant_leaf": state.is_plant_leaf,
+        "has_disease": state.has_disease,
+        "annotated_image": annotated_image,
+        "cropped_images": cropped_images,
+        "overview": overview,
+        "treatment": treatment,
+        "recommendations": recommendations,
+        "diagnoses_ref": state.diagnoses_ref,
+        "created_by": state.created_by,
     }
 
 # Conditional routing from retriever_agent based on current task
@@ -499,7 +510,6 @@ builder.add_conditional_edges(
 
 graph = builder.compile(
     name="Plant Disease Detection Multi-Agent System",
-    checkpointer=checkpoint_saver  
 )
 
 async def stream_graph_execution():
@@ -523,7 +533,8 @@ async def stream_graph_execution():
         "image_url": image_url,
         "diagnoses_ref": "32af0ef8-bd5d-4074-8733-99d5f393910d",
         "created_by": "05e5fc52-e58a-4213-b560-7ead5aa6c2e7",
-        "task_type": "diagnosis"
+        "task_type": "diagnosis",
+        "thread_id": "diagnosis_session_002",   
     }
     
     # Run diagnosis workflow
@@ -605,9 +616,7 @@ async def stream_graph_execution():
         }
     }
 
-    # Interactive loop for continuous questioning
     while True:
-        # Get user input
         try:
             user_input = input("\n  Your question (or 'quit' to exit): ").strip()
             
@@ -620,6 +629,7 @@ async def stream_graph_execution():
                 
             current_state = {
                 "task_type": "qa",
+                "thread_id": "diagnosis_session_002",
             }
             
             # Add the new user message to the conversation
